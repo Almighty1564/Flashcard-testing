@@ -906,8 +906,14 @@ function renderSidebar(){
 }
 function renderGroupSelects(){
   const opts=project.groups.map((g,i)=>`<option value="${esc(g.id)}">${i+1}. ${esc(g.name)}</option>`).join("");
-  document.getElementById("questionGroup").innerHTML=opts || `<option value="">Create a group first</option>`;
-  document.getElementById("bankGroupFilter").innerHTML=`<option value="">All Groups</option>${opts}`;
+  const qg=document.getElementById("questionGroup");
+  const bf=document.getElementById("bankGroupFilter");
+  const qgPrev=qg.value;
+  const bfPrev=bf.value;
+  qg.innerHTML=opts || `<option value="">Create a group first</option>`;
+  bf.innerHTML=`<option value="">All Groups</option>${opts}`;
+  if(qgPrev && [...qg.options].some(o=>o.value===qgPrev)) qg.value=qgPrev;
+  if(bfPrev && [...bf.options].some(o=>o.value===bfPrev)) bf.value=bfPrev;
 }
 function renderChoiceEditor(){
   const list=document.getElementById("choicesList");
