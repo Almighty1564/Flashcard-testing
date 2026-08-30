@@ -3,6 +3,9 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
 <title>Developer • Question Bank Builder</title>
 <style>
 :root{
@@ -186,7 +189,7 @@ details.advanced>summary{cursor:pointer;font-weight:800;color:#c9d1d9}
 </head>
 <body>
 <div id="developerLock" class="access-lock">
-  <h1>Developer Access</h1>
+  <h1>Developer Access</h1><div style="color:#3fb950;font-size:11px;font-weight:800;margin-bottom:8px">HARD LOCK BUILD V6</div>
   <p>Enter the developer password.</p>
   <input id="developerPasswordInput" type="password" autocomplete="off" placeholder="Developer password">
   <button id="developerUnlockBtn" type="button">Unlock Developer</button>
@@ -195,7 +198,7 @@ details.advanced>summary{cursor:pointer;font-weight:800;color:#c9d1d9}
 
 
 
-<div class="shell " >
+<div class="shell access-locked" id="developerApp" style="display:none">
   <aside class="sidebar">
     <div class="brand">
       <h1>Question Bank Builder</h1>
@@ -1543,7 +1546,7 @@ showView("questions");
     if(actual===EXPECTED_HASH){
       input.value="";
       lock.style.display="none";
-      app.classList.remove("access-locked");
+      app.classList.remove("access-locked"); app.style.display="";
     }else{
       error.textContent="Incorrect password.";
       input.select();

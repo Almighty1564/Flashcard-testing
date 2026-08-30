@@ -43,14 +43,14 @@ h1{margin:0}
 </head>
 <body>
 <div id="testerLock" class="access-lock">
-  <h1>Tester Access</h1>
+  <h1>Tester Access</h1><div style="color:#2f81f7;font-size:11px;font-weight:800;margin-bottom:8px">LOCK BUILD V6</div>
   <p>Enter the tester password.</p>
   <input id="testerPasswordInput" type="password" autocomplete="off" placeholder="Tester password">
   <button id="testerUnlockBtn" type="button">Unlock Tester</button>
   <div id="testerLockError" class="access-lock-error"></div>
 </div>
 
-<div id="testerApp" class="access-locked">
+<div id="testerApp" class="access-locked" style="display:none">
 <main>
   <div class="top">
     <h1>Choose Module</h1>
@@ -58,7 +58,7 @@ h1{margin:0}
   </div>
 
   <div class="mods">
-    <a class="mod" href="./mod1.html">
+    <a class="mod" href="./mod1.html?v=6">
       MOD 1
       <small>Open Test</small>
     </a>
@@ -88,7 +88,7 @@ h1{margin:0}
     if(actual===EXPECTED_HASH){
       input.value="";
       lock.style.display="none";
-      app.classList.remove("access-locked");
+      app.classList.remove("access-locked"); app.style.display="";
     }else{
       error.textContent="Incorrect password.";
       input.select();
