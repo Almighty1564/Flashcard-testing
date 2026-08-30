@@ -145,10 +145,36 @@ details.advanced>summary{cursor:pointer;font-weight:800;color:#c9d1d9}
   padding:9px 12px;border-radius:9px;font-weight:800
 }
 .portal-home-btn:hover{border-color:#6e7681}
+
+.dev-lock-screen{
+  max-width:430px;margin:90px auto;padding:24px;background:#161b22;
+  border:1px solid #30363d;border-radius:14px;color:#e6edf3
+}
+.dev-lock-screen h1{margin:0 0 8px;font-size:24px}
+.dev-lock-screen p{color:#8b949e;margin:0 0 16px}
+.dev-lock-screen input{
+  width:100%;padding:11px;background:#0d1117;color:#e6edf3;
+  border:1px solid #30363d;border-radius:9px;font:inherit;margin-bottom:10px
+}
+.dev-lock-screen button{
+  width:100%;padding:11px;background:#238636;color:white;border:1px solid #2ea043;
+  border-radius:9px;font:inherit;font-weight:800;cursor:pointer
+}
+.dev-lock-error{color:#f85149;font-size:12px;margin-top:10px;min-height:17px}
+.dev-app-locked{display:none!important}
+
 </style>
 </head>
 <body>
-<div class="shell">
+<div id="developerLock" class="dev-lock-screen">
+  <h1>Developer Access</h1>
+  <p>Enter the developer password.</p>
+  <input id="developerPasswordInput" type="password" autocomplete="current-password" placeholder="Developer password">
+  <button id="developerUnlockBtn" type="button">Unlock Developer</button>
+  <div id="developerLockError" class="dev-lock-error"></div>
+</div>
+
+<div class="shell dev-app-locked" id="developerApp">
   <aside class="sidebar">
     <div class="brand">
       <h1>Question Bank Builder</h1>
@@ -1471,5 +1497,51 @@ document.getElementById("resetProjectBtn").onclick=()=>{
 renderAll();
 showView("questions");
 </script>
+
+<script>
+(function(){
+  const EXPECTED_HASH="52b04b5f6f447d99b5777c4e0e9fe60c257ee04e787d3223c13f26e38ba44207";
+  const lock=document.getElementById("developerLock");
+  const app=document.getElementById("developerApp");
+  const input=document.getElementById("developerPasswordInput");
+  const button=document.getElementById("developerUnlockBtn");
+  const error=document.getElementById("developerLockError");
+
+  async function sha256(text){
+    const bytes=new TextEncoder().encode(text);
+    const digest=await crypto.subtle.digest("SHA-256",bytes);
+    return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,"0")).join("");
+  }
+
+  function showApp(){
+    lock.style.display="none";
+    app.classList.remove("dev-app-locked");
+    sessionStorage.setItem("developer_unlocked_v1","1");
+  }
+
+  async function unlock(){
+    error.textContent="";
+    const value=input.value;
+    if(!value)return;
+    const actual=await sha256(value);
+    if(actual===EXPECTED_HASH){
+      input.value="";
+      showApp();
+    }else{
+      error.textContent="Incorrect developer password.";
+      input.select();
+    }
+  }
+
+  if(sessionStorage.getItem("developer_unlocked_v1")==="1"){
+    showApp();
+  }else{
+    button.addEventListener("click",unlock);
+    input.addEventListener("keydown",e=>{if(e.key==="Enter")unlock();});
+    input.focus();
+  }
+})();
+</script>
+
 </body>
 </html>

@@ -88,7 +88,7 @@ input[type=text],input[type=password],select{width:100%;background:#0d1117;color
 <aside class="sidebar">
   <div class="brand">
     <h1 id="sideModule">Study Program</h1>
-    <div class="build">TESTER MODE • STUDY FRONTEND</div>
+    <div class="build">TESTER MODE • OLD + NEW BANK SUPPORT</div>
   </div>
 
   <div class="panel" style="padding:10px;margin:10px 0">
@@ -277,6 +277,121 @@ async function decryptEnvelope(envelope,passphrase){
   );
   return JSON.parse(new TextDecoder().decode(plain));
 }
+function normalizeLoadedBank(rawBank){
+  const normalized={...rawBank};
+
+  normalized.cards=(rawBank?.cards||[]).map(card=>{
+    let type=card.type || card.questionType || "";
+
+    const rawQuestion=
+      card.question ??
+      card.questionText ??
+      card.q ??
+      card.front ??
+      card.prompt ??
+      "";
+
+    const rawAnswer=
+      card.answer ??
+      card.answerText ??
+      card.a ??
+      card.back ??
+      card.response ??
+      "";
+
+    const question=
+      (rawQuestion && typeof rawQuestion==="object" && !Array.isArray(rawQuestion))
+        ? {
+            text:String(rawQuestion.text ?? rawQuestion.value ?? rawQuestion.prompt ?? ""),
+            image:rawQuestion.image ?? rawQuestion.imageData ?? card.questionImage ?? null
+          }
+        : {
+            text:String(rawQuestion ?? ""),
+            image:card.questionImage ?? card.questionImageData ?? null
+          };
+
+    const answer=
+      (rawAnswer && typeof rawAnswer==="object" && !Array.isArray(rawAnswer))
+        ? {
+            text:String(rawAnswer.text ?? rawAnswer.value ?? rawAnswer.response ?? ""),
+            image:rawAnswer.image ?? rawAnswer.imageData ?? card.answerImage ?? null
+          }
+        : {
+            text:String(rawAnswer ?? ""),
+            image:card.answerImage ?? card.answerImageData ?? null
+          };
+
+    const choices=Array.isArray(card.choices)
+      ? card.choices
+      : Array.isArray(card.answers)
+        ? card.answers
+        : null;
+
+    const pairs=Array.isArray(card.pairs)
+      ? card.pairs
+      : Array.isArray(card.matches)
+        ? card.matches
+        : null;
+
+    if(!type){
+      if(pairs) type="matching";
+      else if(choices){
+        const correctCount=choices.filter(c=>c.correct===true || c.isCorrect===true).length;
+        type=correctCount>1 ? "multiple-select" : "multiple-choice";
+      }else{
+        type="flashcard";
+      }
+    }
+
+    const aliases={
+      "flash-card":"flashcard",
+      "flash_card":"flashcard",
+      "card":"flashcard",
+      "basic":"flashcard",
+      "multiple_choice":"multiple-choice",
+      "multiplechoice":"multiple-choice",
+      "single-choice":"multiple-choice",
+      "pick-multiple":"multiple-select",
+      "multiple_select":"multiple-select",
+      "multiselect":"multiple-select",
+      "drag-drop":"matching",
+      "match":"matching"
+    };
+    type=aliases[String(type).toLowerCase()] || String(type).toLowerCase();
+
+    const normalizedChoices=choices?.map((c,i)=>({
+      id:c.id || `${card.id || "card"}-choice-${i+1}`,
+      text:String(c.text ?? c.answer ?? c.value ?? ""),
+      image:c.image ?? c.imageData ?? null,
+      correct:c.correct===true || c.isCorrect===true
+    })) || null;
+
+    const normalizedPairs=pairs?.map((p,i)=>{
+      const left=p.left ?? p.source ?? p.from ?? "";
+      const right=p.right ?? p.target ?? p.to ?? "";
+      return {
+        id:p.id || `${card.id || "card"}-pair-${i+1}`,
+        left:typeof left==="object"
+          ? {text:String(left.text ?? left.value ?? ""),image:left.image ?? left.imageData ?? null}
+          : {text:String(left ?? ""),image:null},
+        right:typeof right==="object"
+          ? {text:String(right.text ?? right.value ?? ""),image:right.image ?? right.imageData ?? null}
+          : {text:String(right ?? ""),image:null}
+      };
+    }) || null;
+
+    return {
+      ...card,
+      type,
+      question,
+      answer,
+      choices:normalizedChoices,
+      pairs:normalizedPairs
+    };
+  });
+
+  return normalized;
+}
 function groups(){return bank?.groups||[]}
 function cards(){return (bank?.cards||[]).filter(c=>c.status!=="incomplete")}
 function cardsForGroup(id){return cards().filter(c=>c.groupId===id)}
@@ -387,7 +502,7 @@ async function unlockBank(){
     throw new Error("Bank and manifest versions do not match.");
   }
 
-  bank=decrypted;
+  bank=normalizeLoadedBank(decrypted);
   state=loadState();
   selectedGroupId=null;
   session=null;
