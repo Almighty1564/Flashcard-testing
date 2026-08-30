@@ -797,7 +797,7 @@ document.getElementById("importInput").onchange=async e=>{
   function start(){ if(timer) return; beat(); timer=setInterval(beat,HEARTBEAT_MS); }
   function stop(){ clearInterval(timer); timer=null; }
   document.addEventListener("visibilitychange",()=>{ document.hidden ? stop() : start(); });
-  window.addEventListener("load", start);
+  start();
 })();
 </script>
 </body>
