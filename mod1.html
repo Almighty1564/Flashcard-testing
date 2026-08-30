@@ -1,0 +1,817 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>MOD 1 • Tester</title>
+<style>
+:root{
+ --bg:#0d1117;--panel:#161b22;--panel2:#0f141b;--line:#30363d;--text:#e6edf3;
+ --muted:#8b949e;--accent:#2f81f7;--good:#3fb950;--warn:#d29922;--bad:#f85149;--gray:#6e7681;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+button,input,select{font:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+.shell{display:grid;grid-template-columns:290px minmax(0,1fr);min-height:100vh}
+.sidebar{border-right:1px solid var(--line);background:#0b0f14;padding:18px;position:sticky;top:0;height:100vh;overflow:auto}
+.main{padding:22px;min-width:0}
+.brand h1{font-size:18px;margin:0}.build{font-size:11px;font-weight:900;color:var(--accent);margin:5px 0 15px}
+.muted{color:var(--muted)}.small{font-size:12px}
+.btn{border:1px solid var(--line);background:#21262d;color:var(--text);padding:10px 12px;border-radius:9px;font-weight:750}
+.btn:hover{border-color:#6e7681}.btn.primary{background:var(--accent);border-color:var(--accent);color:white}
+.btn.good{background:#1f6f33;border-color:#2ea043}.btn.warn{background:#5e4513;border-color:#8a6919}.btn.bad{background:#5b1e1e;border-color:#8a2f2f}
+.btn.full{width:100%;margin-top:8px}.btn:disabled{opacity:.45;cursor:not-allowed}
+.field{display:grid;gap:6px;margin-bottom:10px}.field label{font-size:11px;color:var(--muted);font-weight:800}
+input[type=text],input[type=password],select{width:100%;background:#0d1117;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:18px;margin-bottom:16px}
+.topbar{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:16px}
+.topbar h2{margin:0 0 4px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:13px 0}
+.stat{border:1px solid var(--line);background:var(--panel2);padding:9px;border-radius:9px}.stat span{display:block;color:var(--muted);font-size:9px;text-transform:uppercase}.stat strong{font-size:19px}
+.group-list{display:grid;gap:7px;margin-top:12px}
+.group-btn{width:100%;text-align:left;border:1px solid var(--line);background:var(--panel2);color:var(--text);padding:10px;border-radius:9px}
+.group-btn.active{border-color:var(--accent);background:#142033}.group-name{font-weight:800}.group-meta{font-size:10px;color:var(--muted);margin-top:3px}
+.question-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;max-width:1000px}
+.question-meta{display:flex;gap:7px;flex-wrap:wrap;color:var(--muted);font-size:11px;margin-bottom:14px}
+.badge{border:1px solid var(--line);border-radius:999px;padding:3px 7px}
+.question-text{font-size:24px;line-height:1.35;font-weight:800;white-space:pre-wrap}
+.question-image,.answer-image,.choice-image,.match-image{max-width:100%;max-height:380px;object-fit:contain;border-radius:10px;margin-top:13px;border:1px solid var(--line)}
+.answer-box{border-top:1px solid var(--line);margin-top:20px;padding-top:18px;font-size:19px;line-height:1.45;white-space:pre-wrap}
+.rating-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
+.choice-list{display:grid;gap:9px;margin-top:18px}
+.choice-option{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;align-items:start;border:1px solid var(--line);background:var(--panel2);padding:12px;border-radius:10px}
+.choice-option.correct-reveal{border-color:var(--good)}.choice-option.wrong-selected{border-color:var(--bad)}
+.choice-option input{width:18px;height:18px;margin-top:3px}
+.choice-content{white-space:pre-wrap}
+.feedback{margin-top:14px;padding:11px;border-radius:9px;border-left:3px solid var(--line)}
+.feedback.good{background:#122719;border-color:var(--good)}.feedback.bad{background:#2f1717;border-color:var(--bad)}
+.match-wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.65fr);gap:16px;margin-top:18px}
+.match-left,.match-right{display:grid;gap:9px}
+.match-row{border:1px solid var(--line);background:var(--panel2);border-radius:10px;padding:11px}
+.match-source{border:1px solid #53606d;background:#131b24;border-radius:9px;padding:9px;cursor:grab}
+.match-source.selected{border-color:var(--accent);background:#152944}
+.drop-zone{min-height:46px;border:1px dashed #59636f;border-radius:8px;margin-top:8px;padding:9px;color:var(--muted)}
+.drop-zone.filled{border-style:solid;color:var(--text)}
+.drop-zone.correct-reveal{border-color:var(--good)}.drop-zone.wrong-reveal{border-color:var(--bad)}
+.empty{text-align:center;padding:36px;border:1px dashed var(--line);border-radius:12px;color:var(--muted)}
+.builder-toolbar{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}
+.check-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:14px}
+.check-item{display:flex;gap:8px;align-items:center;border:1px solid var(--line);background:var(--panel2);padding:10px;border-radius:9px}
+.summary-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:14px 0}
+.summary-box{border:1px solid var(--line);background:var(--panel2);border-radius:9px;padding:10px}.summary-box span{font-size:10px;color:var(--muted);display:block}.summary-box strong{font-size:22px}
+.progress-row{display:grid;grid-template-columns:40px minmax(150px,1.2fr) 2fr 110px;gap:10px;align-items:center;border-top:1px solid var(--line);padding:11px 0}
+.progress-row:first-child{border-top:0}.rank{font-size:20px;color:var(--muted);font-weight:900;text-align:center}
+.bar{height:14px;background:#202731;border-radius:999px;overflow:hidden;display:flex}.seg{height:100%}.confident{background:var(--accent)}.correct{background:var(--good)}.guessed{background:var(--warn)}.wrong{background:var(--bad)}.unanswered{background:var(--gray)}.untested{background:#242b35}
+.score{text-align:right}.score strong{display:block;font-size:20px}.score span{font-size:10px;color:var(--muted)}
+.priority-list{display:grid;gap:7px;margin-top:10px}.priority{border:1px solid var(--line);background:var(--panel2);padding:9px;border-radius:8px}
+.file-input{display:none}
+@media(max-width:850px){
+ .shell{grid-template-columns:1fr}.sidebar{position:relative;height:auto;border-right:0;border-bottom:1px solid var(--line)}
+ .match-wrap,.check-grid{grid-template-columns:1fr}.summary-grid{grid-template-columns:1fr 1fr}
+ .progress-row{grid-template-columns:35px 1fr}.progress-row .bar,.progress-row .score{grid-column:2}.score{text-align:left}
+ .question-text{font-size:20px}
+}
+
+.back-modules{
+  display:inline-block;margin-bottom:14px;text-decoration:none;
+  background:#21262d;color:#e6edf3;border:1px solid #30363d;
+  padding:9px 12px;border-radius:9px;font-weight:800
+}
+.back-modules:hover{border-color:#6e7681}
+
+</style>
+</head>
+<body>
+<div class="shell">
+<aside class="sidebar">
+  <div class="brand">
+    <h1 id="sideModule">Study Program</h1>
+    <div class="build">TESTER MODE • STUDY FRONTEND</div>
+  </div>
+
+  <div class="panel" style="padding:10px;margin:10px 0">
+    <div class="small muted">BANK BACKEND</div>
+    <div class="small" style="word-break:break-all;margin-top:4px">https://almighty1564.github.io/flashcard-bank/</div>
+  </div>
+  <button id="unlockBtn" class="btn primary full">Unlock / Refresh Bank</button>
+
+  <div class="stats">
+    <div class="stat"><span>Due</span><strong id="statDue">0</strong></div>
+    <div class="stat"><span>Learned</span><strong id="statLearned">0</strong></div>
+    <div class="stat"><span>Reviews</span><strong id="statReviews">0</strong></div>
+  </div>
+
+  <button id="customBtn" class="btn full" disabled>Build Custom Test</button>
+  <button id="progressBtn" class="btn full" disabled>Overall Progress</button>
+  <button id="exportBtn" class="btn full">Export Progress</button>
+  <button id="importBtn" class="btn full">Import Progress</button>
+  <input id="importInput" class="file-input" type="file" accept=".json,application/json">
+
+  <div id="groupList" class="group-list"></div>
+</aside>
+
+<main class="main">
+<a class="back-modules" href="./tester.html">← Back to Modules</a>
+  <div class="topbar">
+    <div>
+      <h2 id="pageTitle">Question Bank Study Program</h2>
+      <div id="pageSub" class="muted">Unlock the encrypted question bank to begin.</div>
+    </div>
+  </div>
+
+  <section id="lockedView" class="panel">
+    <h3>Load a Question Bank</h3>
+    <p class="muted">
+      Click <strong>Unlock / Refresh Bank</strong> and enter the shared bank passphrase.
+      The encrypted bank is downloaded from the configured GitHub Pages backend and decrypted only in this browser.
+    </p>
+  </section>
+
+  <section id="emptyView" class="hidden">
+    <div class="empty">
+      <h3 id="emptyTitle">No cards due</h3>
+      <p id="emptyText">The SRS timer says to wait.</p>
+      <div class="rating-row" style="justify-content:center">
+        <button id="emptyRetestWrong" class="btn">Retest Wrong / Guessed</button>
+        <button id="emptyRetestAll" class="btn primary">Retest All Now</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="studyView" class="hidden">
+    <div class="question-card">
+      <div id="questionMeta" class="question-meta"></div>
+      <div id="questionText" class="question-text"></div>
+      <div id="questionImageWrap"></div>
+      <div id="interaction"></div>
+      <div class="rating-row">
+        <button id="skipBtn" class="btn">Skip</button>
+      </div>
+    </div>
+  </section>
+
+  <section id="customView" class="panel hidden">
+    <div class="builder-toolbar">
+      <div>
+        <h3 style="margin:0">Custom Test</h3>
+        <div class="muted small">Choose any combination of groups. SRS due dates are ignored for this test.</div>
+      </div>
+      <button id="closeCustomBtn" class="btn">Cancel</button>
+    </div>
+    <div class="rating-row">
+      <button id="customAllBtn" class="btn">Select All</button>
+      <button id="customNoneBtn" class="btn">Clear</button>
+    </div>
+    <div id="customGroups" class="check-grid"></div>
+    <div class="rating-row">
+      <button id="startCustomBtn" class="btn primary">Start Custom Test</button>
+    </div>
+  </section>
+
+  <section id="debriefView" class="panel hidden">
+    <h3 id="debriefTitle">Session Complete</h3>
+    <div id="debriefSub" class="muted small"></div>
+    <div id="debriefCounts" class="summary-grid"></div>
+    <div class="rating-row">
+      <button id="retestWrongBtn" class="btn">Retest Wrong / Guessed</button>
+      <button id="retestAllBtn" class="btn primary">Retest All</button>
+      <button id="returnDueBtn" class="btn">Return to Due Reviews</button>
+    </div>
+    <div style="margin-top:20px">
+      <h4>Priority Retest</h4>
+      <div id="priorityList" class="priority-list"></div>
+    </div>
+  </section>
+
+  <section id="progressView" class="panel hidden">
+    <div class="builder-toolbar">
+      <div>
+        <h3 style="margin:0">Overall Progress</h3>
+        <div class="muted small">Recalculated from each card's latest stored result every time this page opens.</div>
+      </div>
+      <button id="closeProgressBtn" class="btn">Back</button>
+    </div>
+    <div id="overallSummary" class="summary-grid"></div>
+    <h4>Best → Worst Tested Groups</h4>
+    <div id="rankedGroups"></div>
+    <h4 style="margin-top:24px">Not Tested</h4>
+    <div id="untestedGroups" class="check-grid"></div>
+  </section>
+</main>
+</div>
+
+<script>
+const BACKEND_BASE="https://almighty1564.github.io/flashcard-bank/";
+const STATE_PREFIX="question_bank_study_state_v1::";
+
+let bank=null;
+let backendBase="";
+let state=null;
+let selectedGroupId=null;
+let session=null;
+let currentCard=null;
+let interactionState=null;
+
+function esc(v){
+  return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+}
+function normalizeBase(v){
+  let s=String(v||"").trim();
+  if(!s)return "";
+  if(!/^https?:\/\//i.test(s))s="https://"+s;
+  if(!s.endsWith("/"))s+="/";
+  return s;
+}
+function stateKey(){
+  return STATE_PREFIX+(bank?.module?.id || backendBase || "unknown");
+}
+function defaultState(){
+  return {progress:{},mastery:{},totalReviews:0,sessions:[]};
+}
+function loadState(){
+  try{
+    const raw=localStorage.getItem(stateKey());
+    if(!raw)return defaultState();
+    return {...defaultState(),...JSON.parse(raw)};
+  }catch(_){return defaultState();}
+}
+function saveState(){
+  if(!state)return;
+  localStorage.setItem(stateKey(),JSON.stringify(state));
+}
+function download(name,text){
+  const blob=new Blob([text],{type:"application/json"});
+  const u=URL.createObjectURL(blob);
+  const a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(u),1000);
+}
+function base64ToBytes(s){
+  const binary=atob(s);
+  const out=new Uint8Array(binary.length);
+  for(let i=0;i<binary.length;i++)out[i]=binary.charCodeAt(i);
+  return out;
+}
+async function decryptEnvelope(envelope,passphrase){
+  const enc=new TextEncoder();
+  const material=await crypto.subtle.importKey(
+    "raw",enc.encode(passphrase),"PBKDF2",false,["deriveKey"]
+  );
+  const key=await crypto.subtle.deriveKey(
+    {
+      name:"PBKDF2",
+      salt:base64ToBytes(envelope.kdf.salt),
+      iterations:envelope.kdf.iterations,
+      hash:envelope.kdf.hash||"SHA-256"
+    },
+    material,
+    {name:"AES-GCM",length:256},
+    false,
+    ["decrypt"]
+  );
+  const plain=await crypto.subtle.decrypt(
+    {name:"AES-GCM",iv:base64ToBytes(envelope.cipher.iv)},
+    key,
+    base64ToBytes(envelope.ciphertext)
+  );
+  return JSON.parse(new TextDecoder().decode(plain));
+}
+function groups(){return bank?.groups||[]}
+function cards(){return (bank?.cards||[]).filter(c=>c.status!=="incomplete")}
+function cardsForGroup(id){return cards().filter(c=>c.groupId===id)}
+function groupName(id){return groups().find(g=>g.id===id)?.name||"Unknown Group"}
+function typeLabel(t){
+  return {"flashcard":"Flash Card","multiple-choice":"Multiple Choice","multiple-select":"Pick Multiple","matching":"Matching"}[t]||t;
+}
+function pstate(id){
+  if(!state.progress[id]){
+    state.progress[id]={dueAt:0,intervalDays:0,ease:2.5,reps:0,lapses:0,totalReviews:0};
+  }
+  return state.progress[id];
+}
+function isDue(c){return (state.progress[c.id]?.dueAt||0)<=Date.now()}
+function dueCards(groupId=selectedGroupId){
+  const list=groupId?cardsForGroup(groupId):cards();
+  return list.filter(isDue);
+}
+function applySrs(cardId,result){
+  const p=pstate(cardId);
+  const now=Date.now();
+  const day=86400000;
+
+  if(result==="wrong"){
+    p.dueAt=now+10*60*1000;
+    p.intervalDays=0;
+    p.ease=Math.max(1.3,p.ease-0.2);
+    p.lapses++;
+    p.reps++;
+  }else if(result==="guessed"){
+    p.intervalDays=Math.max(1,Math.round((p.intervalDays||1)*1.2));
+    p.ease=Math.max(1.3,p.ease-0.05);
+    p.dueAt=now+p.intervalDays*day;
+    p.reps++;
+  }else if(result==="correct"){
+    if(p.reps===0)p.intervalDays=1;
+    else if(p.intervalDays<=1)p.intervalDays=3;
+    else p.intervalDays=Math.max(1,Math.round(p.intervalDays*p.ease));
+    p.dueAt=now+p.intervalDays*day;
+    p.reps++;
+  }else if(result==="confident"){
+    if(p.reps===0)p.intervalDays=4;
+    else p.intervalDays=Math.max(4,Math.round(Math.max(1,p.intervalDays)*(p.ease+0.15)*1.3));
+    p.ease=Math.min(3.5,p.ease+0.1);
+    p.dueAt=now+p.intervalDays*day;
+    p.reps++;
+  }
+
+  p.totalReviews++;
+  state.totalReviews++;
+  state.mastery[cardId]={lastResult:result,lastReviewedAt:new Date().toISOString()};
+  saveState();
+}
+function markUnanswered(cardId){
+  state.mastery[cardId]={lastResult:"unanswered",lastReviewedAt:new Date().toISOString()};
+  saveState();
+}
+function hideViews(){
+  ["lockedView","emptyView","studyView","customView","debriefView","progressView"].forEach(id=>document.getElementById(id).classList.add("hidden"));
+}
+function renderSidebar(){
+  if(!bank){
+    document.getElementById("sideModule").textContent="Study Program";
+    document.getElementById("groupList").innerHTML="";
+    document.getElementById("statDue").textContent="0";
+    document.getElementById("statLearned").textContent="0";
+    document.getElementById("statReviews").textContent=state?.totalReviews||0;
+    return;
+  }
+
+  document.getElementById("sideModule").textContent=bank.module?.name||"Question Bank";
+  document.getElementById("statDue").textContent=dueCards(null).length;
+  document.getElementById("statLearned").textContent=Object.keys(state.progress).filter(id=>(state.progress[id]?.reps||0)>0).length;
+  document.getElementById("statReviews").textContent=state.totalReviews||0;
+
+  document.getElementById("groupList").innerHTML=groups().map((g,i)=>{
+    const all=cardsForGroup(g.id);
+    const due=all.filter(isDue).length;
+    const learned=all.filter(c=>(state.progress[c.id]?.reps||0)>0).length;
+    return `<button class="group-btn ${selectedGroupId===g.id?"active":""}" data-group="${esc(g.id)}">
+      <div class="group-name">${i+1}. ${esc(g.name)}</div>
+      <div class="group-meta">${due} due • ${learned}/${all.length} learned</div>
+    </button>`;
+  }).join("");
+
+  document.querySelectorAll("[data-group]").forEach(b=>b.onclick=()=>{
+    selectedGroupId=b.dataset.group;
+    renderSidebar();
+    openDueReviews();
+  });
+}
+async function unlockBank(){
+  backendBase=normalizeBase(BACKEND_BASE);
+  const passphrase=prompt("Enter the bank passphrase:");
+  if(!passphrase)return false;
+
+  const mres=await fetch(backendBase+"manifest.json?_="+Date.now(),{cache:"no-store"});
+  if(!mres.ok)throw new Error("Could not load manifest.json from that backend.");
+  const manifest=await mres.json();
+
+  const bankUrl=new URL(manifest.bank,backendBase).href;
+  const bres=await fetch(bankUrl+"?_="+Date.now(),{cache:"no-store"});
+  if(!bres.ok)throw new Error("Could not load master.enc.json.");
+  const envelope=await bres.json();
+
+  const decrypted=await decryptEnvelope(envelope,passphrase);
+  if(Number(decrypted.bankVersion)!==Number(manifest.bankVersion)){
+    throw new Error("Bank and manifest versions do not match.");
+  }
+
+  bank=decrypted;
+  state=loadState();
+  selectedGroupId=null;
+  session=null;
+  currentCard=null;
+
+  document.getElementById("customBtn").disabled=false;
+  document.getElementById("progressBtn").disabled=false;
+  document.getElementById("pageTitle").textContent=bank.module?.name||"Question Bank";
+  document.getElementById("pageSub").textContent=`Bank version ${bank.bankVersion} • ${groups().length} groups • ${cards().length} usable questions`;
+  renderSidebar();
+  openDueReviews();
+  return true;
+}
+function startSession(cardList,mode="due",scopeGroups=null){
+  const list=[...cardList];
+  session={
+    mode,
+    scopeGroups:scopeGroups||[...new Set(list.map(c=>c.groupId))],
+    queue:list.map(c=>c.id),
+    results:{},
+    cursor:0,
+    startedAt:new Date().toISOString()
+  };
+  currentCard=null;
+  loadCurrent();
+}
+function loadCurrent(){
+  if(!session)return;
+  if(session.cursor>=session.queue.length){finishSession();return;}
+  currentCard=cards().find(c=>c.id===session.queue[session.cursor]);
+  if(!currentCard){session.cursor++;loadCurrent();return;}
+  interactionState=null;
+  renderCard();
+}
+function renderCard(){
+  hideViews();
+  document.getElementById("studyView").classList.remove("hidden");
+  document.getElementById("questionMeta").innerHTML=`
+    <span class="badge">${esc(groupName(currentCard.groupId))}</span>
+    <span class="badge">${esc(typeLabel(currentCard.type))}</span>
+    <span class="badge">${session.cursor+1}/${session.queue.length}</span>
+  `;
+  document.getElementById("questionText").textContent=currentCard.question?.text||"";
+  const qi=currentCard.question?.image;
+  document.getElementById("questionImageWrap").innerHTML=qi?`<img class="question-image" src="${qi}" alt="Question image">`:"";
+  renderInteraction();
+}
+function renderInteraction(){
+  const el=document.getElementById("interaction");
+  if(currentCard.type==="flashcard")renderFlashcard(el);
+  else if(currentCard.type==="multiple-choice")renderChoices(el,false);
+  else if(currentCard.type==="multiple-select")renderChoices(el,true);
+  else if(currentCard.type==="matching")renderMatching(el);
+  else el.innerHTML='<div class="feedback bad">Unsupported question type.</div>';
+}
+function imageHtml(src,cls="answer-image",alt="Image"){
+  return src?`<img class="${cls}" src="${src}" alt="${esc(alt)}">`:"";
+}
+function ratingButtons(includeWrong=true){
+  return `<div class="rating-row">
+    ${includeWrong?'<button class="btn bad" data-rate="wrong">Wrong</button>':""}
+    <button class="btn warn" data-rate="guessed">Guessed</button>
+    <button class="btn good" data-rate="correct">Correct</button>
+    <button class="btn primary" data-rate="confident">Confident</button>
+  </div>`;
+}
+function wireRatings(root,allowed=null){
+  root.querySelectorAll("[data-rate]").forEach(b=>b.onclick=()=>{
+    const r=b.dataset.rate;
+    if(allowed && !allowed.includes(r))return;
+    recordAndNext(r);
+  });
+}
+function renderFlashcard(el){
+  el.innerHTML=`<div class="rating-row"><button id="showAnswerBtn" class="btn primary">Show Answer</button></div>`;
+  document.getElementById("showAnswerBtn").onclick=()=>{
+    el.innerHTML=`<div class="answer-box">${esc(currentCard.answer?.text||"")}${imageHtml(currentCard.answer?.image)}</div>${ratingButtons(true)}`;
+    wireRatings(el);
+  };
+}
+function renderChoices(el,multi){
+  const choices=[...(currentCard.choices||[])];
+  if(currentCard.shuffleChoices!==false){
+    choices.sort(()=>Math.random()-.5);
+  }
+  interactionState={submitted:false,displayChoices:choices};
+
+  el.innerHTML=`<div class="choice-list">${
+    choices.map(c=>`<label class="choice-option" data-choice-row="${esc(c.id)}">
+      <input type="${multi?"checkbox":"radio"}" name="answerChoice" value="${esc(c.id)}">
+      <div class="choice-content">${esc(c.text||"")}${imageHtml(c.image,"choice-image","Answer choice image")}</div>
+    </label>`).join("")
+  }</div>
+  <div class="rating-row"><button id="submitObjectiveBtn" class="btn primary">Submit Answer</button></div>`;
+
+  document.getElementById("submitObjectiveBtn").onclick=()=>{
+    const selected=[...el.querySelectorAll('input[name="answerChoice"]:checked')].map(i=>i.value);
+    if(!selected.length){alert("Choose an answer first.");return;}
+
+    const correct=(currentCard.choices||[]).filter(c=>c.correct).map(c=>c.id).sort();
+    const picked=[...selected].sort();
+    const isCorrect=correct.length===picked.length && correct.every((id,i)=>id===picked[i]);
+
+    el.querySelectorAll("[data-choice-row]").forEach(row=>{
+      const c=currentCard.choices.find(x=>x.id===row.dataset.choiceRow);
+      if(c?.correct)row.classList.add("correct-reveal");
+      const input=row.querySelector("input");
+      if(input.checked&&!c?.correct)row.classList.add("wrong-selected");
+      input.disabled=true;
+    });
+
+    document.getElementById("submitObjectiveBtn").remove();
+
+    if(isCorrect){
+      const feedback=document.createElement("div");
+      feedback.innerHTML=`<div class="feedback good"><strong>Correct.</strong> Choose how well you knew it.</div>${ratingButtons(false)}`;
+      el.appendChild(feedback);
+      wireRatings(feedback,["guessed","correct","confident"]);
+    }else{
+      const feedback=document.createElement("div");
+      feedback.innerHTML=`<div class="feedback bad"><strong>Incorrect.</strong> Correct answer${correct.length===1?"":"s"} highlighted.</div>
+      <div class="rating-row"><button id="continueWrongBtn" class="btn bad">Continue — Wrong</button></div>`;
+      el.appendChild(feedback);
+      feedback.querySelector("#continueWrongBtn").onclick=()=>recordAndNext("wrong");
+    }
+  };
+}
+function renderMatching(el){
+  const pairs=currentCard.pairs||[];
+  const right=[...pairs].sort(()=>Math.random()-.5);
+  interactionState={assignments:{},selectedRight:null};
+
+  el.innerHTML=`<div class="match-wrap">
+    <div class="match-left">
+      ${pairs.map(p=>`<div class="match-row">
+        <div>${esc(p.left?.text||"")}${imageHtml(p.left?.image,"match-image","Left match image")}</div>
+        <div class="drop-zone" data-drop="${esc(p.id)}">Drop or tap a right-side item here</div>
+      </div>`).join("")}
+    </div>
+    <div class="match-right">
+      ${right.map(p=>`<div class="match-source" draggable="true" data-source="${esc(p.id)}">
+        ${esc(p.right?.text||"")}${imageHtml(p.right?.image,"match-image","Right match image")}
+      </div>`).join("")}
+    </div>
+  </div>
+  <div class="rating-row">
+    <button id="resetMatchBtn" class="btn">Reset Matches</button>
+    <button id="submitMatchBtn" class="btn primary">Submit Matches</button>
+  </div>`;
+
+  function sourceContent(id){
+    const p=pairs.find(x=>x.id===id);
+    return `${esc(p?.right?.text||"")}${imageHtml(p?.right?.image,"match-image","Right match image")}`;
+  }
+  function assign(leftId,rightId){
+    if(!leftId||!rightId)return;
+    Object.keys(interactionState.assignments).forEach(k=>{
+      if(interactionState.assignments[k]===rightId)delete interactionState.assignments[k];
+    });
+    interactionState.assignments[leftId]=rightId;
+    refresh();
+  }
+  function refresh(){
+    el.querySelectorAll("[data-source]").forEach(s=>{
+      const used=Object.values(interactionState.assignments).includes(s.dataset.source);
+      s.style.opacity=used?".35":"1";
+      s.classList.toggle("selected",interactionState.selectedRight===s.dataset.source);
+    });
+    el.querySelectorAll("[data-drop]").forEach(d=>{
+      const rid=interactionState.assignments[d.dataset.drop];
+      d.classList.toggle("filled",!!rid);
+      d.innerHTML=rid?sourceContent(rid):"Drop or tap a right-side item here";
+    });
+  }
+
+  el.querySelectorAll("[data-source]").forEach(s=>{
+    s.addEventListener("dragstart",e=>e.dataTransfer.setData("text/plain",s.dataset.source));
+    s.onclick=()=>{
+      if(Object.values(interactionState.assignments).includes(s.dataset.source))return;
+      interactionState.selectedRight=interactionState.selectedRight===s.dataset.source?null:s.dataset.source;
+      refresh();
+    };
+  });
+  el.querySelectorAll("[data-drop]").forEach(d=>{
+    d.addEventListener("dragover",e=>e.preventDefault());
+    d.addEventListener("drop",e=>{
+      e.preventDefault();assign(d.dataset.drop,e.dataTransfer.getData("text/plain"));
+    });
+    d.onclick=()=>{
+      if(interactionState.selectedRight){
+        assign(d.dataset.drop,interactionState.selectedRight);
+        interactionState.selectedRight=null;refresh();
+      }else if(interactionState.assignments[d.dataset.drop]){
+        delete interactionState.assignments[d.dataset.drop];refresh();
+      }
+    };
+  });
+
+  document.getElementById("resetMatchBtn").onclick=()=>{interactionState.assignments={};interactionState.selectedRight=null;refresh();};
+  document.getElementById("submitMatchBtn").onclick=()=>{
+    if(Object.keys(interactionState.assignments).length!==pairs.length){
+      alert("Match every item before submitting.");return;
+    }
+    const correct=pairs.every(p=>interactionState.assignments[p.id]===p.id);
+
+    el.querySelectorAll("[data-drop]").forEach(d=>{
+      d.classList.add(interactionState.assignments[d.dataset.drop]===d.dataset.drop?"correct-reveal":"wrong-reveal");
+    });
+    el.querySelectorAll("[data-source]").forEach(s=>s.setAttribute("draggable","false"));
+    document.getElementById("resetMatchBtn").remove();
+    document.getElementById("submitMatchBtn").remove();
+
+    const fb=document.createElement("div");
+    if(correct){
+      fb.innerHTML=`<div class="feedback good"><strong>Correct.</strong> Choose how well you knew it.</div>${ratingButtons(false)}`;
+      el.appendChild(fb);wireRatings(fb,["guessed","correct","confident"]);
+    }else{
+      fb.innerHTML=`<div class="feedback bad"><strong>Incorrect.</strong> Green matches are correct; red matches are incorrect.</div>
+      <div class="rating-row"><button id="continueMatchWrong" class="btn bad">Continue — Wrong</button></div>`;
+      el.appendChild(fb);
+      fb.querySelector("#continueMatchWrong").onclick=()=>recordAndNext("wrong");
+    }
+  };
+}
+function recordAndNext(result){
+  if(!session||!currentCard)return;
+  applySrs(currentCard.id,result);
+  session.results[currentCard.id]=result;
+  session.cursor++;
+  renderSidebar();
+  loadCurrent();
+}
+function skipCurrent(){
+  if(!session||!currentCard)return;
+  markUnanswered(currentCard.id);
+  session.results[currentCard.id]="unanswered";
+  session.cursor++;
+  loadCurrent();
+}
+function finishSession(){
+  const counts={confident:0,correct:0,guessed:0,wrong:0,unanswered:0};
+  session.queue.forEach(id=>{
+    const r=session.results[id]||"unanswered";
+    counts[r]++;
+  });
+  const summary={
+    id:"session_"+Date.now(),
+    mode:session.mode,
+    scopeGroups:[...session.scopeGroups],
+    cardIds:[...session.queue],
+    results:{...session.results},
+    counts,
+    total:session.queue.length,
+    startedAt:session.startedAt,
+    completedAt:new Date().toISOString()
+  };
+  state.sessions.push(summary);
+  if(state.sessions.length>100)state.sessions=state.sessions.slice(-100);
+  saveState();
+  session=null;currentCard=null;
+  showDebrief(summary);
+}
+function showDebrief(summary){
+  hideViews();
+  document.getElementById("debriefView").classList.remove("hidden");
+  document.getElementById("debriefTitle").textContent="Session Complete";
+  document.getElementById("debriefSub").textContent=`${summary.total} questions • ${summary.scopeGroups.length} group${summary.scopeGroups.length===1?"":"s"}`;
+  document.getElementById("debriefCounts").innerHTML=[
+    ["Confident",summary.counts.confident],
+    ["Correct",summary.counts.correct],
+    ["Guessed",summary.counts.guessed],
+    ["Wrong",summary.counts.wrong],
+    ["Unanswered",summary.counts.unanswered]
+  ].map(([n,v])=>`<div class="summary-box"><span>${n}</span><strong>${v}</strong></div>`).join("");
+
+  const priority=summary.cardIds.filter(id=>["wrong","guessed"].includes(summary.results[id]));
+  document.getElementById("priorityList").innerHTML=priority.length?priority.map(id=>{
+    const c=cards().find(x=>x.id===id);
+    return `<div class="priority"><strong>${esc(groupName(c?.groupId))}</strong><br>${esc(c?.question?.text||"[Image question]")} <span class="muted">— ${esc(summary.results[id])}</span></div>`;
+  }).join(""):'<div class="muted small">No wrong or guessed questions in this session.</div>';
+
+  document.getElementById("retestWrongBtn").disabled=!priority.length;
+  document.getElementById("retestWrongBtn").onclick=()=>{
+    const list=priority.map(id=>cards().find(c=>c.id===id)).filter(Boolean);
+    startSession(list,"wrong",summary.scopeGroups);
+  };
+  document.getElementById("retestAllBtn").onclick=()=>{
+    const list=summary.cardIds.map(id=>cards().find(c=>c.id===id)).filter(Boolean);
+    startSession(list,"all",summary.scopeGroups);
+  };
+  document.getElementById("returnDueBtn").onclick=openDueReviews;
+  renderSidebar();
+}
+function openDueReviews(){
+  if(!bank)return;
+  const due=dueCards(selectedGroupId);
+  if(due.length){
+    startSession(due,"due",selectedGroupId?[selectedGroupId]:groups().map(g=>g.id));
+  }else{
+    hideViews();
+    document.getElementById("emptyView").classList.remove("hidden");
+    document.getElementById("emptyTitle").textContent="No cards due";
+    document.getElementById("emptyText").textContent=
+      selectedGroupId?`${groupName(selectedGroupId)} has no SRS cards due right now.`:"No SRS cards are due right now.";
+
+    const scope=selectedGroupId?cardsForGroup(selectedGroupId):cards();
+    const wg=scope.filter(c=>["wrong","guessed"].includes(state.mastery[c.id]?.lastResult));
+    document.getElementById("emptyRetestWrong").disabled=!wg.length;
+    document.getElementById("emptyRetestWrong").onclick=()=>startSession(wg,"wrong",selectedGroupId?[selectedGroupId]:groups().map(g=>g.id));
+    document.getElementById("emptyRetestAll").onclick=()=>startSession(scope,"all",selectedGroupId?[selectedGroupId]:groups().map(g=>g.id));
+  }
+  renderSidebar();
+}
+function showCustom(){
+  hideViews();
+  document.getElementById("customView").classList.remove("hidden");
+  document.getElementById("customGroups").innerHTML=groups().map((g,i)=>`
+    <label class="check-item">
+      <input type="checkbox" data-custom-group="${esc(g.id)}">
+      <span><strong>${i+1}. ${esc(g.name)}</strong><br><span class="muted small">${cardsForGroup(g.id).length} questions</span></span>
+    </label>`).join("");
+}
+function showOverallProgress(){
+  hideViews();
+  document.getElementById("progressView").classList.remove("hidden");
+
+  const rows=groups().map(g=>{
+    const gcards=cardsForGroup(g.id);
+    const counts={confident:0,correct:0,guessed:0,wrong:0,unanswered:0,untested:0};
+    gcards.forEach(c=>{
+      const r=state.mastery[c.id]?.lastResult;
+      if(r&&counts[r]!==undefined)counts[r]++;else counts.untested++;
+    });
+    const tested=gcards.length-counts.untested;
+    const strong=counts.confident+counts.correct;
+    return {
+      id:g.id,name:g.name,total:gcards.length,counts,tested,strong,
+      score:tested?Math.round(strong/tested*100):null,
+      coverage:gcards.length?Math.round(tested/gcards.length*100):0
+    };
+  });
+
+  const tested=rows.filter(r=>r.tested>0).sort((a,b)=>(b.score-a.score)||(b.coverage-a.coverage)||a.name.localeCompare(b.name));
+  const untested=rows.filter(r=>r.tested===0);
+
+  const total=rows.reduce((n,r)=>n+r.total,0);
+  const totalTested=rows.reduce((n,r)=>n+r.tested,0);
+  const totalStrong=rows.reduce((n,r)=>n+r.strong,0);
+  const overall=totalTested?Math.round(totalStrong/totalTested*100):0;
+
+  document.getElementById("overallSummary").innerHTML=[
+    ["Tested",totalTested],
+    ["Untested",total-totalTested],
+    ["Strong Recall",overall+"%"],
+    ["Groups Tested",tested.length+"/"+rows.length],
+    ["Reviews",state.totalReviews||0]
+  ].map(([n,v])=>`<div class="summary-box"><span>${n}</span><strong>${v}</strong></div>`).join("");
+
+  document.getElementById("rankedGroups").innerHTML=tested.length?tested.map((r,i)=>{
+    const pct=n=>r.total?100*n/r.total:0;
+    return `<div class="progress-row">
+      <div class="rank">${i+1}</div>
+      <div><strong>${esc(r.name)}</strong><div class="muted small">${r.tested}/${r.total} tested • ${r.coverage}% coverage</div></div>
+      <div class="bar">
+        <span class="seg confident" style="width:${pct(r.counts.confident)}%"></span>
+        <span class="seg correct" style="width:${pct(r.counts.correct)}%"></span>
+        <span class="seg guessed" style="width:${pct(r.counts.guessed)}%"></span>
+        <span class="seg wrong" style="width:${pct(r.counts.wrong)}%"></span>
+        <span class="seg unanswered" style="width:${pct(r.counts.unanswered)}%"></span>
+        <span class="seg untested" style="width:${pct(r.counts.untested)}%"></span>
+      </div>
+      <div class="score"><strong>${r.score}%</strong><span>strong recall</span></div>
+    </div>`;
+  }).join(""):'<div class="empty">No groups have been tested yet.</div>';
+
+  document.getElementById("untestedGroups").innerHTML=untested.length?untested.map(r=>
+    `<div class="check-item"><strong>${esc(r.name)}</strong><span class="muted small">${r.total} questions</span></div>`
+  ).join(""):'<div class="muted small">Every group has at least one result.</div>';
+}
+function selectedCustomGroups(){
+  return [...document.querySelectorAll("[data-custom-group]:checked")].map(x=>x.dataset.customGroup);
+}
+
+document.getElementById("unlockBtn").onclick=async()=>{
+  try{await unlockBank()}catch(e){alert(e.message||String(e))}
+};
+document.getElementById("customBtn").onclick=showCustom;
+document.getElementById("progressBtn").onclick=showOverallProgress;
+document.getElementById("closeCustomBtn").onclick=openDueReviews;
+document.getElementById("closeProgressBtn").onclick=openDueReviews;
+document.getElementById("skipBtn").onclick=skipCurrent;
+document.getElementById("customAllBtn").onclick=()=>document.querySelectorAll("[data-custom-group]").forEach(x=>x.checked=true);
+document.getElementById("customNoneBtn").onclick=()=>document.querySelectorAll("[data-custom-group]").forEach(x=>x.checked=false);
+document.getElementById("startCustomBtn").onclick=()=>{
+  const ids=selectedCustomGroups();
+  if(!ids.length){alert("Select at least one group.");return;}
+  const set=new Set(ids);
+  startSession(cards().filter(c=>set.has(c.groupId)),"custom",ids);
+};
+document.getElementById("exportBtn").onclick=()=>{
+  if(!state){alert("Unlock a bank first.");return;}
+  download((bank.module?.id||"study")+"-progress.json",JSON.stringify({
+    format:"question-bank-study-progress-v1",
+    module:bank.module,
+    bankVersion:bank.bankVersion,
+    state
+  },null,2));
+};
+document.getElementById("importBtn").onclick=()=>document.getElementById("importInput").click();
+document.getElementById("importInput").onchange=async e=>{
+  const f=e.target.files?.[0];if(!f)return;
+  try{
+    if(!bank)throw new Error("Unlock the matching bank before importing progress.");
+    const obj=JSON.parse(await f.text());
+    if(obj.format!=="question-bank-study-progress-v1")throw new Error("Unsupported progress file.");
+    if(obj.module?.id!==bank.module?.id)throw new Error("This progress file belongs to a different module.");
+    state={...defaultState(),...(obj.state||{})};
+    saveState();renderSidebar();openDueReviews();
+  }catch(err){alert(err.message||String(err))}
+  e.target.value="";
+};
+
+state=defaultState();
+renderSidebar();
+</script>
+</body>
+</html>
