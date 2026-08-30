@@ -779,5 +779,26 @@ document.getElementById("importInput").onchange=async e=>{
   }
 })();
 </script>
+ <script>
+(function(){
+  const HEARTBEAT_MS = 30000;
+  let timer = null;
+  async function beat(){
+    try{
+      if(!window.FC || !FC.client) return;
+      const { data:{ user } } = await FC.client.auth.getUser();
+      if(!user) return;
+      await FC.client.from("presence").upsert(
+        { user_id: user.id, last_seen_at: new Date().toISOString() },
+        { onConflict: "user_id" }
+      );
+    }catch(_){}
+  }
+  function start(){ if(timer) return; beat(); timer=setInterval(beat,HEARTBEAT_MS); }
+  function stop(){ clearInterval(timer); timer=null; }
+  document.addEventListener("visibilitychange",()=>{ document.hidden ? stop() : start(); });
+  window.addEventListener("load", start);
+})();
+</script>
 </body>
 </html>
