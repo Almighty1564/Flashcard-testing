@@ -165,12 +165,13 @@ details.advanced>summary{cursor:pointer;font-weight:800;color:#c9d1d9}
 </style>
 </head>
 <body>
-<div id="developerLock">
+<div id="developerLock" hidden>
   <h1>Developer Access</h1>
-  <div class="buildmark">HARD LOCK V8</div>
-  <p>Enter the developer password.</p>
-  <input id="developerPasswordInput" type="password" autocomplete="off" placeholder="Developer password">
-  <button id="developerUnlockBtn" type="button">Unlock Developer</button>
+  <div class="buildmark">CLOUD BUILD V8</div>
+  <p>Sign in with your developer username and password.</p>
+  <input id="developerUsernameInput" type="text" autocomplete="username" placeholder="Username">
+  <input id="developerPasswordInput" type="password" autocomplete="current-password" placeholder="Password">
+  <button id="developerUnlockBtn" type="button">Sign In</button>
   <div id="developerError"></div>
 </div>
 
@@ -180,14 +181,25 @@ details.advanced>summary{cursor:pointer;font-weight:800;color:#c9d1d9}
   <aside class="sidebar">
     <div class="brand">
       <h1>Question Bank Builder</h1>
-      <div class="version">BUILD v1.3 • SIMPLE PUBLISH</div>
-      <div class="small muted">Local authoring tool</div>
+      <div class="version">BUILD v2.0 • CLOUD</div>
+      <div class="small muted" id="devWhoami">Signed in</div>
     </div>
 
     <div class="field">
+      <label>CLOUD MODULE</label>
+      <select id="cloudModuleSelect"></select>
+    </div>
+    <div class="row" style="gap:8px">
+      <button id="newModuleBtn" class="btn" type="button" style="flex:1">New Module</button>
+      <button id="publishToggleBtn" class="btn" type="button" style="flex:1">Publish</button>
+    </div>
+
+    <div class="field" style="margin-top:10px">
       <label>MODULE / COURSE NAME</label>
       <input id="moduleName" type="text" placeholder="Example: WMOD 2">
     </div>
+
+    <div class="small" id="syncStatus" style="color:#8b949e;margin-bottom:10px">Ready</div>
 
     <div class="stats">
       <div class="stat"><span>Groups</span><strong id="statGroups">0</strong></div>
@@ -205,7 +217,8 @@ details.advanced>summary{cursor:pointer;font-weight:800;color:#c9d1d9}
     <div id="sidebarGroups" class="group-list"></div>
 
     <div class="footer-note">
-      Drafts autosave to this browser. Export a project backup before moving to another computer.
+      Every change saves to Supabase automatically. Sign in anywhere to keep working.
+      <button id="devSignOutBtn" class="btn full" type="button" style="margin-top:10px">Sign out</button>
     </div>
   </aside>
 
@@ -520,11 +533,13 @@ details.advanced>summary{cursor:pointer;font-weight:800;color:#c9d1d9}
   </main>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="./supabase-config.js"></script>
+<script src="./cloud.js"></script>
 <script>
-const STORAGE_KEY="flashcard_question_builder_v1";
 const PROJECT_FORMAT="flashcard-question-builder-v1";
 
-let project=loadProject();
+let project=blankProject();
 let editingId=null;
 let draft=emptyDraft();
 let preparedEncrypted=null;
@@ -557,22 +572,251 @@ function emptyDraft(){
   };
 }
 function blankProject(){
-  return {format:PROJECT_FORMAT,moduleName:"",groups:[],questions:[],createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+  return {format:PROJECT_FORMAT,moduleId:null,moduleSlug:"",moduleName:"",isPublished:false,
+          groups:[],questions:[],createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
 }
-function loadProject(){
-  try{
-    const raw=localStorage.getItem(STORAGE_KEY);
-    if(!raw) return blankProject();
-    const data=JSON.parse(raw);
-    if(!data || !Array.isArray(data.groups) || !Array.isArray(data.questions)) return blankProject();
-    return {...blankProject(),...data,format:PROJECT_FORMAT};
-  }catch(_){ return blankProject(); }
+
+/* ============================================================
+   CLOUD PERSISTENCE
+   The builder keeps working on the same in-memory `project`
+   object it always used. Only the storage underneath changed.
+   ============================================================ */
+
+let cloudReady=false;      // true once a module has loaded successfully
+let syncing=false;
+let syncQueued=false;
+let syncTimer=null;
+
+function setSyncStatus(text,color){
+  const el=document.getElementById("syncStatus");
+  if(!el)return;
+  el.textContent=text;
+  el.style.color=color||"#8b949e";
+}
+function slugify(v){
+  return String(v||"").toLowerCase().replace(/[^a-z0-9]+/g,"").slice(0,40) || ("module"+Date.now().toString(36));
 }
 function saveProject(){
   project.moduleName=document.getElementById("moduleName")?.value ?? project.moduleName;
   project.updatedAt=new Date().toISOString();
-  localStorage.setItem(STORAGE_KEY,JSON.stringify(project));
   renderSidebar();
+  queueSync();
+}
+function queueSync(){
+  if(!cloudReady)return;
+  setSyncStatus("Saving…","#d29922");
+  clearTimeout(syncTimer);
+  syncTimer=setTimeout(runSync,700);
+}
+async function imagePathFor(value,existingPath,basePath){
+  if(!value) return null;
+  if(typeof value==="string" && value.startsWith("data:")){
+    const mime=value.slice(5,value.indexOf(";"));
+    const ext=(mime.split("/")[1]||"png").replace(/[^a-z0-9]/gi,"").slice(0,5);
+    const path=basePath+"."+ext;
+    await FC.uploadImage(value,path);
+    return path;
+  }
+  return existingPath||null;
+}
+async function uploadPendingImages(){
+  const base=q=>project.moduleSlug+"/"+q.id;
+  for(const q of project.questions){
+    q.questionImagePath=await imagePathFor(q.questionImage,q.questionImagePath,base(q)+"/question");
+    if(q.type==="flashcard"){
+      q.answerImagePath=await imagePathFor(q.answerImage,q.answerImagePath,base(q)+"/answer");
+    }
+    for(const c of (q.choices||[])){
+      c.imagePath=await imagePathFor(c.image,c.imagePath,base(q)+"/choice-"+c.id);
+    }
+    for(const p of (q.pairs||[])){
+      p.leftImagePath=await imagePathFor(p.leftImage,p.leftImagePath,base(q)+"/pair-"+p.id+"-left");
+      p.rightImagePath=await imagePathFor(p.rightImage,p.rightImagePath,base(q)+"/pair-"+p.id+"-right");
+    }
+  }
+}
+function answerDataFor(q){
+  if(q.type==="flashcard"){
+    return {text:q.answerText||"",image_path:q.answerImagePath||null};
+  }
+  if(q.type==="multiple-choice"||q.type==="multiple-select"){
+    return {
+      choices:(q.choices||[]).map(c=>({id:c.id,text:c.text||"",image_path:c.imagePath||null,correct:!!c.correct})),
+      shuffle:q.shuffleChoices!==false
+    };
+  }
+  if(q.type==="matching"){
+    return {
+      pairs:(q.pairs||[]).map(p=>({
+        id:p.id,
+        left:{text:p.leftText||"",image_path:p.leftImagePath||null},
+        right:{text:p.rightText||"",image_path:p.rightImagePath||null}
+      }))
+    };
+  }
+  return {};
+}
+async function runSync(){
+  if(!cloudReady||!project.moduleId)return;
+  if(syncing){syncQueued=true;return;}
+  syncing=true;
+  const sb=FC.client;
+  try{
+    await uploadPendingImages();
+
+    let r=await sb.from("modules").update({
+      name:project.moduleName||project.moduleSlug,
+      is_published:!!project.isPublished,
+      updated_at:new Date().toISOString()
+    }).eq("id",project.moduleId);
+    if(r.error) throw new Error(r.error.message);
+
+    const groupRows=project.groups.map((g,i)=>({
+      id:g.id,module_id:project.moduleId,name:g.name||"Untitled group",sort_order:i+1
+    }));
+    if(groupRows.length){
+      r=await sb.from("question_groups").upsert(groupRows,{onConflict:"id"});
+      if(r.error) throw new Error(r.error.message);
+    }
+
+    const questionRows=project.questions.map((q,i)=>({
+      id:q.id,
+      module_id:project.moduleId,
+      group_id:q.groupId||null,
+      question_type:q.type,
+      question_text:q.questionText||"",
+      question_image_path:q.questionImagePath||null,
+      answer_data:answerDataFor(q),
+      sort_order:i+1,
+      is_active:true,
+      updated_at:new Date().toISOString()
+    }));
+    if(questionRows.length){
+      r=await sb.from("questions").upsert(questionRows,{onConflict:"id"});
+      if(r.error) throw new Error(r.error.message);
+    }
+
+    // Remove anything deleted in the builder.
+    const keepQ=project.questions.map(q=>q.id);
+    const existingQ=await sb.from("questions").select("id").eq("module_id",project.moduleId);
+    if(existingQ.error) throw new Error(existingQ.error.message);
+    const staleQ=(existingQ.data||[]).map(x=>x.id).filter(id=>keepQ.indexOf(id)===-1);
+    if(staleQ.length){
+      r=await sb.from("questions").delete().in("id",staleQ);
+      if(r.error) throw new Error(r.error.message);
+    }
+
+    const keepG=project.groups.map(g=>g.id);
+    const existingG=await sb.from("question_groups").select("id").eq("module_id",project.moduleId);
+    if(existingG.error) throw new Error(existingG.error.message);
+    const staleG=(existingG.data||[]).map(x=>x.id).filter(id=>keepG.indexOf(id)===-1);
+    if(staleG.length){
+      r=await sb.from("question_groups").delete().in("id",staleG);
+      if(r.error) throw new Error(r.error.message);
+    }
+
+    setSyncStatus("Saved to cloud • "+new Date().toLocaleTimeString(),"#3fb950");
+  }catch(e){
+    setSyncStatus("Not saved: "+(e.message||e),"#f85149");
+  }finally{
+    syncing=false;
+    if(syncQueued){syncQueued=false;queueSync();}
+  }
+}
+async function loadModuleIntoBuilder(slug){
+  cloudReady=false;
+  setSyncStatus("Loading…","#8b949e");
+  const sb=FC.client;
+
+  const module=await FC.getModule(slug);
+  if(!module) throw new Error("Module \""+slug+"\" was not found.");
+
+  const gRes=await sb.from("question_groups")
+    .select("id, name, sort_order").eq("module_id",module.id)
+    .order("sort_order",{ascending:true});
+  if(gRes.error) throw new Error(gRes.error.message);
+
+  const qRes=await sb.from("questions")
+    .select("id, group_id, question_type, question_text, question_image_path, answer_data, sort_order")
+    .eq("module_id",module.id).order("sort_order",{ascending:true});
+  if(qRes.error) throw new Error(qRes.error.message);
+
+  const rows=qRes.data||[];
+  const paths=[];
+  rows.forEach(row=>{
+    const ad=row.answer_data||{};
+    if(row.question_image_path)paths.push(row.question_image_path);
+    if(ad.image_path)paths.push(ad.image_path);
+    (ad.choices||[]).forEach(c=>{if(c.image_path)paths.push(c.image_path)});
+    (ad.pairs||[]).forEach(p=>{
+      if(p.left&&p.left.image_path)paths.push(p.left.image_path);
+      if(p.right&&p.right.image_path)paths.push(p.right.image_path);
+    });
+  });
+  await FC.signPaths(paths);
+
+  project=blankProject();
+  project.moduleId=module.id;
+  project.moduleSlug=module.slug;
+  project.moduleName=module.name||"";
+  project.isPublished=!!module.is_published;
+  project.groups=(gRes.data||[]).map(g=>({id:g.id,name:g.name}));
+  project.questions=rows.map(row=>{
+    const ad=row.answer_data||{};
+    const q={
+      id:row.id,
+      groupId:row.group_id,
+      type:row.question_type,
+      questionText:row.question_text||"",
+      questionImage:FC.signedUrl(row.question_image_path),
+      questionImagePath:row.question_image_path||null,
+      answerText:null,answerImage:null,answerImagePath:null,
+      choices:null,shuffleChoices:null,pairs:null
+    };
+    if(row.question_type==="flashcard"){
+      q.answerText=ad.text||"";
+      q.answerImage=FC.signedUrl(ad.image_path);
+      q.answerImagePath=ad.image_path||null;
+    }
+    if(row.question_type==="multiple-choice"||row.question_type==="multiple-select"){
+      q.choices=(ad.choices||[]).map(c=>({
+        id:c.id||uid("choice"),text:c.text||"",
+        image:FC.signedUrl(c.image_path),imagePath:c.image_path||null,correct:!!c.correct
+      }));
+      q.shuffleChoices=ad.shuffle!==false;
+    }
+    if(row.question_type==="matching"){
+      q.pairs=(ad.pairs||[]).map(p=>({
+        id:p.id||uid("pair"),
+        leftText:(p.left&&p.left.text)||"",leftImage:FC.signedUrl(p.left&&p.left.image_path),leftImagePath:(p.left&&p.left.image_path)||null,
+        rightText:(p.right&&p.right.text)||"",rightImage:FC.signedUrl(p.right&&p.right.image_path),rightImagePath:(p.right&&p.right.image_path)||null
+      }));
+    }
+    return q;
+  });
+
+  editingId=null;
+  draft=emptyDraft();
+  cloudReady=true;
+  updatePublishButton();
+  renderAll();
+  setSyncStatus("Loaded "+project.questions.length+" questions","#8b949e");
+}
+function updatePublishButton(){
+  const b=document.getElementById("publishToggleBtn");
+  if(!b)return;
+  b.textContent=project.isPublished?"Unpublish":"Publish";
+  b.className=project.isPublished?"btn warn":"btn good";
+  b.style.flex="1";
+}
+async function renderModuleSelect(selectSlug){
+  const sel=document.getElementById("cloudModuleSelect");
+  const modules=await FC.listModules();
+  sel.innerHTML=modules.map(m=>
+    `<option value="${esc(m.slug)}">${esc(m.name)}${m.is_published?"":" (draft)"}</option>`
+  ).join("") || `<option value="">No modules yet</option>`;
+  if(selectSlug) sel.value=selectSlug;
+  return modules;
 }
 function esc(s){
   return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
@@ -824,6 +1068,8 @@ function saveCurrentQuestion(){
   if(!project.groups.length){alert("Create a group first.");showView("groups");return;}
   const q={
     id:editingId || uid("card"),
+    questionImagePath:draft.questionImagePath||null,
+    answerImagePath:draft.type==="flashcard"?(draft.answerImagePath||null):null,
     groupId:draft.groupId,
     type:draft.type,
     questionText:draft.questionText.trim(),
@@ -831,22 +1077,39 @@ function saveCurrentQuestion(){
     answerText:draft.type==="flashcard"?draft.answerText.trim():null,
     answerImage:draft.type==="flashcard"?draft.answerImage:null,
     choices:["multiple-choice","multiple-select"].includes(draft.type)
-      ? draft.choices.map(c=>({id:c.id,text:c.text.trim(),image:c.image,correct:!!c.correct}))
+      ? draft.choices.map(c=>({id:c.id,text:c.text.trim(),image:c.image,imagePath:c.imagePath||null,correct:!!c.correct}))
       : null,
     shuffleChoices:["multiple-choice","multiple-select"].includes(draft.type)?!!draft.shuffleChoices:null,
     pairs:draft.type==="matching"
-      ? draft.pairs.map(p=>({id:p.id,leftText:p.leftText.trim(),leftImage:p.leftImage,rightText:p.rightText.trim(),rightImage:p.rightImage}))
+      ? draft.pairs.map(p=>({id:p.id,leftText:p.leftText.trim(),leftImage:p.leftImage,leftImagePath:p.leftImagePath||null,rightText:p.rightText.trim(),rightImage:p.rightImage,rightImagePath:p.rightImagePath||null}))
       : null,
     updatedAt:new Date().toISOString()
   };
   const problems=questionIssues(q);
   if(problems.length && !confirm("This question has validation issues:\n\n- "+problems.join("\n- ")+"\n\nSave it anyway?")) return;
+  const prev=project.questions.find(x=>x.id===q.id);
+  if(prev) carryImagePaths(q,prev);
   const idx=project.questions.findIndex(x=>x.id===q.id);
   if(idx>=0) project.questions[idx]={...project.questions[idx],...q};
   else project.questions.push({...q,createdAt:new Date().toISOString()});
   saveProject();
   newQuestion();
   showView("bank");
+}
+/* An unchanged image keeps its Supabase Storage path so it is not re-uploaded. */
+function carryImagePaths(next,prev){
+  if(next.questionImage && next.questionImage===prev.questionImage) next.questionImagePath=prev.questionImagePath||null;
+  if(next.answerImage && next.answerImage===prev.answerImage) next.answerImagePath=prev.answerImagePath||null;
+  (next.choices||[]).forEach(c=>{
+    const old=(prev.choices||[]).find(x=>x.id===c.id);
+    if(old && c.image && c.image===old.image) c.imagePath=old.imagePath||null;
+  });
+  (next.pairs||[]).forEach(p=>{
+    const old=(prev.pairs||[]).find(x=>x.id===p.id);
+    if(!old)return;
+    if(p.leftImage && p.leftImage===old.leftImage) p.leftImagePath=old.leftImagePath||null;
+    if(p.rightImage && p.rightImage===old.rightImage) p.rightImagePath=old.rightImagePath||null;
+  });
 }
 function newQuestion(){
   editingId=null;
@@ -866,6 +1129,8 @@ function editQuestion(id){
     shuffleChoices:q.shuffleChoices!==false,
     pairs:q.pairs?JSON.parse(JSON.stringify(q.pairs)):emptyDraft().pairs
   };
+  draft.questionImagePath=q.questionImagePath||null;
+  draft.answerImagePath=q.answerImagePath||null;
   fillFormFromDraft();
   document.getElementById("saveQuestionBtn").textContent="Update Question";
   showView("questions");
@@ -954,7 +1219,7 @@ function addGroup(){
   const name=inp.value.trim();
   if(!name)return;
   if(project.groups.some(g=>g.name.toLowerCase()===name.toLowerCase())){alert("A group with that name already exists.");return;}
-  const g={id:uid("group"),name,createdAt:new Date().toISOString()};
+  const g={id:(crypto.randomUUID?crypto.randomUUID():uid("group")),name,createdAt:new Date().toISOString()};
   project.groups.push(g);inp.value="";saveProject();
   if(!draft.groupId)draft.groupId=g.id;
   renderAll();
@@ -1360,10 +1625,11 @@ document.getElementById("importProjectInput").onchange=async e=>{
   try{
     const obj=JSON.parse(await f.text());
     if(!obj||!Array.isArray(obj.groups)||!Array.isArray(obj.questions))throw new Error("Not a valid builder project.");
-    if(!confirm("Replace the current local project with this imported project?"))return;
-    project={...blankProject(),...obj,format:PROJECT_FORMAT};
-    localStorage.setItem(STORAGE_KEY,JSON.stringify(project));
-    newQuestion();renderAll();showView("bank");
+    if(!confirm("Replace ALL groups and questions in the current cloud module with this file?"))return;
+    const keep={moduleId:project.moduleId,moduleSlug:project.moduleSlug,moduleName:project.moduleName,isPublished:project.isPublished};
+    project={...blankProject(),...obj,...keep,format:PROJECT_FORMAT};
+    project.groups=(project.groups||[]).map(g=>({...g,id:/^[0-9a-f-]{36}$/i.test(g.id)?g.id:(crypto.randomUUID?crypto.randomUUID():g.id)}));
+    newQuestion();renderAll();saveProject();showView("bank");
   }catch(err){alert(err.message||String(err));}
   e.target.value="";
 };
@@ -1491,46 +1757,118 @@ document.getElementById("downloadCompleteZipBtn").onclick=()=>{
   downloadBlob(`${moduleSlug}-DEPLOY_PACKAGE.zip`,makeZip(files));
 };
 
-document.getElementById("resetProjectBtn").onclick=()=>{
-  if(!confirm("Delete the entire locally saved builder project? This cannot be undone unless you exported a backup."))return;
-  localStorage.removeItem(STORAGE_KEY);project=blankProject();editingId=null;draft=emptyDraft();renderAll();showView("questions");
+document.getElementById("resetProjectBtn").onclick=async()=>{
+  if(!confirm("Discard unsaved edits and reload this module from the cloud?"))return;
+  try{ await loadModuleIntoBuilder(project.moduleSlug); showView("questions"); }
+  catch(e){ alert(e.message||String(e)); }
 };
 
 renderAll();
 showView("questions");
+
+/* ---- cloud module controls ---- */
+document.getElementById("cloudModuleSelect").addEventListener("change",async e=>{
+  try{ await loadModuleIntoBuilder(e.target.value); showView("questions"); }
+  catch(err){ alert(err.message||String(err)); }
+});
+document.getElementById("publishToggleBtn").addEventListener("click",()=>{
+  if(!cloudReady)return;
+  project.isPublished=!project.isPublished;
+  updatePublishButton();
+  saveProject();
+});
+document.getElementById("newModuleBtn").addEventListener("click",async()=>{
+  const name=prompt("Name for the new module (example: MOD 2):");
+  if(!name)return;
+  const slug=slugify(name);
+  try{
+    const session=await FC.getSession();
+    const r=await FC.client.from("modules").insert({
+      slug:slug,name:name.trim(),is_published:false,created_by:session.user.id
+    }).select().single();
+    if(r.error) throw new Error(r.error.message);
+    await renderModuleSelect(slug);
+    await loadModuleIntoBuilder(slug);
+    showView("groups");
+  }catch(e){ alert(e.message||String(e)); }
+});
+document.getElementById("devSignOutBtn").addEventListener("click",async()=>{
+  await FC.signOut();
+  location.reload();
+});
+
+/* Called by the sign-in gate once a developer is verified. */
+window.__startBuilder=async function(profile){
+  document.getElementById("devWhoami").textContent=
+    "Signed in as "+(profile.username||"developer");
+  const modules=await renderModuleSelect();
+  if(modules.length){
+    await loadModuleIntoBuilder(document.getElementById("cloudModuleSelect").value||modules[0].slug);
+  }else{
+    setSyncStatus("No modules yet — use New Module","#8b949e");
+  }
+};
 </script>
 
 </div>
 <script>
 (function(){
-  const EXPECTED_HASH="1f5713fcb1eeb83a4a22806b701b5f0a1992adb97358a95ae4ef0d81c2833192";
   const lock=document.getElementById("developerLock");
   const app=document.getElementById("developerApp");
-  const input=document.getElementById("developerPasswordInput");
+  const user=document.getElementById("developerUsernameInput");
+  const pass=document.getElementById("developerPasswordInput");
   const button=document.getElementById("developerUnlockBtn");
   const error=document.getElementById("developerError");
 
-  async function hash(text){
-    const data=new TextEncoder().encode(text);
-    const digest=await crypto.subtle.digest("SHA-256",data);
-    return Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,"0")).join("");
+  function showLock(msg){
+    app.hidden=true;
+    lock.hidden=false;
+    error.textContent=msg||"";
+    user.focus();
   }
 
-  async function unlock(){
-    error.textContent="";
-    if(await hash(input.value)===EXPECTED_HASH){
-      input.value="";
-      lock.hidden=true;
-      app.hidden=false;
-    }else{
-      error.textContent="Incorrect developer password.";
-      input.select();
+  async function enter(profile){
+    lock.hidden=true;
+    app.hidden=false;
+    try{
+      await window.__startBuilder(profile);
+    }catch(e){
+      alert(e.message||String(e));
     }
   }
 
-  button.addEventListener("click",unlock);
-  input.addEventListener("keydown",e=>{if(e.key==="Enter")unlock();});
-  input.focus();
+  async function attempt(profile){
+    if(!profile){ showLock(""); return; }
+    if(profile.role!=="developer"){
+      await FC.signOut();
+      showLock("That account does not have developer access.");
+      return;
+    }
+    await enter(profile);
+  }
+
+  async function signIn(){
+    error.textContent="";
+    try{
+      await FC.signIn(user.value,pass.value);
+      const profile=await FC.getProfile();
+      pass.value="";
+      await attempt(profile);
+    }catch(e){
+      await FC.signOut();
+      showLock(e.message||"Sign in failed.");
+      pass.select();
+    }
+  }
+
+  button.addEventListener("click",signIn);
+  [user,pass].forEach(el=>el.addEventListener("keydown",e=>{if(e.key==="Enter")signIn();}));
+
+  (async function boot(){
+    let profile=null;
+    try{ profile=await FC.requireUser(); }catch(_){ profile=null; }
+    await attempt(profile);
+  })();
 })();
 </script>
 

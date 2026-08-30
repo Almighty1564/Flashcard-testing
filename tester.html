@@ -38,6 +38,7 @@ h1{margin:0}
 }
 .access-lock-error{color:#f85149;font-size:12px;margin-top:10px;min-height:17px}
 .access-locked{display:none!important}
+.mod-user{color:var(--muted);font-size:12px;font-weight:700}
 
 
 [hidden]{display:none!important}
@@ -47,12 +48,13 @@ h1{margin:0}
 </style>
 </head>
 <body>
-<div id="testerLock" class="access-lock">
+<div id="testerLock" class="access-lock" hidden>
   <h1>Tester Access</h1>
-  <div style="color:#2f81f7;font-size:11px;font-weight:800;margin-bottom:8px">ACCESS BUILD V7</div>
-  <p>Enter the tester password to view the modules.</p>
-  <input id="testerPasswordInput" type="password" autocomplete="off" placeholder="Tester password">
-  <button id="testerUnlockBtn" type="button">Unlock Tester</button>
+  <div style="color:#2f81f7;font-size:11px;font-weight:800;margin-bottom:8px">CLOUD BUILD V8</div>
+  <p>Sign in with your tester username and password.</p>
+  <input id="testerUsernameInput" type="text" autocomplete="username" placeholder="Username">
+  <input id="testerPasswordInput" type="password" autocomplete="current-password" placeholder="Password">
+  <button id="testerUnlockBtn" type="button">Sign In</button>
   <div id="testerLockError" class="access-lock-error"></div>
 </div>
 
@@ -61,15 +63,15 @@ h1{margin:0}
 <main>
   <div class="top">
     <h1>Choose Module</h1>
-    <a class="back" href="./index.html">← Back</a>
+    <div style="display:flex;gap:10px;align-items:center">
+      <span id="whoami" class="mod-user"></span>
+      <button id="signOutBtn" type="button" class="back" style="cursor:pointer">Sign out</button>
+      <a class="back" href="./index.html">← Back</a>
+    </div>
   </div>
 
-  <div class="mods">
-    <a class="mod" href="./mod1.html?v=7">MOD 1<small>Open Test</small></a>
-    <div class="mod disabled">MOD 2<small>Not Added Yet</small></div>
-    <div class="mod disabled">MOD 3<small>Not Added Yet</small></div>
-    <div class="mod disabled">MOD 4<small>Not Added Yet</small></div>
-    <div class="mod disabled">MOD 5<small>Not Added Yet</small></div>
+  <div class="mods" id="modList">
+    <div class="mod disabled">Loading<small>Reading your modules</small></div>
   </div>
 </main>
 
@@ -77,19 +79,85 @@ h1{margin:0}
 
 
 
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="./supabase-config.js"></script>
+<script src="./cloud.js"></script>
 <script>
 (function(){
- const EXPECTED_HASH="69bbc95c3e3d17f49d4d2ab4e7d429717822c6fbb390351189be6157a0ee7368";
- const lock=document.getElementById("testerLock");
- const app=document.getElementById("testerApp");
- const input=document.getElementById("testerPasswordInput");
- const error=document.getElementById("testerLockError");
- async function sha256(t){const b=new TextEncoder().encode(t);const d=await crypto.subtle.digest("SHA-256",b);return [...new Uint8Array(d)].map(x=>x.toString(16).padStart(2,"0")).join("")}
- function show(){lock.hidden=true;app.hidden=false}
- async function unlock(){error.textContent="";const p=input.value; if(await sha256(p)===EXPECTED_HASH){sessionStorage.setItem("flashcard_tester_pass_v7",p);sessionStorage.setItem("flashcard_tester_unlocked_v7","1");input.value="";show()} else {error.textContent="Incorrect password.";input.select()}}
- document.getElementById("testerUnlockBtn").addEventListener("click",unlock);
- input.addEventListener("keydown",e=>{if(e.key==="Enter")unlock()});
- if(sessionStorage.getItem("flashcard_tester_unlocked_v7")==="1" && sessionStorage.getItem("flashcard_tester_pass_v7")) show(); else input.focus();
+  const lock=document.getElementById("testerLock");
+  const app=document.getElementById("testerApp");
+  const user=document.getElementById("testerUsernameInput");
+  const pass=document.getElementById("testerPasswordInput");
+  const error=document.getElementById("testerLockError");
+  const list=document.getElementById("modList");
+  const MIN_TILES=5;
+
+  function esc(v){
+    return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+  }
+  function showLock(msg){
+    app.hidden=true;
+    lock.hidden=false;
+    error.textContent=msg||"";
+    user.focus();
+  }
+  function showApp(){
+    lock.hidden=true;
+    app.hidden=false;
+  }
+
+  async function renderModules(){
+    list.innerHTML='<div class="mod disabled">Loading<small>Reading your modules</small></div>';
+    let modules=[];
+    try{
+      modules=(await FC.listModules()).filter(m=>m.is_published);
+    }catch(e){
+      list.innerHTML='<div class="mod disabled">Unavailable<small>'+esc(e.message||"Could not load modules")+'</small></div>';
+      return;
+    }
+
+    const tiles=modules.map(m=>
+      '<a class="mod" href="./mod1.html?module='+encodeURIComponent(m.slug)+'">'+esc(m.name)+'<small>Open Test</small></a>'
+    );
+    for(let i=tiles.length;i<MIN_TILES;i++){
+      tiles.push('<div class="mod disabled">MOD '+(i+1)+'<small>Not Added Yet</small></div>');
+    }
+    list.innerHTML=tiles.join("");
+  }
+
+  async function enter(profile){
+    document.getElementById("whoami").textContent=profile.username?("Signed in as "+profile.username):"Signed in";
+    showApp();
+    await renderModules();
+  }
+
+  async function signIn(){
+    error.textContent="";
+    try{
+      await FC.signIn(user.value,pass.value);
+      const profile=await FC.getProfile();
+      pass.value="";
+      await enter(profile);
+    }catch(e){
+      await FC.signOut();
+      showLock(e.message||"Sign in failed.");
+      pass.select();
+    }
+  }
+
+  document.getElementById("testerUnlockBtn").addEventListener("click",signIn);
+  [user,pass].forEach(el=>el.addEventListener("keydown",e=>{if(e.key==="Enter")signIn()}));
+  document.getElementById("signOutBtn").addEventListener("click",async()=>{
+    await FC.signOut();
+    user.value="";pass.value="";
+    showLock("");
+  });
+
+  (async function boot(){
+    let profile=null;
+    try{ profile=await FC.requireUser(); }catch(_){ profile=null; }
+    if(profile) await enter(profile); else showLock("");
+  })();
 })();
 </script>
 </body>
