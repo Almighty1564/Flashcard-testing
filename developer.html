@@ -163,15 +163,13 @@ details.advanced>summary{cursor:pointer;font-weight:800;color:#c9d1d9}
 }
 
 </style>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const CLOUD_SUPABASE_URL="https://semtnzdzpluhnkzxkquk.supabase.co";
-const CLOUD_SUPABASE_KEY="sb_publishable__iTA6kUw3yTS1f2W0kfOig_alnmzLcz";
-const cloudSb=supabase.createClient(CLOUD_SUPABASE_URL,CLOUD_SUPABASE_KEY);
-function cloudInternalEmail(username){return String(username||"").trim().toLowerCase()+"@flashcard.invalid";}
+const cloudSb=supabase.createClient("https://semtnzdzpluhnkzxkquk.supabase.co","sb_publishable__iTA6kUw3yTS1f2W0kfOig_alnmzLcz");
+function cloudInternalEmail(username){
+  return String(username||"").trim().toLowerCase()+"@flashcard.invalid";
+}
 </script>
-
 </head>
 <body>
 <div id="developerLock">
@@ -220,7 +218,7 @@ function cloudInternalEmail(username){return String(username||"").trim().toLower
   </aside>
 
   <main class="main">
-<a class="portal-home-btn" href="./index.html?v=cloud-ui-1">← Back to Home</a>
+<a class="portal-home-btn" href="./index.html?v=cloud-original-ui-v2">← Back to Home</a>
     <div class="topbar">
       <div>
         <h2 id="viewTitle">Create Question</h2>
@@ -1526,18 +1524,25 @@ showView("questions");
       email:cloudInternalEmail(username.value),
       password:password.value
     });
+
     if(authError){
       error.textContent="Incorrect username or password.";
       password.select();
       return;
     }
+
     const {data:profile,error:profileError}=await cloudSb
-      .from("profiles").select("role").eq("id",data.user.id).single();
+      .from("profiles")
+      .select("role")
+      .eq("id",data.user.id)
+      .single();
+
     if(profileError || profile?.role!=="developer"){
       await cloudSb.auth.signOut();
       error.textContent="This account is not a developer.";
       return;
     }
+
     password.value="";
     lock.hidden=true;
     app.hidden=false;

@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MOD 1 • Cloud Tester</title>
+<title>MOD 1 • Tester</title>
 <style>
 :root{
  --bg:#0d1117;--panel:#161b22;--panel2:#0f141b;--line:#30363d;--text:#e6edf3;
@@ -88,7 +88,7 @@ input[type=text],input[type=password],select{width:100%;background:#0d1117;color
 <aside class="sidebar">
   <div class="brand">
     <h1 id="sideModule">Study Program</h1>
-    <div class="build">TESTER MODE • CLOUD PERSISTENCE</div>
+    <div class="build">TESTER MODE • CLOUD</div>
   </div>
 
   <div class="panel" style="padding:10px;margin:10px 0">
@@ -113,7 +113,7 @@ input[type=text],input[type=password],select{width:100%;background:#0d1117;color
 </aside>
 
 <main class="main">
-<a class="back-modules" href="./tester.html?v=cloud-ui-1">← Back to Modules</a>
+<a class="back-modules" href="./tester.html?v=cloud-original-ui-v2">← Back to Modules</a>
   <div class="topbar">
     <div>
       <h2 id="pageTitle">Question Bank Study Program</h2>
@@ -124,7 +124,7 @@ input[type=text],input[type=password],select{width:100%;background:#0d1117;color
   <section id="lockedView" class="panel">
     <h3>Loading Module</h3>
     <p class="muted">
-      Your signed-in account loads this module from the persistent cloud database.
+      Your signed-in Tester account loads this module from the persistent cloud database.
     </p>
   </section>
 
@@ -203,13 +203,11 @@ input[type=text],input[type=password],select{width:100%;background:#0d1117;color
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const SUPABASE_URL="https://semtnzdzpluhnkzxkquk.supabase.co";
-const SUPABASE_KEY="sb_publishable__iTA6kUw3yTS1f2W0kfOig_alnmzLcz";
-const sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
-const STATE_PREFIX="question_bank_study_state_cloud_v1::";
+const BACKEND_BASE="Supabase Cloud";
+const STATE_PREFIX="question_bank_study_state_v1::";
 
 let bank=null;
-let backendBase="supabase";
+let backendBase="";
 let state=null;
 let selectedGroupId=null;
 let session=null;
@@ -221,8 +219,15 @@ let cloudModule=null;
 function esc(v){
   return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
 }
+function normalizeBase(v){
+  let s=String(v||"").trim();
+  if(!s)return "";
+  if(!/^https?:\/\//i.test(s))s="https://"+s;
+  if(!s.endsWith("/"))s+="/";
+  return s;
+}
 function stateKey(){
-  return STATE_PREFIX+(cloudUser?.id||"unknown")+"::"+(bank?.module?.id||"module");
+  return STATE_PREFIX+(cloudUser?.id||"unknown")+"::"+(bank?.module?.id||"unknown");
 }
 function defaultState(){
   return {progress:{},mastery:{},totalReviews:0,sessions:[]};
@@ -244,45 +249,199 @@ function download(name,text){
   const a=document.createElement("a");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();
   setTimeout(()=>URL.revokeObjectURL(u),1000);
 }
-async function cloudImage(path){
+function base64ToBytes(s){
+  const binary=atob(s);
+  const out=new Uint8Array(binary.length);
+  for(let i=0;i<binary.length;i++)out[i]=binary.charCodeAt(i);
+  return out;
+}
+async function decryptEnvelope(envelope,passphrase){
+  const enc=new TextEncoder();
+  const material=await crypto.subtle.importKey(
+    "raw",enc.encode(passphrase),"PBKDF2",false,["deriveKey"]
+  );
+  const key=await crypto.subtle.deriveKey(
+    {
+      name:"PBKDF2",
+      salt:base64ToBytes(envelope.kdf.salt),
+      iterations:envelope.kdf.iterations,
+      hash:envelope.kdf.hash||"SHA-256"
+    },
+    material,
+    {name:"AES-GCM",length:256},
+    false,
+    ["decrypt"]
+  );
+  const plain=await crypto.subtle.decrypt(
+    {name:"AES-GCM",iv:base64ToBytes(envelope.cipher.iv)},
+    key,
+    base64ToBytes(envelope.ciphertext)
+  );
+  return JSON.parse(new TextDecoder().decode(plain));
+}
+function normalizeLoadedBank(rawBank){
+  const normalized={...rawBank};
+
+  normalized.cards=(rawBank?.cards||[]).map(card=>{
+    let type=card.type || card.questionType || "";
+
+    const rawQuestion=
+      card.question ??
+      card.questionText ??
+      card.q ??
+      card.front ??
+      card.prompt ??
+      "";
+
+    const rawAnswer=
+      card.answer ??
+      card.answerText ??
+      card.a ??
+      card.back ??
+      card.response ??
+      "";
+
+    const question=
+      (rawQuestion && typeof rawQuestion==="object" && !Array.isArray(rawQuestion))
+        ? {
+            text:String(rawQuestion.text ?? rawQuestion.value ?? rawQuestion.prompt ?? ""),
+            image:rawQuestion.image ?? rawQuestion.imageData ?? card.questionImage ?? null
+          }
+        : {
+            text:String(rawQuestion ?? ""),
+            image:card.questionImage ?? card.questionImageData ?? null
+          };
+
+    const answer=
+      (rawAnswer && typeof rawAnswer==="object" && !Array.isArray(rawAnswer))
+        ? {
+            text:String(rawAnswer.text ?? rawAnswer.value ?? rawAnswer.response ?? ""),
+            image:rawAnswer.image ?? rawAnswer.imageData ?? card.answerImage ?? null
+          }
+        : {
+            text:String(rawAnswer ?? ""),
+            image:card.answerImage ?? card.answerImageData ?? null
+          };
+
+    const choices=Array.isArray(card.choices)
+      ? card.choices
+      : Array.isArray(card.answers)
+        ? card.answers
+        : null;
+
+    const pairs=Array.isArray(card.pairs)
+      ? card.pairs
+      : Array.isArray(card.matches)
+        ? card.matches
+        : null;
+
+    if(!type){
+      if(pairs) type="matching";
+      else if(choices){
+        const correctCount=choices.filter(c=>c.correct===true || c.isCorrect===true).length;
+        type=correctCount>1 ? "multiple-select" : "multiple-choice";
+      }else{
+        type="flashcard";
+      }
+    }
+
+    const aliases={
+      "flash-card":"flashcard",
+      "flash_card":"flashcard",
+      "card":"flashcard",
+      "basic":"flashcard",
+      "multiple_choice":"multiple-choice",
+      "multiplechoice":"multiple-choice",
+      "single-choice":"multiple-choice",
+      "pick-multiple":"multiple-select",
+      "multiple_select":"multiple-select",
+      "multiselect":"multiple-select",
+      "drag-drop":"matching",
+      "match":"matching"
+    };
+    type=aliases[String(type).toLowerCase()] || String(type).toLowerCase();
+
+    const normalizedChoices=choices?.map((c,i)=>({
+      id:c.id || `${card.id || "card"}-choice-${i+1}`,
+      text:String(c.text ?? c.answer ?? c.value ?? ""),
+      image:c.image ?? c.imageData ?? null,
+      correct:c.correct===true || c.isCorrect===true
+    })) || null;
+
+    const normalizedPairs=pairs?.map((p,i)=>{
+      const left=p.left ?? p.source ?? p.from ?? "";
+      const right=p.right ?? p.target ?? p.to ?? "";
+      return {
+        id:p.id || `${card.id || "card"}-pair-${i+1}`,
+        left:typeof left==="object"
+          ? {text:String(left.text ?? left.value ?? ""),image:left.image ?? left.imageData ?? null}
+          : {text:String(left ?? ""),image:null},
+        right:typeof right==="object"
+          ? {text:String(right.text ?? right.value ?? ""),image:right.image ?? right.imageData ?? null}
+          : {text:String(right ?? ""),image:null}
+      };
+    }) || null;
+
+    return {
+      ...card,
+      type,
+      question,
+      answer,
+      choices:normalizedChoices,
+      pairs:normalizedPairs
+    };
+  });
+
+  return normalized;
+}
+
+async function signedImage(path){
   if(!path)return null;
   if(/^https?:\/\//i.test(path)||String(path).startsWith("data:"))return path;
   const {data,error}=await sb.storage.from("question-images").createSignedUrl(path,3600);
-  return error?null:data?.signedUrl||null;
+  return error?null:(data?.signedUrl||null);
 }
-async function cloudQuestionToCard(q){
-  const answerData=q.answer_data||{};
+
+async function questionRowToCard(q){
+  const a=q.answer_data||{};
   const card={
     id:q.id,
     groupId:q.group_id,
     type:q.question_type||"flashcard",
     status:q.is_active===false?"inactive":"complete",
-    question:{text:q.question_text||"",image:await cloudImage(q.question_image_path)},
+    question:{text:q.question_text||"",image:await signedImage(q.question_image_path)},
     answer:null,
     choices:null,
     pairs:null,
-    shuffleChoices:answerData.shuffle!==false
+    shuffleChoices:a.shuffle!==false
   };
+
   if(card.type==="flashcard"){
-    card.answer={text:String(answerData.text||""),image:await cloudImage(answerData.image_path)};
+    card.answer={text:String(a.text||""),image:await signedImage(a.image_path)};
   }else if(card.type==="multiple-choice"||card.type==="multiple-select"){
     card.choices=[];
-    for(const c of (answerData.choices||[])){
-      card.choices.push({id:c.id,text:String(c.text||""),image:await cloudImage(c.image_path),correct:!!c.correct});
+    for(const c of (a.choices||[])){
+      card.choices.push({
+        id:c.id,
+        text:String(c.text||""),
+        image:await signedImage(c.image_path),
+        correct:!!c.correct
+      });
     }
   }else if(card.type==="matching"){
     card.pairs=[];
-    for(const p of (answerData.pairs||[])){
+    for(const p of (a.pairs||[])){
       card.pairs.push({
         id:p.id,
-        left:{text:String(p.left?.text||""),image:await cloudImage(p.left?.image_path)},
-        right:{text:String(p.right?.text||""),image:await cloudImage(p.right?.image_path)}
+        left:{text:String(p.left?.text||""),image:await signedImage(p.left?.image_path)},
+        right:{text:String(p.right?.text||""),image:await signedImage(p.right?.image_path)}
       });
     }
   }
   return card;
 }
-async function loadCloudState(){
+
+async function loadCloudProgress(){
   const s=defaultState();
   const {data,error}=await sb.from("card_progress").select("*").eq("user_id",cloudUser.id);
   if(error)throw error;
@@ -296,12 +455,37 @@ async function loadCloudState(){
       totalReviews:Number(p.total_reviews||0)
     };
     if(p.last_result){
-      s.mastery[p.question_id]={lastResult:p.last_result,lastReviewedAt:p.last_reviewed_at||p.updated_at};
+      s.mastery[p.question_id]={
+        lastResult:p.last_result,
+        lastReviewedAt:p.last_reviewed_at||p.updated_at
+      };
     }
     s.totalReviews+=Number(p.total_reviews||0);
   }
   return s;
 }
+
+function syncCloudProgress(cardId,result){
+  if(!cloudUser||!state)return;
+  const p=pstate(cardId);
+  const last=state.mastery[cardId];
+  sb.from("card_progress").upsert({
+    user_id:cloudUser.id,
+    question_id:cardId,
+    last_result:result,
+    due_at:p.dueAt?new Date(p.dueAt).toISOString():null,
+    interval_days:p.intervalDays,
+    ease:p.ease,
+    reps:p.reps,
+    lapses:p.lapses,
+    total_reviews:p.totalReviews,
+    last_reviewed_at:last?.lastReviewedAt||new Date().toISOString(),
+    updated_at:new Date().toISOString()
+  },{onConflict:"user_id,question_id"}).then(({error})=>{
+    if(error)console.error("Progress sync failed:",error);
+  });
+}
+
 function groups(){return bank?.groups||[]}
 function cards(){return (bank?.cards||[]).filter(c=>c.status!=="incomplete")}
 function cardsForGroup(id){return cards().filter(c=>c.groupId===id)}
@@ -320,7 +504,7 @@ function dueCards(groupId=selectedGroupId){
   const list=groupId?cardsForGroup(groupId):cards();
   return list.filter(isDue);
 }
-async function applySrs(cardId,result){
+function applySrs(cardId,result){
   const p=pstate(cardId);
   const now=Date.now();
   const day=86400000;
@@ -354,39 +538,12 @@ async function applySrs(cardId,result){
   state.totalReviews++;
   state.mastery[cardId]={lastResult:result,lastReviewedAt:new Date().toISOString()};
   saveState();
-  const {error}=await sb.from("card_progress").upsert({
-    user_id:cloudUser.id,
-    question_id:cardId,
-    last_result:result,
-    due_at:p.dueAt?new Date(p.dueAt).toISOString():null,
-    interval_days:p.intervalDays,
-    ease:p.ease,
-    reps:p.reps,
-    lapses:p.lapses,
-    total_reviews:p.totalReviews,
-    last_reviewed_at:new Date().toISOString(),
-    updated_at:new Date().toISOString()
-  },{onConflict:"user_id,question_id"});
-  if(error)throw error;
+  syncCloudProgress(cardId,result);
 }
-async function markUnanswered(cardId){
+function markUnanswered(cardId){
   state.mastery[cardId]={lastResult:"unanswered",lastReviewedAt:new Date().toISOString()};
   saveState();
-  const p=pstate(cardId);
-  const {error}=await sb.from("card_progress").upsert({
-    user_id:cloudUser.id,
-    question_id:cardId,
-    last_result:"unanswered",
-    due_at:p.dueAt?new Date(p.dueAt).toISOString():null,
-    interval_days:p.intervalDays,
-    ease:p.ease,
-    reps:p.reps,
-    lapses:p.lapses,
-    total_reviews:p.totalReviews,
-    last_reviewed_at:new Date().toISOString(),
-    updated_at:new Date().toISOString()
-  },{onConflict:"user_id,question_id"});
-  if(error)throw error;
+  syncCloudProgress(cardId,"unanswered");
 }
 function hideViews(){
   ["lockedView","emptyView","studyView","customView","debriefView","progressView"].forEach(id=>document.getElementById(id).classList.add("hidden"));
@@ -425,27 +582,36 @@ function renderSidebar(){
 async function unlockBank(){
   const {data:{session:authSession}}=await sb.auth.getSession();
   if(!authSession?.user){
-    location.replace("./tester.html?v=cloud-ui-1");
+    location.replace("./tester.html?v=cloud-original-ui-v2");
     return false;
   }
   cloudUser=authSession.user;
+
   const slug=new URLSearchParams(location.search).get("module")||"mod1";
 
-  let r=await sb.from("modules").select("id,slug,name,description,is_published").eq("slug",slug).single();
+  let r=await sb.from("modules")
+    .select("id,slug,name,description,is_published")
+    .eq("slug",slug)
+    .single();
   if(r.error)throw r.error;
   cloudModule=r.data;
 
-  r=await sb.from("question_groups").select("id,name,sort_order").eq("module_id",cloudModule.id).order("sort_order");
+  r=await sb.from("question_groups")
+    .select("id,name,sort_order")
+    .eq("module_id",cloudModule.id)
+    .order("sort_order");
   if(r.error)throw r.error;
   const cloudGroups=(r.data||[]).map(g=>({id:g.id,name:g.name,sortOrder:g.sort_order}));
 
   r=await sb.from("questions")
-    .select("id,module_id,group_id,question_type,question_text,question_image_path,answer_data,sort_order,is_active")
-    .eq("module_id",cloudModule.id).eq("is_active",true).order("sort_order");
+    .select("id,group_id,question_type,question_text,question_image_path,answer_data,sort_order,is_active")
+    .eq("module_id",cloudModule.id)
+    .eq("is_active",true)
+    .order("sort_order");
   if(r.error)throw r.error;
 
   const cloudCards=[];
-  for(const q of (r.data||[]))cloudCards.push(await cloudQuestionToCard(q));
+  for(const q of (r.data||[]))cloudCards.push(await questionRowToCard(q));
 
   bank={
     bankVersion:"cloud",
@@ -454,7 +620,7 @@ async function unlockBank(){
     cards:cloudCards
   };
 
-  state=await loadCloudState();
+  state=await loadCloudProgress();
   selectedGroupId=null;
   session=null;
   currentCard=null;
@@ -462,7 +628,7 @@ async function unlockBank(){
   document.getElementById("customBtn").disabled=false;
   document.getElementById("progressBtn").disabled=false;
   document.getElementById("pageTitle").textContent=bank.module?.name||"Question Bank";
-  document.getElementById("pageSub").textContent=`Cloud • ${groups().length} groups • ${cards().length} usable questions`;
+  document.getElementById("pageSub").textContent=`${groups().length} groups • ${cards().length} usable questions • cloud progress`;
   renderSidebar();
   openDueReviews();
   return true;
@@ -678,17 +844,17 @@ function renderMatching(el){
     }
   };
 }
-async function recordAndNext(result){
+function recordAndNext(result){
   if(!session||!currentCard)return;
-  await applySrs(currentCard.id,result);
+  applySrs(currentCard.id,result);
   session.results[currentCard.id]=result;
   session.cursor++;
   renderSidebar();
   loadCurrent();
 }
-async function skipCurrent(){
+function skipCurrent(){
   if(!session||!currentCard)return;
-  await markUnanswered(currentCard.id);
+  markUnanswered(currentCard.id);
   session.results[currentCard.id]="unanswered";
   session.cursor++;
   loadCurrent();
@@ -713,16 +879,20 @@ function finishSession(){
   state.sessions.push(summary);
   if(state.sessions.length>100)state.sessions=state.sessions.slice(-100);
   saveState();
-  sb.from("test_sessions").insert({
-    user_id:cloudUser.id,
-    module_id:cloudModule.id,
-    mode:summary.mode,
-    selected_group_ids:summary.scopeGroups,
-    result_counts:summary.counts,
-    total_questions:summary.total,
-    started_at:summary.startedAt,
-    completed_at:summary.completedAt
-  }).then(()=>{});
+
+  if(cloudUser&&cloudModule){
+    sb.from("test_sessions").insert({
+      user_id:cloudUser.id,
+      module_id:cloudModule.id,
+      mode:summary.mode,
+      selected_group_ids:summary.scopeGroups,
+      result_counts:summary.counts,
+      total_questions:summary.total,
+      started_at:summary.startedAt,
+      completed_at:summary.completedAt
+    }).then(({error})=>{if(error)console.error("Session sync failed:",error);});
+  }
+
   session=null;currentCard=null;
   showDebrief(summary);
 }
@@ -890,8 +1060,8 @@ state=defaultState();
 renderSidebar();
 unlockBank().catch(e=>{
   console.error(e);
-  alert("Could not load this module from the cloud: "+(e.message||String(e)));
-  location.replace("./tester.html?v=cloud-ui-1");
+  alert("Could not load this module: "+(e.message||String(e)));
+  location.replace("./tester.html?v=cloud-original-ui-v2");
 });
 </script>
 </body>
