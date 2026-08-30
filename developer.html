@@ -3,10 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
-<meta http-equiv="Pragma" content="no-cache">
-<meta http-equiv="Expires" content="0">
-<title>Developer • Question Bank Builder</title>
+<title>Developer • Question Bank Builder • V8</title>
 <style>
 :root{
   --bg:#0d1117; --panel:#161b22; --panel2:#0f141b; --line:#30363d;
@@ -142,67 +139,44 @@ details.advanced>summary{cursor:pointer;font-weight:800;color:#c9d1d9}
 @media(max-width:900px){.repo-grid{grid-template-columns:1fr}}
 
 
+#developerApp[hidden]{display:none!important}
+#developerLock{
+  max-width:430px;margin:90px auto;padding:24px;background:#161b22;
+  border:1px solid #30363d;border-radius:14px;color:#e6edf3
+}
+#developerLock h1{margin:0 0 6px;font-size:24px}
+#developerLock .buildmark{color:#3fb950;font-size:11px;font-weight:900;margin-bottom:10px}
+#developerLock p{color:#8b949e;margin:0 0 16px}
+#developerLock input{
+  width:100%;box-sizing:border-box;padding:11px;background:#0d1117;color:#e6edf3;
+  border:1px solid #30363d;border-radius:9px;font:inherit;margin-bottom:10px
+}
+#developerLock button{
+  width:100%;padding:11px;background:#238636;color:#fff;border:1px solid #2ea043;
+  border-radius:9px;font:inherit;font-weight:800;cursor:pointer
+}
+#developerError{color:#f85149;font-size:12px;min-height:17px;margin-top:10px}
 .portal-home-btn{
   display:inline-block;margin:0 0 14px;text-decoration:none;
   background:#21262d;color:#e6edf3;border:1px solid #30363d;
   padding:9px 12px;border-radius:9px;font-weight:800
 }
-.portal-home-btn:hover{border-color:#6e7681}
 
-.dev-lock-screen{
-  max-width:430px;margin:90px auto;padding:24px;background:#161b22;
-  border:1px solid #30363d;border-radius:14px;color:#e6edf3
-}
-.dev-lock-screen h1{margin:0 0 8px;font-size:24px}
-.dev-lock-screen p{color:#8b949e;margin:0 0 16px}
-.dev-lock-screen input{
-  width:100%;padding:11px;background:#0d1117;color:#e6edf3;
-  border:1px solid #30363d;border-radius:9px;font:inherit;margin-bottom:10px
-}
-.dev-lock-screen button{
-  width:100%;padding:11px;background:#238636;color:white;border:1px solid #2ea043;
-  border-radius:9px;font:inherit;font-weight:800;cursor:pointer
-}
-.dev-lock-error{color:#f85149;font-size:12px;margin-top:10px;min-height:17px}
-.{display:none!important}
-
-
-.access-lock{
-  max-width:430px;margin:90px auto;padding:24px;background:#161b22;
-  border:1px solid #30363d;border-radius:14px;color:#e6edf3;
-  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif
-}
-.access-lock h1{margin:0 0 8px;font-size:24px}
-.access-lock p{color:#8b949e;margin:0 0 16px}
-.access-lock input{
-  width:100%;box-sizing:border-box;padding:11px;background:#0d1117;color:#e6edf3;
-  border:1px solid #30363d;border-radius:9px;font:inherit;margin-bottom:10px
-}
-.access-lock button{
-  width:100%;padding:11px;background:#238636;color:white;border:1px solid #2ea043;
-  border-radius:9px;font:inherit;font-weight:800;cursor:pointer
-}
-.access-lock-error{color:#f85149;font-size:12px;margin-top:10px;min-height:17px}
-.access-locked{display:none!important}
-
-
-[hidden]{display:none!important}
 </style>
 </head>
 <body>
-<div id="developerLock" class="access-lock">
+<div id="developerLock">
   <h1>Developer Access</h1>
-  <div style="color:#3fb950;font-size:11px;font-weight:800;margin-bottom:8px">HARD GATE V7</div>
+  <div class="buildmark">HARD LOCK V8</div>
   <p>Enter the developer password.</p>
   <input id="developerPasswordInput" type="password" autocomplete="off" placeholder="Developer password">
   <button id="developerUnlockBtn" type="button">Unlock Developer</button>
-  <div id="developerLockError" class="access-lock-error"></div>
+  <div id="developerError"></div>
 </div>
 
+<div id="developerApp" hidden>
 
-
-
-<div class="shell" id="developerApp" hidden>
+<div class="shell">
   <aside class="sidebar">
     <div class="brand">
       <h1>Question Bank Builder</h1>
@@ -1526,22 +1500,39 @@ renderAll();
 showView("questions");
 </script>
 
-
-
-
+</div>
 <script>
 (function(){
- const EXPECTED_HASH="1f5713fcb1eeb83a4a22806b701b5f0a1992adb97358a95ae4ef0d81c2833192";
- const lock=document.getElementById("developerLock");
- const app=document.getElementById("developerApp");
- const input=document.getElementById("developerPasswordInput");
- const error=document.getElementById("developerLockError");
- async function sha256(t){const b=new TextEncoder().encode(t);const d=await crypto.subtle.digest("SHA-256",b);return [...new Uint8Array(d)].map(x=>x.toString(16).padStart(2,"0")).join("")}
- async function unlock(){error.textContent="";if(await sha256(input.value)===EXPECTED_HASH){input.value="";lock.hidden=true;app.hidden=false}else{error.textContent="Incorrect password.";input.select()}}
- document.getElementById("developerUnlockBtn").addEventListener("click",unlock);
- input.addEventListener("keydown",e=>{if(e.key==="Enter")unlock()});
- input.focus();
+  const EXPECTED_HASH="1f5713fcb1eeb83a4a22806b701b5f0a1992adb97358a95ae4ef0d81c2833192";
+  const lock=document.getElementById("developerLock");
+  const app=document.getElementById("developerApp");
+  const input=document.getElementById("developerPasswordInput");
+  const button=document.getElementById("developerUnlockBtn");
+  const error=document.getElementById("developerError");
+
+  async function hash(text){
+    const data=new TextEncoder().encode(text);
+    const digest=await crypto.subtle.digest("SHA-256",data);
+    return Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,"0")).join("");
+  }
+
+  async function unlock(){
+    error.textContent="";
+    if(await hash(input.value)===EXPECTED_HASH){
+      input.value="";
+      lock.hidden=true;
+      app.hidden=false;
+    }else{
+      error.textContent="Incorrect developer password.";
+      input.select();
+    }
+  }
+
+  button.addEventListener("click",unlock);
+  input.addEventListener("keydown",e=>{if(e.key==="Enter")unlock();});
+  input.focus();
 })();
 </script>
+
 </body>
 </html>
