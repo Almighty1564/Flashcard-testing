@@ -1,89 +1,1553 @@
-<!doctype html><html><head><title>Developer</title>
+<!doctype html>
+<html lang="en">
+<head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Developer • Question Bank Builder • V8</title>
 <style>
-:root{--bg:#0d1117;--panel:#161b22;--panel2:#0f141b;--line:#30363d;--text:#e6edf3;--muted:#8b949e;--blue:#2f81f7;--green:#238636;--red:#da3633;--yellow:#9e6a03}
+:root{
+  --bg:#0d1117; --panel:#161b22; --panel2:#0f141b; --line:#30363d;
+  --text:#e6edf3; --muted:#8b949e; --accent:#2f81f7; --good:#3fb950;
+  --warn:#d29922; --bad:#f85149; --radius:12px;
+}
 *{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
-main{max-width:1050px;margin:45px auto;padding:20px}
-.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:16px}
-input,select,textarea{width:100%;background:#0d1117;color:var(--text);border:1px solid var(--line);border-radius:9px;padding:11px;font:inherit}
-button,.btn{border:1px solid var(--line);background:#21262d;color:var(--text);border-radius:9px;padding:10px 13px;font-weight:800;cursor:pointer;text-decoration:none;display:inline-block}
-.primary{background:var(--blue);border-color:var(--blue);color:white}.good{background:var(--green);border-color:#2ea043;color:white}.bad{background:#491717;border-color:#7d2727}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.muted{color:var(--muted)}.hidden{display:none!important}
-.field{display:grid;gap:6px;margin-bottom:12px}.field label{font-size:12px;color:var(--muted);font-weight:800}
-.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
-.error{color:#ff7b72;margin-top:10px}.ok{color:#3fb950}.module{min-height:130px;display:flex;flex-direction:column;justify-content:center}
-.answer{border-top:1px solid var(--line);margin-top:16px;padding-top:16px}
-.stat{background:var(--panel2);border:1px solid var(--line);padding:10px;border-radius:9px}
-code{background:#0d1117;border:1px solid var(--line);padding:2px 5px;border-radius:5px}
+body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+button,input,textarea,select{font:inherit}
+button{cursor:pointer}
+.hidden{display:none!important}
+.shell{display:grid;grid-template-columns:290px minmax(0,1fr);min-height:100vh}
+.sidebar{border-right:1px solid var(--line);padding:18px;background:#0b0f14;position:sticky;top:0;height:100vh;overflow:auto}
+.main{padding:22px;min-width:0}
+.brand{margin-bottom:18px}
+.brand h1{font-size:18px;margin:0}
+.brand .version{margin-top:5px;color:var(--accent);font-size:12px;font-weight:800}
+.muted{color:var(--muted)}
+.small{font-size:12px}
+.btn{border:1px solid var(--line);background:#21262d;color:var(--text);padding:10px 12px;border-radius:9px;font-weight:700}
+.btn:hover{border-color:#6e7681}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:white}
+.btn.good{background:#1f6f33;border-color:#2ea043}
+.btn.bad{background:#491717;border-color:#7d2727}
+.btn.full{width:100%;margin-top:8px}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.field{display:grid;gap:6px;margin-bottom:13px}
+.field label{font-size:12px;color:var(--muted);font-weight:700}
+input[type=text],input[type=search],input[type=password],textarea,select{
+  width:100%;border:1px solid var(--line);background:#0d1117;color:var(--text);
+  padding:10px 11px;border-radius:9px;outline:none
+}
+textarea{min-height:92px;resize:vertical}
+input:focus,textarea:focus,select:focus{border-color:var(--accent)}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:18px;margin-bottom:16px}
+.topbar{display:flex;justify-content:space-between;gap:16px;align-items:flex-start;margin-bottom:16px}
+.topbar h2{margin:0 0 4px}
+.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:14px 0}
+.stat{padding:10px;border:1px solid var(--line);background:var(--panel2);border-radius:10px}
+.stat span{display:block;color:var(--muted);font-size:10px;text-transform:uppercase}
+.stat strong{display:block;font-size:21px;margin-top:3px}
+.navbtn{width:100%;text-align:left;margin-bottom:8px}
+.navbtn.active{background:#1f2d3d;border-color:#305d8c}
+.group-list{display:grid;gap:7px;margin-top:10px}
+.group-pill{border:1px solid var(--line);border-radius:9px;padding:9px;background:var(--panel2)}
+.group-pill strong{display:block;font-size:13px}
+.group-pill span{font-size:11px;color:var(--muted)}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:14px}
+.section-title{font-size:14px;font-weight:900;margin:6px 0 12px}
+.image-box{border:1px dashed #48515c;border-radius:10px;padding:10px;background:var(--panel2)}
+.image-box img{display:block;max-width:100%;max-height:240px;border-radius:8px;margin-top:8px}
+.image-actions{display:flex;gap:8px;flex-wrap:wrap}
+.choice{border:1px solid var(--line);background:var(--panel2);border-radius:10px;padding:12px;margin-bottom:10px}
+.choice-head{display:flex;justify-content:space-between;gap:10px;align-items:center;margin-bottom:8px}
+.choice-body{display:grid;grid-template-columns:36px 1fr;gap:10px;align-items:start}
+.correct-toggle{display:flex;align-items:center;justify-content:center;padding-top:10px}
+.correct-toggle input{width:18px;height:18px}
+.match-pair{border:1px solid var(--line);background:var(--panel2);border-radius:10px;padding:12px;margin-bottom:10px}
+.match-grid{display:grid;grid-template-columns:1fr 46px 1fr;gap:10px;align-items:center}
+.arrow{text-align:center;color:var(--muted);font-size:22px}
+.list-toolbar{display:grid;grid-template-columns:1fr 220px 180px;gap:10px;margin-bottom:12px}
+.question-list{display:grid;gap:9px}
+.qrow{border:1px solid var(--line);border-radius:10px;background:var(--panel2);padding:12px}
+.qrow-top{display:flex;justify-content:space-between;gap:10px}
+.qrow-title{font-weight:800;line-height:1.35}
+.qrow-meta{color:var(--muted);font-size:11px;margin-top:5px}
+.qrow-actions{display:flex;gap:6px;flex-wrap:wrap;margin-top:10px}
+.badge{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:3px 7px;font-size:10px;color:var(--muted);margin-right:5px}
+.issue{border-left:3px solid var(--warn);padding:9px 10px;background:#2b2312;border-radius:7px;margin:7px 0}
+.ok{border-left:3px solid var(--good);padding:9px 10px;background:#122719;border-radius:7px}
+.empty{padding:28px;text-align:center;color:var(--muted);border:1px dashed var(--line);border-radius:10px}
+.preview-card{border:1px solid var(--line);border-radius:12px;padding:18px;background:var(--panel2)}
+.preview-card img{max-width:100%;max-height:320px;border-radius:9px;margin-top:10px}
+.preview-answer{margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
+.preview-choice{padding:9px;border:1px solid var(--line);border-radius:8px;margin:7px 0}
+.preview-choice.correct{border-color:var(--good)}
+.footer-note{font-size:11px;color:var(--muted);margin-top:14px}
+.file-input{display:none}
+.danger-zone{border-color:#5c2424}
+@media(max-width:900px){
+  .shell{grid-template-columns:1fr}
+  .sidebar{position:relative;height:auto;border-right:0;border-bottom:1px solid var(--line)}
+  .grid2,.grid3,.list-toolbar{grid-template-columns:1fr}
+  .match-grid{grid-template-columns:1fr}
+  .arrow{transform:rotate(90deg)}
+}
+
+.help{
+  position:relative;display:inline-flex;align-items:center;justify-content:center;
+  width:18px;height:18px;margin-left:5px;border:1px solid #56606c;border-radius:50%;
+  color:#a9b4c0;font-size:11px;font-weight:900;cursor:help;vertical-align:middle;
+  background:#10161d;outline:none
+}
+.help::after{
+  content:attr(data-tip);position:absolute;left:50%;bottom:calc(100% + 9px);
+  transform:translateX(-50%);width:min(320px,70vw);padding:9px 10px;border-radius:8px;
+  background:#05080c;color:#e6edf3;border:1px solid #48515c;font-size:12px;
+  font-weight:500;line-height:1.35;white-space:normal;z-index:50;
+  opacity:0;pointer-events:none;transition:opacity .12s ease;
+  box-shadow:0 8px 24px rgba(0,0,0,.35)
+}
+.help:hover::after,.help:focus::after{opacity:1}
+.simple-step{
+  border:1px solid var(--line);background:var(--panel);border-radius:12px;
+  padding:18px;margin-bottom:16px
+}
+.step-head{display:flex;gap:11px;align-items:flex-start;margin-bottom:13px}
+.step-num{
+  flex:0 0 30px;width:30px;height:30px;border-radius:50%;display:flex;align-items:center;
+  justify-content:center;background:#1f6feb;color:white;font-weight:900
+}
+.step-head h3{margin:1px 0 3px;font-size:15px}
+.step-head p{margin:0;color:var(--muted);font-size:12px}
+.primary-download{
+  font-size:16px;padding:13px 18px;background:#238636;border-color:#2ea043
+}
+details.advanced{
+  border:1px solid var(--line);border-radius:10px;background:var(--panel2);
+  padding:10px 12px;margin-top:12px
+}
+details.advanced>summary{cursor:pointer;font-weight:800;color:#c9d1d9}
+.action-note{
+  margin-top:10px;padding:10px 12px;border-left:3px solid #2f81f7;
+  background:#101c2c;border-radius:7px;font-size:12px;color:#c9d1d9
+}
+.ready-box{
+  border-left:3px solid var(--good);background:#10271a;padding:12px;border-radius:8px;
+  margin-top:12px
+}
+.repo-grid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px}
+@media(max-width:900px){.repo-grid{grid-template-columns:1fr}}
+
+
+#developerApp[hidden]{display:none!important}
+#developerLock{
+  max-width:430px;margin:90px auto;padding:24px;background:#161b22;
+  border:1px solid #30363d;border-radius:14px;color:#e6edf3
+}
+#developerLock h1{margin:0 0 6px;font-size:24px}
+#developerLock .buildmark{color:#3fb950;font-size:11px;font-weight:900;margin-bottom:10px}
+#developerLock p{color:#8b949e;margin:0 0 16px}
+#developerLock input{
+  width:100%;box-sizing:border-box;padding:11px;background:#0d1117;color:#e6edf3;
+  border:1px solid #30363d;border-radius:9px;font:inherit;margin-bottom:10px
+}
+#developerLock button{
+  width:100%;padding:11px;background:#238636;color:#fff;border:1px solid #2ea043;
+  border-radius:9px;font:inherit;font-weight:800;cursor:pointer
+}
+#developerError{color:#f85149;font-size:12px;min-height:17px;margin-top:10px}
+.portal-home-btn{
+  display:inline-block;margin:0 0 14px;text-decoration:none;
+  background:#21262d;color:#e6edf3;border:1px solid #30363d;
+  padding:9px 12px;border-radius:9px;font-weight:800
+}
+
 </style>
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const SUPABASE_URL = "https://semtnzdzpluhnkzxkquk.supabase.co";
-const SUPABASE_KEY = "sb_publishable__iTA6kUw3yTS1f2W0kfOig_alnmzLcz";
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-
-function internalEmail(username){
-  return String(username||"").trim().toLowerCase()+"@flashcard.invalid";
-}
-async function currentUser(){
-  const {data:{session}} = await sb.auth.getSession();
-  return session?.user || null;
-}
-async function profileFor(user){
-  if(!user) return null;
-  const {data,error}=await sb.from("profiles").select("id,username,role").eq("id",user.id).single();
-  if(error) throw error;
-  return data;
-}
-async function logout(){
-  await sb.auth.signOut();
-  location.href="./index.html";
-}
+const CLOUD_SUPABASE_URL="https://semtnzdzpluhnkzxkquk.supabase.co";
+const CLOUD_SUPABASE_KEY="sb_publishable__iTA6kUw3yTS1f2W0kfOig_alnmzLcz";
+const cloudSb=supabase.createClient(CLOUD_SUPABASE_URL,CLOUD_SUPABASE_KEY);
+function cloudInternalEmail(username){return String(username||"").trim().toLowerCase()+"@flashcard.invalid";}
 </script>
-</head><body><main>
-<div class="top"><h1>Developer</h1><a class="btn" href="./index.html">← Home</a></div>
-<div id="loginCard" class="card">
- <h2>Developer Sign In</h2>
- <div class="field"><label>USERNAME</label><input id="username" value="developer"></div>
- <div class="field"><label>PASSWORD</label><input id="password" type="password"></div>
- <button id="loginBtn" class="good">Sign In</button><div id="error" class="error"></div>
+
+</head>
+<body>
+<div id="developerLock">
+  <h1>Developer Access</h1>
+  <div class="buildmark">CLOUD AUTH</div>
+  <p>Sign in with your developer account.</p>
+  <input id="developerUsernameInput" type="text" autocomplete="username" value="developer" placeholder="Username">
+  <input id="developerPasswordInput" type="password" autocomplete="current-password" placeholder="Password">
+  <button id="developerUnlockBtn" type="button">Unlock Developer</button>
+  <div id="developerError"></div>
 </div>
-<div id="denied" class="card hidden"><h2>Access denied</h2><p>This account is not a developer.</p><button onclick="logout()">Sign Out</button></div>
-<div id="app" class="hidden">
- <div class="card top"><div><h2 style="margin:0">Cloud Developer Connected</h2><div class="muted">Phase 1 connection checkpoint</div></div><button onclick="logout()">Sign Out</button></div>
- <div class="grid">
-  <div class="stat"><div class="muted">Modules</div><h2 id="modCount">0</h2></div>
-  <div class="stat"><div class="muted">Groups</div><h2 id="groupCount">0</h2></div>
-  <div class="stat"><div class="muted">Questions</div><h2 id="qCount">0</h2></div>
- </div>
- <div class="card">
-   <h2>Connection successful</h2>
-   <p>Your Developer account is authenticated and its <code>developer</code> role is being enforced by Supabase.</p>
-   <p class="muted">Next phase: replace the local Question Bank Builder with the persistent cloud builder.</p>
- </div>
+
+<div id="developerApp" hidden>
+
+<div class="shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <h1>Question Bank Builder</h1>
+      <div class="version">BUILD v1.3 • SIMPLE PUBLISH</div>
+      <div class="small muted">Local authoring tool</div>
+    </div>
+
+    <div class="field">
+      <label>MODULE / COURSE NAME</label>
+      <input id="moduleName" type="text" placeholder="Example: WMOD 2">
+    </div>
+
+    <div class="stats">
+      <div class="stat"><span>Groups</span><strong id="statGroups">0</strong></div>
+      <div class="stat"><span>Questions</span><strong id="statQuestions">0</strong></div>
+      <div class="stat"><span>Issues</span><strong id="statIssues">0</strong></div>
+    </div>
+
+    <button class="btn navbtn active" data-view="questions">Create Question</button>
+    <button class="btn navbtn" data-view="bank">Question Bank</button>
+    <button class="btn navbtn" data-view="groups">Manage Groups</button>
+    <button class="btn navbtn" data-view="validate">Validate Bank</button>
+    <button class="btn navbtn" data-view="project">Project / Export</button>
+
+    <div class="section-title" style="margin-top:18px">Groups</div>
+    <div id="sidebarGroups" class="group-list"></div>
+
+    <div class="footer-note">
+      Drafts autosave to this browser. Export a project backup before moving to another computer.
+    </div>
+  </aside>
+
+  <main class="main">
+<a class="portal-home-btn" href="./index.html?v=cloud-ui-1">← Back to Home</a>
+    <div class="topbar">
+      <div>
+        <h2 id="viewTitle">Create Question</h2>
+        <div id="viewSub" class="muted">Create a new question or edit an existing one.</div>
+      </div>
+      <div class="row">
+        <button id="newQuestionBtn" class="btn">New Question</button>
+        <button id="previewBtn" class="btn">Preview</button>
+        <button id="saveQuestionBtn" class="btn primary">Save Question</button>
+      </div>
+    </div>
+
+    <section id="questionsView">
+      <div class="panel">
+        <div class="grid2">
+          <div class="field">
+            <label>GROUP</label>
+            <select id="questionGroup"></select>
+          </div>
+          <div class="field">
+            <label>QUESTION TYPE</label>
+            <select id="questionType">
+              <option value="flashcard">Flash Card</option>
+              <option value="multiple-choice">Multiple Choice</option>
+              <option value="multiple-select">Pick Multiple</option>
+              <option value="matching">Matching / Drag & Drop</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="field">
+          <label>QUESTION</label>
+          <textarea id="questionText" placeholder="Type the question..."></textarea>
+        </div>
+
+        <div class="image-box">
+          <div class="image-actions">
+            <button id="questionImageBtn" class="btn" type="button">Insert Question Image</button>
+            <button id="removeQuestionImageBtn" class="btn bad hidden" type="button">Remove Image</button>
+            <input id="questionImageInput" class="file-input" type="file" accept="image/*">
+          </div>
+          <img id="questionImagePreview" class="hidden" alt="Question image preview">
+        </div>
+      </div>
+
+      <div id="flashcardEditor" class="panel">
+        <div class="section-title">Answer</div>
+        <div class="field">
+          <label>ANSWER</label>
+          <textarea id="flashAnswerText" placeholder="Type the answer..."></textarea>
+        </div>
+        <div class="image-box">
+          <div class="image-actions">
+            <button id="flashAnswerImageBtn" class="btn" type="button">Insert Answer Image</button>
+            <button id="removeFlashAnswerImageBtn" class="btn bad hidden" type="button">Remove Image</button>
+            <input id="flashAnswerImageInput" class="file-input" type="file" accept="image/*">
+          </div>
+          <img id="flashAnswerImagePreview" class="hidden" alt="Answer image preview">
+        </div>
+      </div>
+
+      <div id="choicesEditor" class="panel hidden">
+        <div class="row" style="justify-content:space-between">
+          <div>
+            <div class="section-title" style="margin-bottom:2px">Answer Choices</div>
+            <div id="choiceInstruction" class="small muted"></div>
+          </div>
+          <button id="addChoiceBtn" class="btn" type="button">+ Add Answer</button>
+        </div>
+        <div id="choicesList" style="margin-top:12px"></div>
+        <label class="row small muted" style="margin-top:8px">
+          <input id="shuffleChoices" type="checkbox" checked>
+          Shuffle answer choices during testing
+        </label>
+      </div>
+
+      <div id="matchingEditor" class="panel hidden">
+        <div class="row" style="justify-content:space-between">
+          <div>
+            <div class="section-title" style="margin-bottom:2px">Matching Pairs</div>
+            <div class="small muted">Author the correct pairs here. The study program will randomize the destination side.</div>
+          </div>
+          <button id="addPairBtn" class="btn" type="button">+ Add Pair</button>
+        </div>
+        <div id="pairsList" style="margin-top:12px"></div>
+      </div>
+    </section>
+
+    <section id="bankView" class="hidden">
+      <div class="panel">
+        <div class="list-toolbar">
+          <input id="bankSearch" type="search" placeholder="Search questions...">
+          <select id="bankGroupFilter"></select>
+          <select id="bankTypeFilter">
+            <option value="">All Types</option>
+            <option value="flashcard">Flash Card</option>
+            <option value="multiple-choice">Multiple Choice</option>
+            <option value="multiple-select">Pick Multiple</option>
+            <option value="matching">Matching</option>
+          </select>
+        </div>
+        <div id="questionList" class="question-list"></div>
+      </div>
+    </section>
+
+    <section id="groupsView" class="hidden">
+      <div class="panel">
+        <div class="section-title">Create Group</div>
+        <div class="row">
+          <input id="newGroupName" type="text" placeholder="Example: Radio Theory" style="flex:1">
+          <button id="addGroupBtn" class="btn primary">+ Create Group</button>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="section-title">Existing Groups</div>
+        <div id="groupManager"></div>
+      </div>
+    </section>
+
+    <section id="validateView" class="hidden">
+      <div class="panel">
+        <div class="row" style="justify-content:space-between">
+          <div>
+            <div class="section-title" style="margin-bottom:2px">Validation Report</div>
+            <div class="small muted">Checks groups, required text/images, correct answers, and matching pairs.</div>
+          </div>
+          <button id="runValidationBtn" class="btn">Run Validation</button>
+        </div>
+        <div id="validationReport" style="margin-top:14px"></div>
+      </div>
+    </section>
+
+    <section id="projectView" class="hidden">
+
+      <div class="simple-step">
+        <div class="step-head">
+          <div class="step-num">1</div>
+          <div>
+            <h3>Save an Editable Backup
+              <span class="help" tabindex="0" data-tip="Save this file somewhere safe. It contains your editable groups, questions, stable IDs, correct answers, matching pairs, and embedded images.">?</span>
+            </h3>
+            <p>Do this before publishing so you can edit this module later.</p>
+          </div>
+        </div>
+        <div class="row">
+          <button id="exportProjectBtn" class="btn primary">Download Editable Backup</button>
+          <button id="importProjectBtn" class="btn">Load an Existing Backup</button>
+          <input id="importProjectInput" class="file-input" type="file" accept=".json,application/json">
+        </div>
+        <div class="action-note"><strong>What do I do?</strong> Click <b>Download Editable Backup</b> and keep that JSON file private.</div>
+      </div>
+
+      <div class="simple-step">
+        <div class="step-head">
+          <div class="step-num">2</div>
+          <div>
+            <h3>Build the Files for GitHub
+              <span class="help" tabindex="0" data-tip="This encrypts your questions and images, then prepares the files your GitHub Pages backend and study website need.">?</span>
+            </h3>
+            <p>Enter the version and shared bank password, then build.</p>
+          </div>
+        </div>
+
+        <div class="grid2">
+          <div class="field">
+            <label>BANK VERSION
+              <span class="help" tabindex="0" data-tip="First publish: use 1. Each time you publish an updated bank, increase it: 2, 3, 4...">?</span>
+            </label>
+            <input id="bankVersionInput" type="text" value="1" inputmode="numeric">
+          </div>
+          <div></div>
+        </div>
+
+        <div class="grid2">
+          <div class="field">
+            <label>SHARED BANK PASSWORD
+              <span class="help" tabindex="0" data-tip="This is the password users enter to unlock the encrypted question bank. Keep it private and remember it.">?</span>
+            </label>
+            <input id="bankPassphrase" type="password" placeholder="Enter the password users will use">
+          </div>
+          <div class="field">
+            <label>TYPE IT AGAIN
+              <span class="help" tabindex="0" data-tip="This prevents you from accidentally encrypting the bank with a mistyped password. Both boxes must match.">?</span>
+            </label>
+            <input id="bankPassphraseConfirm" type="password" placeholder="Enter the same password again">
+          </div>
+        </div>
+
+        <button id="prepareEncryptedBtn" class="btn primary">Build Deployment Files</button>
+
+        <details class="advanced">
+          <summary>Advanced security setting — normally leave this alone</summary>
+          <div class="field" style="margin-top:12px;max-width:400px">
+            <label>PBKDF2 ITERATIONS
+              <span class="help" tabindex="0" data-tip="Controls how much work is used to derive the encryption key from the password. Leave this at 600000 unless you intentionally change the encryption design.">?</span>
+            </label>
+            <input id="iterationInput" type="text" value="600000" inputmode="numeric">
+          </div>
+        </details>
+
+        <div class="action-note"><strong>What do I do?</strong> For a new module use Version <b>1</b>, leave the advanced setting alone, enter your password twice, then click <b>Build Deployment Files</b>.</div>
+      </div>
+
+      <div id="encryptedOutput" class="hidden">
+        <div class="simple-step">
+          <div class="step-head">
+            <div class="step-num">3</div>
+            <div>
+              <h3>Choose Where It Will Go
+                <span class="help" tabindex="0" data-tip="These names tell the builder which GitHub Pages URLs to put into the generated study website. For a different module, use different repository names.">?</span>
+              </h3>
+              <p>The defaults match your current GitHub setup.</p>
+            </div>
+          </div>
+
+          <div class="repo-grid">
+            <div class="field">
+              <label>GITHUB USERNAME
+                <span class="help" tabindex="0" data-tip="Your GitHub account name. Leave Almighty1564 if you are publishing from that account.">?</span>
+              </label>
+              <input id="deployGithubUser" type="text" value="Almighty1564">
+            </div>
+            <div class="field">
+              <label>QUESTION BANK REPO
+                <span class="help" tabindex="0" data-tip="The backend repository that stores manifest.json and the encrypted master.enc.json. Current repo: flashcard-bank.">?</span>
+              </label>
+              <input id="deployBackendRepo" type="text" value="flashcard-bank">
+            </div>
+            <div class="field">
+              <label>STUDY WEBSITE REPO
+                <span class="help" tabindex="0" data-tip="The frontend repository students open to study. Current repo: flashcard-srs.">?</span>
+              </label>
+              <input id="deployFrontendRepo" type="text" value="flashcard-srs">
+            </div>
+          </div>
+
+          <div id="deployUrlPreview" class="small muted" style="margin:8px 0 0"></div>
+          <div id="encryptedMeta" class="small muted" style="margin-top:6px"></div>
+        </div>
+
+        <div class="simple-step">
+          <div class="step-head">
+            <div class="step-num">4</div>
+            <div>
+              <h3>Download and Upload
+                <span class="help" tabindex="0" data-tip="The Complete ZIP contains one folder for the question-bank repo and one folder for the study-site repo. Upload each folder's contents to the matching GitHub repository.">?</span>
+              </h3>
+              <p>This is the normal button you should use.</p>
+            </div>
+          </div>
+
+          <div class="ready-box">
+            <strong>Ready.</strong> Your questions and images are encrypted.
+          </div>
+
+          <div style="margin-top:14px">
+            <button id="downloadCompleteZipBtn" class="btn primary-download">Download Everything for GitHub</button>
+          </div>
+
+          <div class="action-note">
+            <strong>What do I do with the ZIP?</strong><br>
+            1. Open it.<br>
+            2. Upload the files inside <b>flashcard-bank</b> to your bank repository.<br>
+            3. Upload the files inside <b>flashcard-srs</b> to your study-site repository.
+          </div>
+
+          <details class="advanced">
+            <summary>Other downloads / developer tools</summary>
+            <div class="row" style="margin-top:12px">
+              <button id="downloadBackendZipBtn" class="btn">Backend Repo ZIP Only</button>
+              <button id="downloadFrontendZipBtn" class="btn">Frontend Repo ZIP Only</button>
+              <button id="downloadManifestBtn" class="btn">manifest.json Only</button>
+              <button id="downloadEncryptedBtn" class="btn">master.enc.json Only</button>
+            </div>
+          </details>
+        </div>
+      </div>
+
+      <details class="advanced">
+        <summary>Developer Tools
+          <span class="help" tabindex="0" data-tip="You normally do not need these. They are useful for inspecting or troubleshooting the raw bank.">?</span>
+        </summary>
+        <div style="margin-top:12px">
+          <p class="muted small"><b>Plaintext bank:</b> creates an unencrypted cards-master.json for inspection. Do not upload it publicly.</p>
+          <button id="buildPlainBankBtn" class="btn">Build Plaintext cards-master.json</button>
+        </div>
+      </details>
+
+      <details class="advanced danger-zone" style="margin-top:12px">
+        <summary>Reset / Delete Local Builder Project</summary>
+        <div style="margin-top:12px">
+          <p class="muted small">Deletes only the project saved in this browser. Export an editable backup first.</p>
+          <button id="resetProjectBtn" class="btn bad">Delete Local Project</button>
+        </div>
+      </details>
+    </section>
+
+    <section id="previewView" class="hidden">
+      <div class="panel">
+        <div class="row" style="justify-content:space-between">
+          <div class="section-title">Question Preview</div>
+          <button id="closePreviewBtn" class="btn">Close Preview</button>
+        </div>
+        <div id="previewContent"></div>
+      </div>
+    </section>
+  </main>
+</div>
+
+<script>
+const STORAGE_KEY="flashcard_question_builder_v1";
+const PROJECT_FORMAT="flashcard-question-builder-v1";
+
+let project=loadProject();
+let editingId=null;
+let draft=emptyDraft();
+let preparedEncrypted=null;
+const BACKEND_TEMPLATE="<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<title>__MODULE_NAME__ Question Bank Backend</title>\n<style>\n:root{color-scheme:dark}\nbody{margin:0;background:#0d1117;color:#e6edf3;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}\nmain{max-width:760px;margin:60px auto;padding:20px}\n.card{background:#161b22;border:1px solid #30363d;border-radius:14px;padding:22px}\nh1{margin-top:0}.muted{color:#8b949e}.ok{color:#3fb950}.bad{color:#f85149}\ncode{background:#0d1117;border:1px solid #30363d;padding:2px 6px;border-radius:6px}\ndl{display:grid;grid-template-columns:150px 1fr;gap:8px 12px}\n</style>\n</head>\n<body>\n<main>\n  <div class=\"card\">\n    <h1>__MODULE_NAME__ Question Bank Backend</h1>\n    <p id=\"status\" class=\"muted\">Checking manifest.json…</p>\n    <dl id=\"details\"></dl>\n    <p class=\"muted\">\n      This server exposes only the encrypted question bank. The bank passphrase is not stored here.\n    </p>\n  </div>\n</main>\n<script>\n(async()=>{\n  const status=document.getElementById(\"status\");\n  const details=document.getElementById(\"details\");\n  try{\n    const r=await fetch(\"./manifest.json?_=\"+Date.now(),{cache:\"no-store\"});\n    if(!r.ok)throw new Error(\"manifest.json not found\");\n    const m=await r.json();\n\n    const br=await fetch(new URL(m.bank,location.href).href+\"?_=\"+Date.now(),{cache:\"no-store\"});\n    if(!br.ok)throw new Error(\"encrypted bank file not found\");\n\n    status.className=\"ok\";\n    status.textContent=\"ONLINE — encrypted bank is available.\";\n    details.innerHTML=`\n      <dt>Module</dt><dd>${escapeHtml(m.module?.name||\"Unknown\")}</dd>\n      <dt>Bank version</dt><dd>${escapeHtml(m.bankVersion)}</dd>\n      <dt>Groups</dt><dd>${escapeHtml(m.groupCount??\"—\")}</dd>\n      <dt>Questions</dt><dd>${escapeHtml(m.cardCount??\"—\")}</dd>\n      <dt>Bank file</dt><dd><code>${escapeHtml(m.bank||\"\")}</code></dd>\n    `;\n  }catch(e){\n    status.className=\"bad\";\n    status.textContent=\"NOT READY — \"+(e.message||String(e));\n    details.innerHTML=\"<dt>Required</dt><dd>Upload <code>manifest.json</code> and <code>master.enc.json</code> beside this file.</dd>\";\n  }\n\n  function escapeHtml(v){\n    return String(v??\"\").replace(/[&<>\"']/g,c=>({\"&\":\"&amp;\",\"<\":\"&lt;\",\">\":\"&gt;\",\"\\\"\":\"&quot;\",\"'\":\"&#39;\"}[c]));\n  }\n})();\n<\/script>\n</body>\n</html>\n";
+const FRONTEND_TEMPLATE="<!doctype html>\n<html lang=\"en\">\n<head>\n<meta charset=\"utf-8\">\n<meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">\n<title>__MODULE_NAME__ Study</title>\n<style>\n:root{\n --bg:#0d1117;--panel:#161b22;--panel2:#0f141b;--line:#30363d;--text:#e6edf3;\n --muted:#8b949e;--accent:#2f81f7;--good:#3fb950;--warn:#d29922;--bad:#f85149;--gray:#6e7681;\n}\n*{box-sizing:border-box}\nbody{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}\nbutton,input,select{font:inherit}\nbutton{cursor:pointer}\n.hidden{display:none!important}\n.shell{display:grid;grid-template-columns:290px minmax(0,1fr);min-height:100vh}\n.sidebar{border-right:1px solid var(--line);background:#0b0f14;padding:18px;position:sticky;top:0;height:100vh;overflow:auto}\n.main{padding:22px;min-width:0}\n.brand h1{font-size:18px;margin:0}.build{font-size:11px;font-weight:900;color:var(--accent);margin:5px 0 15px}\n.muted{color:var(--muted)}.small{font-size:12px}\n.btn{border:1px solid var(--line);background:#21262d;color:var(--text);padding:10px 12px;border-radius:9px;font-weight:750}\n.btn:hover{border-color:#6e7681}.btn.primary{background:var(--accent);border-color:var(--accent);color:white}\n.btn.good{background:#1f6f33;border-color:#2ea043}.btn.warn{background:#5e4513;border-color:#8a6919}.btn.bad{background:#5b1e1e;border-color:#8a2f2f}\n.btn.full{width:100%;margin-top:8px}.btn:disabled{opacity:.45;cursor:not-allowed}\n.field{display:grid;gap:6px;margin-bottom:10px}.field label{font-size:11px;color:var(--muted);font-weight:800}\ninput[type=text],input[type=password],select{width:100%;background:#0d1117;color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px}\n.panel{background:var(--panel);border:1px solid var(--line);border-radius:13px;padding:18px;margin-bottom:16px}\n.topbar{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;margin-bottom:16px}\n.topbar h2{margin:0 0 4px}\n.stats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:13px 0}\n.stat{border:1px solid var(--line);background:var(--panel2);padding:9px;border-radius:9px}.stat span{display:block;color:var(--muted);font-size:9px;text-transform:uppercase}.stat strong{font-size:19px}\n.group-list{display:grid;gap:7px;margin-top:12px}\n.group-btn{width:100%;text-align:left;border:1px solid var(--line);background:var(--panel2);color:var(--text);padding:10px;border-radius:9px}\n.group-btn.active{border-color:var(--accent);background:#142033}.group-name{font-weight:800}.group-meta{font-size:10px;color:var(--muted);margin-top:3px}\n.question-card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:22px;max-width:1000px}\n.question-meta{display:flex;gap:7px;flex-wrap:wrap;color:var(--muted);font-size:11px;margin-bottom:14px}\n.badge{border:1px solid var(--line);border-radius:999px;padding:3px 7px}\n.question-text{font-size:24px;line-height:1.35;font-weight:800;white-space:pre-wrap}\n.question-image,.answer-image,.choice-image,.match-image{max-width:100%;max-height:380px;object-fit:contain;border-radius:10px;margin-top:13px;border:1px solid var(--line)}\n.answer-box{border-top:1px solid var(--line);margin-top:20px;padding-top:18px;font-size:19px;line-height:1.45;white-space:pre-wrap}\n.rating-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}\n.choice-list{display:grid;gap:9px;margin-top:18px}\n.choice-option{display:grid;grid-template-columns:28px minmax(0,1fr);gap:10px;align-items:start;border:1px solid var(--line);background:var(--panel2);padding:12px;border-radius:10px}\n.choice-option.correct-reveal{border-color:var(--good)}.choice-option.wrong-selected{border-color:var(--bad)}\n.choice-option input{width:18px;height:18px;margin-top:3px}\n.choice-content{white-space:pre-wrap}\n.feedback{margin-top:14px;padding:11px;border-radius:9px;border-left:3px solid var(--line)}\n.feedback.good{background:#122719;border-color:var(--good)}.feedback.bad{background:#2f1717;border-color:var(--bad)}\n.match-wrap{display:grid;grid-template-columns:minmax(0,1fr) minmax(220px,.65fr);gap:16px;margin-top:18px}\n.match-left,.match-right{display:grid;gap:9px}\n.match-row{border:1px solid var(--line);background:var(--panel2);border-radius:10px;padding:11px}\n.match-source{border:1px solid #53606d;background:#131b24;border-radius:9px;padding:9px;cursor:grab}\n.match-source.selected{border-color:var(--accent);background:#152944}\n.drop-zone{min-height:46px;border:1px dashed #59636f;border-radius:8px;margin-top:8px;padding:9px;color:var(--muted)}\n.drop-zone.filled{border-style:solid;color:var(--text)}\n.drop-zone.correct-reveal{border-color:var(--good)}.drop-zone.wrong-reveal{border-color:var(--bad)}\n.empty{text-align:center;padding:36px;border:1px dashed var(--line);border-radius:12px;color:var(--muted)}\n.builder-toolbar{display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}\n.check-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin-top:14px}\n.check-item{display:flex;gap:8px;align-items:center;border:1px solid var(--line);background:var(--panel2);padding:10px;border-radius:9px}\n.summary-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:14px 0}\n.summary-box{border:1px solid var(--line);background:var(--panel2);border-radius:9px;padding:10px}.summary-box span{font-size:10px;color:var(--muted);display:block}.summary-box strong{font-size:22px}\n.progress-row{display:grid;grid-template-columns:40px minmax(150px,1.2fr) 2fr 110px;gap:10px;align-items:center;border-top:1px solid var(--line);padding:11px 0}\n.progress-row:first-child{border-top:0}.rank{font-size:20px;color:var(--muted);font-weight:900;text-align:center}\n.bar{height:14px;background:#202731;border-radius:999px;overflow:hidden;display:flex}.seg{height:100%}.confident{background:var(--accent)}.correct{background:var(--good)}.guessed{background:var(--warn)}.wrong{background:var(--bad)}.unanswered{background:var(--gray)}.untested{background:#242b35}\n.score{text-align:right}.score strong{display:block;font-size:20px}.score span{font-size:10px;color:var(--muted)}\n.priority-list{display:grid;gap:7px;margin-top:10px}.priority{border:1px solid var(--line);background:var(--panel2);padding:9px;border-radius:8px}\n.file-input{display:none}\n@media(max-width:850px){\n .shell{grid-template-columns:1fr}.sidebar{position:relative;height:auto;border-right:0;border-bottom:1px solid var(--line)}\n .match-wrap,.check-grid{grid-template-columns:1fr}.summary-grid{grid-template-columns:1fr 1fr}\n .progress-row{grid-template-columns:35px 1fr}.progress-row .bar,.progress-row .score{grid-column:2}.score{text-align:left}\n .question-text{font-size:20px}\n}\n</style>\n</head>\n<body>\n<div class=\"shell\">\n<aside class=\"sidebar\">\n  <div class=\"brand\">\n    <h1 id=\"sideModule\">Study Program</h1>\n    <div class=\"build\">MULTI-TYPE SRS • BUILDER GENERATED</div>\n  </div>\n\n  <div class=\"panel\" style=\"padding:10px;margin:10px 0\">\n    <div class=\"small muted\">BANK BACKEND</div>\n    <div class=\"small\" style=\"word-break:break-all;margin-top:4px\">__BACKEND_URL__</div>\n  </div>\n  <button id=\"unlockBtn\" class=\"btn primary full\">Unlock / Refresh Bank</button>\n\n  <div class=\"stats\">\n    <div class=\"stat\"><span>Due</span><strong id=\"statDue\">0</strong></div>\n    <div class=\"stat\"><span>Learned</span><strong id=\"statLearned\">0</strong></div>\n    <div class=\"stat\"><span>Reviews</span><strong id=\"statReviews\">0</strong></div>\n  </div>\n\n  <button id=\"customBtn\" class=\"btn full\" disabled>Build Custom Test</button>\n  <button id=\"progressBtn\" class=\"btn full\" disabled>Overall Progress</button>\n  <button id=\"exportBtn\" class=\"btn full\">Export Progress</button>\n  <button id=\"importBtn\" class=\"btn full\">Import Progress</button>\n  <input id=\"importInput\" class=\"file-input\" type=\"file\" accept=\".json,application/json\">\n\n  <div id=\"groupList\" class=\"group-list\"></div>\n</aside>\n\n<main class=\"main\">\n  <div class=\"topbar\">\n    <div>\n      <h2 id=\"pageTitle\">Question Bank Study Program</h2>\n      <div id=\"pageSub\" class=\"muted\">Unlock the encrypted question bank to begin.</div>\n    </div>\n  </div>\n\n  <section id=\"lockedView\" class=\"panel\">\n    <h3>Load a Question Bank</h3>\n    <p class=\"muted\">\n      Click <strong>Unlock / Refresh Bank</strong> and enter the shared bank passphrase.\n      The encrypted bank is downloaded from the configured GitHub Pages backend and decrypted only in this browser.\n    </p>\n  </section>\n\n  <section id=\"emptyView\" class=\"hidden\">\n    <div class=\"empty\">\n      <h3 id=\"emptyTitle\">No cards due</h3>\n      <p id=\"emptyText\">The SRS timer says to wait.</p>\n      <div class=\"rating-row\" style=\"justify-content:center\">\n        <button id=\"emptyRetestWrong\" class=\"btn\">Retest Wrong / Guessed</button>\n        <button id=\"emptyRetestAll\" class=\"btn primary\">Retest All Now</button>\n      </div>\n    </div>\n  </section>\n\n  <section id=\"studyView\" class=\"hidden\">\n    <div class=\"question-card\">\n      <div id=\"questionMeta\" class=\"question-meta\"></div>\n      <div id=\"questionText\" class=\"question-text\"></div>\n      <div id=\"questionImageWrap\"></div>\n      <div id=\"interaction\"></div>\n      <div class=\"rating-row\">\n        <button id=\"skipBtn\" class=\"btn\">Skip</button>\n      </div>\n    </div>\n  </section>\n\n  <section id=\"customView\" class=\"panel hidden\">\n    <div class=\"builder-toolbar\">\n      <div>\n        <h3 style=\"margin:0\">Custom Test</h3>\n        <div class=\"muted small\">Choose any combination of groups. SRS due dates are ignored for this test.</div>\n      </div>\n      <button id=\"closeCustomBtn\" class=\"btn\">Cancel</button>\n    </div>\n    <div class=\"rating-row\">\n      <button id=\"customAllBtn\" class=\"btn\">Select All</button>\n      <button id=\"customNoneBtn\" class=\"btn\">Clear</button>\n    </div>\n    <div id=\"customGroups\" class=\"check-grid\"></div>\n    <div class=\"rating-row\">\n      <button id=\"startCustomBtn\" class=\"btn primary\">Start Custom Test</button>\n    </div>\n  </section>\n\n  <section id=\"debriefView\" class=\"panel hidden\">\n    <h3 id=\"debriefTitle\">Session Complete</h3>\n    <div id=\"debriefSub\" class=\"muted small\"></div>\n    <div id=\"debriefCounts\" class=\"summary-grid\"></div>\n    <div class=\"rating-row\">\n      <button id=\"retestWrongBtn\" class=\"btn\">Retest Wrong / Guessed</button>\n      <button id=\"retestAllBtn\" class=\"btn primary\">Retest All</button>\n      <button id=\"returnDueBtn\" class=\"btn\">Return to Due Reviews</button>\n    </div>\n    <div style=\"margin-top:20px\">\n      <h4>Priority Retest</h4>\n      <div id=\"priorityList\" class=\"priority-list\"></div>\n    </div>\n  </section>\n\n  <section id=\"progressView\" class=\"panel hidden\">\n    <div class=\"builder-toolbar\">\n      <div>\n        <h3 style=\"margin:0\">Overall Progress</h3>\n        <div class=\"muted small\">Recalculated from each card's latest stored result every time this page opens.</div>\n      </div>\n      <button id=\"closeProgressBtn\" class=\"btn\">Back</button>\n    </div>\n    <div id=\"overallSummary\" class=\"summary-grid\"></div>\n    <h4>Best → Worst Tested Groups</h4>\n    <div id=\"rankedGroups\"></div>\n    <h4 style=\"margin-top:24px\">Not Tested</h4>\n    <div id=\"untestedGroups\" class=\"check-grid\"></div>\n  </section>\n</main>\n</div>\n\n<script>\nconst BACKEND_BASE=\"__BACKEND_URL__\";\nconst STATE_PREFIX=\"question_bank_study_state_v1::\";\n\nlet bank=null;\nlet backendBase=\"\";\nlet state=null;\nlet selectedGroupId=null;\nlet session=null;\nlet currentCard=null;\nlet interactionState=null;\n\nfunction esc(v){\n  return String(v??\"\").replace(/[&<>\"']/g,c=>({\"&\":\"&amp;\",\"<\":\"&lt;\",\">\":\"&gt;\",\"\\\"\":\"&quot;\",\"'\":\"&#39;\"}[c]));\n}\nfunction normalizeBase(v){\n  let s=String(v||\"\").trim();\n  if(!s)return \"\";\n  if(!/^https?:\\/\\//i.test(s))s=\"https://\"+s;\n  if(!s.endsWith(\"/\"))s+=\"/\";\n  return s;\n}\nfunction stateKey(){\n  return STATE_PREFIX+(bank?.module?.id || backendBase || \"unknown\");\n}\nfunction defaultState(){\n  return {progress:{},mastery:{},totalReviews:0,sessions:[]};\n}\nfunction loadState(){\n  try{\n    const raw=localStorage.getItem(stateKey());\n    if(!raw)return defaultState();\n    return {...defaultState(),...JSON.parse(raw)};\n  }catch(_){return defaultState();}\n}\nfunction saveState(){\n  if(!state)return;\n  localStorage.setItem(stateKey(),JSON.stringify(state));\n}\nfunction download(name,text){\n  const blob=new Blob([text],{type:\"application/json\"});\n  const u=URL.createObjectURL(blob);\n  const a=document.createElement(\"a\");a.href=u;a.download=name;document.body.appendChild(a);a.click();a.remove();\n  setTimeout(()=>URL.revokeObjectURL(u),1000);\n}\nfunction base64ToBytes(s){\n  const binary=atob(s);\n  const out=new Uint8Array(binary.length);\n  for(let i=0;i<binary.length;i++)out[i]=binary.charCodeAt(i);\n  return out;\n}\nasync function decryptEnvelope(envelope,passphrase){\n  const enc=new TextEncoder();\n  const material=await crypto.subtle.importKey(\n    \"raw\",enc.encode(passphrase),\"PBKDF2\",false,[\"deriveKey\"]\n  );\n  const key=await crypto.subtle.deriveKey(\n    {\n      name:\"PBKDF2\",\n      salt:base64ToBytes(envelope.kdf.salt),\n      iterations:envelope.kdf.iterations,\n      hash:envelope.kdf.hash||\"SHA-256\"\n    },\n    material,\n    {name:\"AES-GCM\",length:256},\n    false,\n    [\"decrypt\"]\n  );\n  const plain=await crypto.subtle.decrypt(\n    {name:\"AES-GCM\",iv:base64ToBytes(envelope.cipher.iv)},\n    key,\n    base64ToBytes(envelope.ciphertext)\n  );\n  return JSON.parse(new TextDecoder().decode(plain));\n}\nfunction groups(){return bank?.groups||[]}\nfunction cards(){return (bank?.cards||[]).filter(c=>c.status!==\"incomplete\")}\nfunction cardsForGroup(id){return cards().filter(c=>c.groupId===id)}\nfunction groupName(id){return groups().find(g=>g.id===id)?.name||\"Unknown Group\"}\nfunction typeLabel(t){\n  return {\"flashcard\":\"Flash Card\",\"multiple-choice\":\"Multiple Choice\",\"multiple-select\":\"Pick Multiple\",\"matching\":\"Matching\"}[t]||t;\n}\nfunction pstate(id){\n  if(!state.progress[id]){\n    state.progress[id]={dueAt:0,intervalDays:0,ease:2.5,reps:0,lapses:0,totalReviews:0};\n  }\n  return state.progress[id];\n}\nfunction isDue(c){return (state.progress[c.id]?.dueAt||0)<=Date.now()}\nfunction dueCards(groupId=selectedGroupId){\n  const list=groupId?cardsForGroup(groupId):cards();\n  return list.filter(isDue);\n}\nfunction applySrs(cardId,result){\n  const p=pstate(cardId);\n  const now=Date.now();\n  const day=86400000;\n\n  if(result===\"wrong\"){\n    p.dueAt=now+10*60*1000;\n    p.intervalDays=0;\n    p.ease=Math.max(1.3,p.ease-0.2);\n    p.lapses++;\n    p.reps++;\n  }else if(result===\"guessed\"){\n    p.intervalDays=Math.max(1,Math.round((p.intervalDays||1)*1.2));\n    p.ease=Math.max(1.3,p.ease-0.05);\n    p.dueAt=now+p.intervalDays*day;\n    p.reps++;\n  }else if(result===\"correct\"){\n    if(p.reps===0)p.intervalDays=1;\n    else if(p.intervalDays<=1)p.intervalDays=3;\n    else p.intervalDays=Math.max(1,Math.round(p.intervalDays*p.ease));\n    p.dueAt=now+p.intervalDays*day;\n    p.reps++;\n  }else if(result===\"confident\"){\n    if(p.reps===0)p.intervalDays=4;\n    else p.intervalDays=Math.max(4,Math.round(Math.max(1,p.intervalDays)*(p.ease+0.15)*1.3));\n    p.ease=Math.min(3.5,p.ease+0.1);\n    p.dueAt=now+p.intervalDays*day;\n    p.reps++;\n  }\n\n  p.totalReviews++;\n  state.totalReviews++;\n  state.mastery[cardId]={lastResult:result,lastReviewedAt:new Date().toISOString()};\n  saveState();\n}\nfunction markUnanswered(cardId){\n  state.mastery[cardId]={lastResult:\"unanswered\",lastReviewedAt:new Date().toISOString()};\n  saveState();\n}\nfunction hideViews(){\n  [\"lockedView\",\"emptyView\",\"studyView\",\"customView\",\"debriefView\",\"progressView\"].forEach(id=>document.getElementById(id).classList.add(\"hidden\"));\n}\nfunction renderSidebar(){\n  if(!bank){\n    document.getElementById(\"sideModule\").textContent=\"Study Program\";\n    document.getElementById(\"groupList\").innerHTML=\"\";\n    document.getElementById(\"statDue\").textContent=\"0\";\n    document.getElementById(\"statLearned\").textContent=\"0\";\n    document.getElementById(\"statReviews\").textContent=state?.totalReviews||0;\n    return;\n  }\n\n  document.getElementById(\"sideModule\").textContent=bank.module?.name||\"Question Bank\";\n  document.getElementById(\"statDue\").textContent=dueCards(null).length;\n  document.getElementById(\"statLearned\").textContent=Object.keys(state.progress).filter(id=>(state.progress[id]?.reps||0)>0).length;\n  document.getElementById(\"statReviews\").textContent=state.totalReviews||0;\n\n  document.getElementById(\"groupList\").innerHTML=groups().map((g,i)=>{\n    const all=cardsForGroup(g.id);\n    const due=all.filter(isDue).length;\n    const learned=all.filter(c=>(state.progress[c.id]?.reps||0)>0).length;\n    return `<button class=\"group-btn ${selectedGroupId===g.id?\"active\":\"\"}\" data-group=\"${esc(g.id)}\">\n      <div class=\"group-name\">${i+1}. ${esc(g.name)}</div>\n      <div class=\"group-meta\">${due} due • ${learned}/${all.length} learned</div>\n    </button>`;\n  }).join(\"\");\n\n  document.querySelectorAll(\"[data-group]\").forEach(b=>b.onclick=()=>{\n    selectedGroupId=b.dataset.group;\n    renderSidebar();\n    openDueReviews();\n  });\n}\nasync function unlockBank(){\n  backendBase=normalizeBase(BACKEND_BASE);\n  const passphrase=prompt(\"Enter the bank passphrase:\");\n  if(!passphrase)return false;\n\n  const mres=await fetch(backendBase+\"manifest.json?_=\"+Date.now(),{cache:\"no-store\"});\n  if(!mres.ok)throw new Error(\"Could not load manifest.json from that backend.\");\n  const manifest=await mres.json();\n\n  const bankUrl=new URL(manifest.bank,backendBase).href;\n  const bres=await fetch(bankUrl+\"?_=\"+Date.now(),{cache:\"no-store\"});\n  if(!bres.ok)throw new Error(\"Could not load master.enc.json.\");\n  const envelope=await bres.json();\n\n  const decrypted=await decryptEnvelope(envelope,passphrase);\n  if(Number(decrypted.bankVersion)!==Number(manifest.bankVersion)){\n    throw new Error(\"Bank and manifest versions do not match.\");\n  }\n\n  bank=decrypted;\n  state=loadState();\n  selectedGroupId=null;\n  session=null;\n  currentCard=null;\n\n  document.getElementById(\"customBtn\").disabled=false;\n  document.getElementById(\"progressBtn\").disabled=false;\n  document.getElementById(\"pageTitle\").textContent=bank.module?.name||\"Question Bank\";\n  document.getElementById(\"pageSub\").textContent=`Bank version ${bank.bankVersion} • ${groups().length} groups • ${cards().length} usable questions`;\n  renderSidebar();\n  openDueReviews();\n  return true;\n}\nfunction startSession(cardList,mode=\"due\",scopeGroups=null){\n  const list=[...cardList];\n  session={\n    mode,\n    scopeGroups:scopeGroups||[...new Set(list.map(c=>c.groupId))],\n    queue:list.map(c=>c.id),\n    results:{},\n    cursor:0,\n    startedAt:new Date().toISOString()\n  };\n  currentCard=null;\n  loadCurrent();\n}\nfunction loadCurrent(){\n  if(!session)return;\n  if(session.cursor>=session.queue.length){finishSession();return;}\n  currentCard=cards().find(c=>c.id===session.queue[session.cursor]);\n  if(!currentCard){session.cursor++;loadCurrent();return;}\n  interactionState=null;\n  renderCard();\n}\nfunction renderCard(){\n  hideViews();\n  document.getElementById(\"studyView\").classList.remove(\"hidden\");\n  document.getElementById(\"questionMeta\").innerHTML=`\n    <span class=\"badge\">${esc(groupName(currentCard.groupId))}</span>\n    <span class=\"badge\">${esc(typeLabel(currentCard.type))}</span>\n    <span class=\"badge\">${session.cursor+1}/${session.queue.length}</span>\n  `;\n  document.getElementById(\"questionText\").textContent=currentCard.question?.text||\"\";\n  const qi=currentCard.question?.image;\n  document.getElementById(\"questionImageWrap\").innerHTML=qi?`<img class=\"question-image\" src=\"${qi}\" alt=\"Question image\">`:\"\";\n  renderInteraction();\n}\nfunction renderInteraction(){\n  const el=document.getElementById(\"interaction\");\n  if(currentCard.type===\"flashcard\")renderFlashcard(el);\n  else if(currentCard.type===\"multiple-choice\")renderChoices(el,false);\n  else if(currentCard.type===\"multiple-select\")renderChoices(el,true);\n  else if(currentCard.type===\"matching\")renderMatching(el);\n  else el.innerHTML='<div class=\"feedback bad\">Unsupported question type.</div>';\n}\nfunction imageHtml(src,cls=\"answer-image\",alt=\"Image\"){\n  return src?`<img class=\"${cls}\" src=\"${src}\" alt=\"${esc(alt)}\">`:\"\";\n}\nfunction ratingButtons(includeWrong=true){\n  return `<div class=\"rating-row\">\n    ${includeWrong?'<button class=\"btn bad\" data-rate=\"wrong\">Wrong</button>':\"\"}\n    <button class=\"btn warn\" data-rate=\"guessed\">Guessed</button>\n    <button class=\"btn good\" data-rate=\"correct\">Correct</button>\n    <button class=\"btn primary\" data-rate=\"confident\">Confident</button>\n  </div>`;\n}\nfunction wireRatings(root,allowed=null){\n  root.querySelectorAll(\"[data-rate]\").forEach(b=>b.onclick=()=>{\n    const r=b.dataset.rate;\n    if(allowed && !allowed.includes(r))return;\n    recordAndNext(r);\n  });\n}\nfunction renderFlashcard(el){\n  el.innerHTML=`<div class=\"rating-row\"><button id=\"showAnswerBtn\" class=\"btn primary\">Show Answer</button></div>`;\n  document.getElementById(\"showAnswerBtn\").onclick=()=>{\n    el.innerHTML=`<div class=\"answer-box\">${esc(currentCard.answer?.text||\"\")}${imageHtml(currentCard.answer?.image)}</div>${ratingButtons(true)}`;\n    wireRatings(el);\n  };\n}\nfunction renderChoices(el,multi){\n  const choices=[...(currentCard.choices||[])];\n  if(currentCard.shuffleChoices!==false){\n    choices.sort(()=>Math.random()-.5);\n  }\n  interactionState={submitted:false,displayChoices:choices};\n\n  el.innerHTML=`<div class=\"choice-list\">${\n    choices.map(c=>`<label class=\"choice-option\" data-choice-row=\"${esc(c.id)}\">\n      <input type=\"${multi?\"checkbox\":\"radio\"}\" name=\"answerChoice\" value=\"${esc(c.id)}\">\n      <div class=\"choice-content\">${esc(c.text||\"\")}${imageHtml(c.image,\"choice-image\",\"Answer choice image\")}</div>\n    </label>`).join(\"\")\n  }</div>\n  <div class=\"rating-row\"><button id=\"submitObjectiveBtn\" class=\"btn primary\">Submit Answer</button></div>`;\n\n  document.getElementById(\"submitObjectiveBtn\").onclick=()=>{\n    const selected=[...el.querySelectorAll('input[name=\"answerChoice\"]:checked')].map(i=>i.value);\n    if(!selected.length){alert(\"Choose an answer first.\");return;}\n\n    const correct=(currentCard.choices||[]).filter(c=>c.correct).map(c=>c.id).sort();\n    const picked=[...selected].sort();\n    const isCorrect=correct.length===picked.length && correct.every((id,i)=>id===picked[i]);\n\n    el.querySelectorAll(\"[data-choice-row]\").forEach(row=>{\n      const c=currentCard.choices.find(x=>x.id===row.dataset.choiceRow);\n      if(c?.correct)row.classList.add(\"correct-reveal\");\n      const input=row.querySelector(\"input\");\n      if(input.checked&&!c?.correct)row.classList.add(\"wrong-selected\");\n      input.disabled=true;\n    });\n\n    document.getElementById(\"submitObjectiveBtn\").remove();\n\n    if(isCorrect){\n      const feedback=document.createElement(\"div\");\n      feedback.innerHTML=`<div class=\"feedback good\"><strong>Correct.</strong> Choose how well you knew it.</div>${ratingButtons(false)}`;\n      el.appendChild(feedback);\n      wireRatings(feedback,[\"guessed\",\"correct\",\"confident\"]);\n    }else{\n      const feedback=document.createElement(\"div\");\n      feedback.innerHTML=`<div class=\"feedback bad\"><strong>Incorrect.</strong> Correct answer${correct.length===1?\"\":\"s\"} highlighted.</div>\n      <div class=\"rating-row\"><button id=\"continueWrongBtn\" class=\"btn bad\">Continue — Wrong</button></div>`;\n      el.appendChild(feedback);\n      feedback.querySelector(\"#continueWrongBtn\").onclick=()=>recordAndNext(\"wrong\");\n    }\n  };\n}\nfunction renderMatching(el){\n  const pairs=currentCard.pairs||[];\n  const right=[...pairs].sort(()=>Math.random()-.5);\n  interactionState={assignments:{},selectedRight:null};\n\n  el.innerHTML=`<div class=\"match-wrap\">\n    <div class=\"match-left\">\n      ${pairs.map(p=>`<div class=\"match-row\">\n        <div>${esc(p.left?.text||\"\")}${imageHtml(p.left?.image,\"match-image\",\"Left match image\")}</div>\n        <div class=\"drop-zone\" data-drop=\"${esc(p.id)}\">Drop or tap a right-side item here</div>\n      </div>`).join(\"\")}\n    </div>\n    <div class=\"match-right\">\n      ${right.map(p=>`<div class=\"match-source\" draggable=\"true\" data-source=\"${esc(p.id)}\">\n        ${esc(p.right?.text||\"\")}${imageHtml(p.right?.image,\"match-image\",\"Right match image\")}\n      </div>`).join(\"\")}\n    </div>\n  </div>\n  <div class=\"rating-row\">\n    <button id=\"resetMatchBtn\" class=\"btn\">Reset Matches</button>\n    <button id=\"submitMatchBtn\" class=\"btn primary\">Submit Matches</button>\n  </div>`;\n\n  function sourceContent(id){\n    const p=pairs.find(x=>x.id===id);\n    return `${esc(p?.right?.text||\"\")}${imageHtml(p?.right?.image,\"match-image\",\"Right match image\")}`;\n  }\n  function assign(leftId,rightId){\n    if(!leftId||!rightId)return;\n    Object.keys(interactionState.assignments).forEach(k=>{\n      if(interactionState.assignments[k]===rightId)delete interactionState.assignments[k];\n    });\n    interactionState.assignments[leftId]=rightId;\n    refresh();\n  }\n  function refresh(){\n    el.querySelectorAll(\"[data-source]\").forEach(s=>{\n      const used=Object.values(interactionState.assignments).includes(s.dataset.source);\n      s.style.opacity=used?\".35\":\"1\";\n      s.classList.toggle(\"selected\",interactionState.selectedRight===s.dataset.source);\n    });\n    el.querySelectorAll(\"[data-drop]\").forEach(d=>{\n      const rid=interactionState.assignments[d.dataset.drop];\n      d.classList.toggle(\"filled\",!!rid);\n      d.innerHTML=rid?sourceContent(rid):\"Drop or tap a right-side item here\";\n    });\n  }\n\n  el.querySelectorAll(\"[data-source]\").forEach(s=>{\n    s.addEventListener(\"dragstart\",e=>e.dataTransfer.setData(\"text/plain\",s.dataset.source));\n    s.onclick=()=>{\n      if(Object.values(interactionState.assignments).includes(s.dataset.source))return;\n      interactionState.selectedRight=interactionState.selectedRight===s.dataset.source?null:s.dataset.source;\n      refresh();\n    };\n  });\n  el.querySelectorAll(\"[data-drop]\").forEach(d=>{\n    d.addEventListener(\"dragover\",e=>e.preventDefault());\n    d.addEventListener(\"drop\",e=>{\n      e.preventDefault();assign(d.dataset.drop,e.dataTransfer.getData(\"text/plain\"));\n    });\n    d.onclick=()=>{\n      if(interactionState.selectedRight){\n        assign(d.dataset.drop,interactionState.selectedRight);\n        interactionState.selectedRight=null;refresh();\n      }else if(interactionState.assignments[d.dataset.drop]){\n        delete interactionState.assignments[d.dataset.drop];refresh();\n      }\n    };\n  });\n\n  document.getElementById(\"resetMatchBtn\").onclick=()=>{interactionState.assignments={};interactionState.selectedRight=null;refresh();};\n  document.getElementById(\"submitMatchBtn\").onclick=()=>{\n    if(Object.keys(interactionState.assignments).length!==pairs.length){\n      alert(\"Match every item before submitting.\");return;\n    }\n    const correct=pairs.every(p=>interactionState.assignments[p.id]===p.id);\n\n    el.querySelectorAll(\"[data-drop]\").forEach(d=>{\n      d.classList.add(interactionState.assignments[d.dataset.drop]===d.dataset.drop?\"correct-reveal\":\"wrong-reveal\");\n    });\n    el.querySelectorAll(\"[data-source]\").forEach(s=>s.setAttribute(\"draggable\",\"false\"));\n    document.getElementById(\"resetMatchBtn\").remove();\n    document.getElementById(\"submitMatchBtn\").remove();\n\n    const fb=document.createElement(\"div\");\n    if(correct){\n      fb.innerHTML=`<div class=\"feedback good\"><strong>Correct.</strong> Choose how well you knew it.</div>${ratingButtons(false)}`;\n      el.appendChild(fb);wireRatings(fb,[\"guessed\",\"correct\",\"confident\"]);\n    }else{\n      fb.innerHTML=`<div class=\"feedback bad\"><strong>Incorrect.</strong> Green matches are correct; red matches are incorrect.</div>\n      <div class=\"rating-row\"><button id=\"continueMatchWrong\" class=\"btn bad\">Continue — Wrong</button></div>`;\n      el.appendChild(fb);\n      fb.querySelector(\"#continueMatchWrong\").onclick=()=>recordAndNext(\"wrong\");\n    }\n  };\n}\nfunction recordAndNext(result){\n  if(!session||!currentCard)return;\n  applySrs(currentCard.id,result);\n  session.results[currentCard.id]=result;\n  session.cursor++;\n  renderSidebar();\n  loadCurrent();\n}\nfunction skipCurrent(){\n  if(!session||!currentCard)return;\n  markUnanswered(currentCard.id);\n  session.results[currentCard.id]=\"unanswered\";\n  session.cursor++;\n  loadCurrent();\n}\nfunction finishSession(){\n  const counts={confident:0,correct:0,guessed:0,wrong:0,unanswered:0};\n  session.queue.forEach(id=>{\n    const r=session.results[id]||\"unanswered\";\n    counts[r]++;\n  });\n  const summary={\n    id:\"session_\"+Date.now(),\n    mode:session.mode,\n    scopeGroups:[...session.scopeGroups],\n    cardIds:[...session.queue],\n    results:{...session.results},\n    counts,\n    total:session.queue.length,\n    startedAt:session.startedAt,\n    completedAt:new Date().toISOString()\n  };\n  state.sessions.push(summary);\n  if(state.sessions.length>100)state.sessions=state.sessions.slice(-100);\n  saveState();\n  session=null;currentCard=null;\n  showDebrief(summary);\n}\nfunction showDebrief(summary){\n  hideViews();\n  document.getElementById(\"debriefView\").classList.remove(\"hidden\");\n  document.getElementById(\"debriefTitle\").textContent=\"Session Complete\";\n  document.getElementById(\"debriefSub\").textContent=`${summary.total} questions • ${summary.scopeGroups.length} group${summary.scopeGroups.length===1?\"\":\"s\"}`;\n  document.getElementById(\"debriefCounts\").innerHTML=[\n    [\"Confident\",summary.counts.confident],\n    [\"Correct\",summary.counts.correct],\n    [\"Guessed\",summary.counts.guessed],\n    [\"Wrong\",summary.counts.wrong],\n    [\"Unanswered\",summary.counts.unanswered]\n  ].map(([n,v])=>`<div class=\"summary-box\"><span>${n}</span><strong>${v}</strong></div>`).join(\"\");\n\n  const priority=summary.cardIds.filter(id=>[\"wrong\",\"guessed\"].includes(summary.results[id]));\n  document.getElementById(\"priorityList\").innerHTML=priority.length?priority.map(id=>{\n    const c=cards().find(x=>x.id===id);\n    return `<div class=\"priority\"><strong>${esc(groupName(c?.groupId))}</strong><br>${esc(c?.question?.text||\"[Image question]\")} <span class=\"muted\">— ${esc(summary.results[id])}</span></div>`;\n  }).join(\"\"):'<div class=\"muted small\">No wrong or guessed questions in this session.</div>';\n\n  document.getElementById(\"retestWrongBtn\").disabled=!priority.length;\n  document.getElementById(\"retestWrongBtn\").onclick=()=>{\n    const list=priority.map(id=>cards().find(c=>c.id===id)).filter(Boolean);\n    startSession(list,\"wrong\",summary.scopeGroups);\n  };\n  document.getElementById(\"retestAllBtn\").onclick=()=>{\n    const list=summary.cardIds.map(id=>cards().find(c=>c.id===id)).filter(Boolean);\n    startSession(list,\"all\",summary.scopeGroups);\n  };\n  document.getElementById(\"returnDueBtn\").onclick=openDueReviews;\n  renderSidebar();\n}\nfunction openDueReviews(){\n  if(!bank)return;\n  const due=dueCards(selectedGroupId);\n  if(due.length){\n    startSession(due,\"due\",selectedGroupId?[selectedGroupId]:groups().map(g=>g.id));\n  }else{\n    hideViews();\n    document.getElementById(\"emptyView\").classList.remove(\"hidden\");\n    document.getElementById(\"emptyTitle\").textContent=\"No cards due\";\n    document.getElementById(\"emptyText\").textContent=\n      selectedGroupId?`${groupName(selectedGroupId)} has no SRS cards due right now.`:\"No SRS cards are due right now.\";\n\n    const scope=selectedGroupId?cardsForGroup(selectedGroupId):cards();\n    const wg=scope.filter(c=>[\"wrong\",\"guessed\"].includes(state.mastery[c.id]?.lastResult));\n    document.getElementById(\"emptyRetestWrong\").disabled=!wg.length;\n    document.getElementById(\"emptyRetestWrong\").onclick=()=>startSession(wg,\"wrong\",selectedGroupId?[selectedGroupId]:groups().map(g=>g.id));\n    document.getElementById(\"emptyRetestAll\").onclick=()=>startSession(scope,\"all\",selectedGroupId?[selectedGroupId]:groups().map(g=>g.id));\n  }\n  renderSidebar();\n}\nfunction showCustom(){\n  hideViews();\n  document.getElementById(\"customView\").classList.remove(\"hidden\");\n  document.getElementById(\"customGroups\").innerHTML=groups().map((g,i)=>`\n    <label class=\"check-item\">\n      <input type=\"checkbox\" data-custom-group=\"${esc(g.id)}\">\n      <span><strong>${i+1}. ${esc(g.name)}</strong><br><span class=\"muted small\">${cardsForGroup(g.id).length} questions</span></span>\n    </label>`).join(\"\");\n}\nfunction showOverallProgress(){\n  hideViews();\n  document.getElementById(\"progressView\").classList.remove(\"hidden\");\n\n  const rows=groups().map(g=>{\n    const gcards=cardsForGroup(g.id);\n    const counts={confident:0,correct:0,guessed:0,wrong:0,unanswered:0,untested:0};\n    gcards.forEach(c=>{\n      const r=state.mastery[c.id]?.lastResult;\n      if(r&&counts[r]!==undefined)counts[r]++;else counts.untested++;\n    });\n    const tested=gcards.length-counts.untested;\n    const strong=counts.confident+counts.correct;\n    return {\n      id:g.id,name:g.name,total:gcards.length,counts,tested,strong,\n      score:tested?Math.round(strong/tested*100):null,\n      coverage:gcards.length?Math.round(tested/gcards.length*100):0\n    };\n  });\n\n  const tested=rows.filter(r=>r.tested>0).sort((a,b)=>(b.score-a.score)||(b.coverage-a.coverage)||a.name.localeCompare(b.name));\n  const untested=rows.filter(r=>r.tested===0);\n\n  const total=rows.reduce((n,r)=>n+r.total,0);\n  const totalTested=rows.reduce((n,r)=>n+r.tested,0);\n  const totalStrong=rows.reduce((n,r)=>n+r.strong,0);\n  const overall=totalTested?Math.round(totalStrong/totalTested*100):0;\n\n  document.getElementById(\"overallSummary\").innerHTML=[\n    [\"Tested\",totalTested],\n    [\"Untested\",total-totalTested],\n    [\"Strong Recall\",overall+\"%\"],\n    [\"Groups Tested\",tested.length+\"/\"+rows.length],\n    [\"Reviews\",state.totalReviews||0]\n  ].map(([n,v])=>`<div class=\"summary-box\"><span>${n}</span><strong>${v}</strong></div>`).join(\"\");\n\n  document.getElementById(\"rankedGroups\").innerHTML=tested.length?tested.map((r,i)=>{\n    const pct=n=>r.total?100*n/r.total:0;\n    return `<div class=\"progress-row\">\n      <div class=\"rank\">${i+1}</div>\n      <div><strong>${esc(r.name)}</strong><div class=\"muted small\">${r.tested}/${r.total} tested • ${r.coverage}% coverage</div></div>\n      <div class=\"bar\">\n        <span class=\"seg confident\" style=\"width:${pct(r.counts.confident)}%\"></span>\n        <span class=\"seg correct\" style=\"width:${pct(r.counts.correct)}%\"></span>\n        <span class=\"seg guessed\" style=\"width:${pct(r.counts.guessed)}%\"></span>\n        <span class=\"seg wrong\" style=\"width:${pct(r.counts.wrong)}%\"></span>\n        <span class=\"seg unanswered\" style=\"width:${pct(r.counts.unanswered)}%\"></span>\n        <span class=\"seg untested\" style=\"width:${pct(r.counts.untested)}%\"></span>\n      </div>\n      <div class=\"score\"><strong>${r.score}%</strong><span>strong recall</span></div>\n    </div>`;\n  }).join(\"\"):'<div class=\"empty\">No groups have been tested yet.</div>';\n\n  document.getElementById(\"untestedGroups\").innerHTML=untested.length?untested.map(r=>\n    `<div class=\"check-item\"><strong>${esc(r.name)}</strong><span class=\"muted small\">${r.total} questions</span></div>`\n  ).join(\"\"):'<div class=\"muted small\">Every group has at least one result.</div>';\n}\nfunction selectedCustomGroups(){\n  return [...document.querySelectorAll(\"[data-custom-group]:checked\")].map(x=>x.dataset.customGroup);\n}\n\ndocument.getElementById(\"unlockBtn\").onclick=async()=>{\n  try{await unlockBank()}catch(e){alert(e.message||String(e))}\n};\ndocument.getElementById(\"customBtn\").onclick=showCustom;\ndocument.getElementById(\"progressBtn\").onclick=showOverallProgress;\ndocument.getElementById(\"closeCustomBtn\").onclick=openDueReviews;\ndocument.getElementById(\"closeProgressBtn\").onclick=openDueReviews;\ndocument.getElementById(\"skipBtn\").onclick=skipCurrent;\ndocument.getElementById(\"customAllBtn\").onclick=()=>document.querySelectorAll(\"[data-custom-group]\").forEach(x=>x.checked=true);\ndocument.getElementById(\"customNoneBtn\").onclick=()=>document.querySelectorAll(\"[data-custom-group]\").forEach(x=>x.checked=false);\ndocument.getElementById(\"startCustomBtn\").onclick=()=>{\n  const ids=selectedCustomGroups();\n  if(!ids.length){alert(\"Select at least one group.\");return;}\n  const set=new Set(ids);\n  startSession(cards().filter(c=>set.has(c.groupId)),\"custom\",ids);\n};\ndocument.getElementById(\"exportBtn\").onclick=()=>{\n  if(!state){alert(\"Unlock a bank first.\");return;}\n  download((bank.module?.id||\"study\")+\"-progress.json\",JSON.stringify({\n    format:\"question-bank-study-progress-v1\",\n    module:bank.module,\n    bankVersion:bank.bankVersion,\n    state\n  },null,2));\n};\ndocument.getElementById(\"importBtn\").onclick=()=>document.getElementById(\"importInput\").click();\ndocument.getElementById(\"importInput\").onchange=async e=>{\n  const f=e.target.files?.[0];if(!f)return;\n  try{\n    if(!bank)throw new Error(\"Unlock the matching bank before importing progress.\");\n    const obj=JSON.parse(await f.text());\n    if(obj.format!==\"question-bank-study-progress-v1\")throw new Error(\"Unsupported progress file.\");\n    if(obj.module?.id!==bank.module?.id)throw new Error(\"This progress file belongs to a different module.\");\n    state={...defaultState(),...(obj.state||{})};\n    saveState();renderSidebar();openDueReviews();\n  }catch(err){alert(err.message||String(err))}\n  e.target.value=\"\";\n};\n\nstate=defaultState();\nrenderSidebar();\n<\/script>\n</body>\n</html>\n";
+
+function uid(prefix){
+  if(window.crypto && crypto.randomUUID) return prefix+"_"+crypto.randomUUID();
+  return prefix+"_"+Date.now().toString(36)+"_"+Math.random().toString(36).slice(2);
+}
+function emptyDraft(){
+  return {
+    groupId:"",
+    type:"flashcard",
+    questionText:"",
+    questionImage:null,
+    answerText:"",
+    answerImage:null,
+    choices:[
+      {id:uid("choice"),text:"",image:null,correct:true},
+      {id:uid("choice"),text:"",image:null,correct:false},
+      {id:uid("choice"),text:"",image:null,correct:false},
+      {id:uid("choice"),text:"",image:null,correct:false}
+    ],
+    shuffleChoices:true,
+    pairs:[
+      {id:uid("pair"),leftText:"",leftImage:null,rightText:"",rightImage:null},
+      {id:uid("pair"),leftText:"",leftImage:null,rightText:"",rightImage:null}
+    ]
+  };
+}
+function blankProject(){
+  return {format:PROJECT_FORMAT,moduleName:"",groups:[],questions:[],createdAt:new Date().toISOString(),updatedAt:new Date().toISOString()};
+}
+function loadProject(){
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY);
+    if(!raw) return blankProject();
+    const data=JSON.parse(raw);
+    if(!data || !Array.isArray(data.groups) || !Array.isArray(data.questions)) return blankProject();
+    return {...blankProject(),...data,format:PROJECT_FORMAT};
+  }catch(_){ return blankProject(); }
+}
+function saveProject(){
+  project.moduleName=document.getElementById("moduleName")?.value ?? project.moduleName;
+  project.updatedAt=new Date().toISOString();
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(project));
+  renderSidebar();
+}
+function esc(s){
+  return String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+}
+function groupName(id){
+  return project.groups.find(g=>g.id===id)?.name || "No Group";
+}
+function typeLabel(type){
+  return ({
+    "flashcard":"Flash Card",
+    "multiple-choice":"Multiple Choice",
+    "multiple-select":"Pick Multiple",
+    "matching":"Matching / Drag & Drop"
+  })[type] || type;
+}
+function download(name,text,type="application/json"){
+  const blob=new Blob([text],{type});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+}
+async function fileToDataUrl(file){
+  return new Promise((resolve,reject)=>{
+    const reader=new FileReader();
+    reader.onload=()=>resolve(reader.result);
+    reader.onerror=reject;
+    reader.readAsDataURL(file);
+  });
+}
+function syncDraftFromForm(){
+  draft.groupId=document.getElementById("questionGroup").value;
+  draft.type=document.getElementById("questionType").value;
+  draft.questionText=document.getElementById("questionText").value;
+  draft.answerText=document.getElementById("flashAnswerText").value;
+  draft.shuffleChoices=document.getElementById("shuffleChoices").checked;
+
+  document.querySelectorAll("[data-choice-id]").forEach(row=>{
+    const id=row.dataset.choiceId;
+    const c=draft.choices.find(x=>x.id===id);
+    if(!c)return;
+    c.text=row.querySelector("[data-choice-text]").value;
+    c.correct=row.querySelector("[data-choice-correct]").checked;
+  });
+
+  document.querySelectorAll("[data-pair-id]").forEach(row=>{
+    const id=row.dataset.pairId;
+    const p=draft.pairs.find(x=>x.id===id);
+    if(!p)return;
+    p.leftText=row.querySelector("[data-left-text]").value;
+    p.rightText=row.querySelector("[data-right-text]").value;
+  });
+}
+function fillFormFromDraft(){
+  renderGroupSelects();
+  document.getElementById("questionGroup").value=draft.groupId || project.groups[0]?.id || "";
+  draft.groupId=document.getElementById("questionGroup").value;
+  document.getElementById("questionType").value=draft.type;
+  document.getElementById("questionText").value=draft.questionText;
+  document.getElementById("flashAnswerText").value=draft.answerText;
+  document.getElementById("shuffleChoices").checked=draft.shuffleChoices!==false;
+  renderImagePreview("question",draft.questionImage);
+  renderImagePreview("flashAnswer",draft.answerImage);
+  renderChoiceEditor();
+  renderPairEditor();
+  updateEditorType();
+}
+function renderImagePreview(kind,data){
+  const img=document.getElementById(kind+"ImagePreview");
+  const remove=document.getElementById("remove"+kind[0].toUpperCase()+kind.slice(1)+"ImageBtn");
+  if(data){
+    img.src=data;img.classList.remove("hidden");remove.classList.remove("hidden");
+  }else{
+    img.removeAttribute("src");img.classList.add("hidden");remove.classList.add("hidden");
+  }
+}
+function renderSidebar(){
+  document.getElementById("statGroups").textContent=project.groups.length;
+  document.getElementById("statQuestions").textContent=project.questions.length;
+  document.getElementById("statIssues").textContent=validateProject().length;
+  const counts={};
+  project.questions.forEach(q=>counts[q.groupId]=(counts[q.groupId]||0)+1);
+  const el=document.getElementById("sidebarGroups");
+  el.innerHTML=project.groups.length?project.groups.map((g,i)=>`
+    <div class="group-pill"><strong>${i+1}. ${esc(g.name)}</strong><span>${counts[g.id]||0} questions</span></div>
+  `).join(""):`<div class="small muted">No groups yet.</div>`;
+}
+function renderGroupSelects(){
+  const opts=project.groups.map((g,i)=>`<option value="${esc(g.id)}">${i+1}. ${esc(g.name)}</option>`).join("");
+  document.getElementById("questionGroup").innerHTML=opts || `<option value="">Create a group first</option>`;
+  document.getElementById("bankGroupFilter").innerHTML=`<option value="">All Groups</option>${opts}`;
+}
+function renderChoiceEditor(){
+  const list=document.getElementById("choicesList");
+  list.innerHTML=draft.choices.map((c,i)=>`
+    <div class="choice" data-choice-id="${esc(c.id)}">
+      <div class="choice-head">
+        <strong>Answer ${i+1}</strong>
+        <button class="btn bad" type="button" data-remove-choice="${esc(c.id)}">Remove</button>
+      </div>
+      <div class="choice-body">
+        <div class="correct-toggle">
+          <input data-choice-correct type="${draft.type==="multiple-choice"?"radio":"checkbox"}" name="correctChoice" ${c.correct?"checked":""} title="Mark correct">
+        </div>
+        <div>
+          <textarea data-choice-text placeholder="Type answer choice...">${esc(c.text)}</textarea>
+          <div class="image-box">
+            <div class="image-actions">
+              <button class="btn" type="button" data-choice-image="${esc(c.id)}">Insert Answer Image</button>
+              ${c.image?`<button class="btn bad" type="button" data-choice-remove-image="${esc(c.id)}">Remove Image</button>`:""}
+              <input class="file-input" type="file" accept="image/*" data-choice-file="${esc(c.id)}">
+            </div>
+            ${c.image?`<img src="${c.image}" alt="Choice image preview">`:""}
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join("");
+
+  list.querySelectorAll("[data-remove-choice]").forEach(b=>b.onclick=()=>{
+    syncDraftFromForm();
+    if(draft.choices.length<=2){alert("Keep at least two answer choices.");return;}
+    draft.choices=draft.choices.filter(c=>c.id!==b.dataset.removeChoice);
+    if(draft.type==="multiple-choice" && !draft.choices.some(c=>c.correct)) draft.choices[0].correct=true;
+    renderChoiceEditor();
+  });
+  list.querySelectorAll("[data-choice-image]").forEach(b=>b.onclick=()=>{
+    list.querySelector(`[data-choice-file="${CSS.escape(b.dataset.choiceImage)}"]`).click();
+  });
+  list.querySelectorAll("[data-choice-file]").forEach(inp=>inp.onchange=async()=>{
+    const f=inp.files?.[0]; if(!f)return;
+    const c=draft.choices.find(x=>x.id===inp.dataset.choiceFile);
+    if(c){c.image=await fileToDataUrl(f);renderChoiceEditor();}
+  });
+  list.querySelectorAll("[data-choice-remove-image]").forEach(b=>b.onclick=()=>{
+    const c=draft.choices.find(x=>x.id===b.dataset.choiceRemoveImage);
+    if(c){c.image=null;renderChoiceEditor();}
+  });
+  if(draft.type==="multiple-choice"){
+    list.querySelectorAll("[data-choice-correct]").forEach(r=>r.onchange=()=>{
+      list.querySelectorAll("[data-choice-correct]").forEach(x=>x.checked=(x===r));
+      syncDraftFromForm();
+    });
+  }
+}
+function renderPairEditor(){
+  const list=document.getElementById("pairsList");
+  list.innerHTML=draft.pairs.map((p,i)=>`
+    <div class="match-pair" data-pair-id="${esc(p.id)}">
+      <div class="choice-head">
+        <strong>Pair ${i+1}</strong>
+        <button class="btn bad" type="button" data-remove-pair="${esc(p.id)}">Remove</button>
+      </div>
+      <div class="match-grid">
+        <div>
+          <textarea data-left-text placeholder="Left-side answer / label...">${esc(p.leftText)}</textarea>
+          <div class="image-box">
+            <div class="image-actions">
+              <button class="btn" type="button" data-left-image="${esc(p.id)}">Insert Image</button>
+              ${p.leftImage?`<button class="btn bad" type="button" data-left-remove="${esc(p.id)}">Remove Image</button>`:""}
+              <input class="file-input" type="file" accept="image/*" data-left-file="${esc(p.id)}">
+            </div>
+            ${p.leftImage?`<img src="${p.leftImage}" alt="Left match image">`:""}
+          </div>
+        </div>
+        <div class="arrow">→</div>
+        <div>
+          <textarea data-right-text placeholder="Correct matching answer...">${esc(p.rightText)}</textarea>
+          <div class="image-box">
+            <div class="image-actions">
+              <button class="btn" type="button" data-right-image="${esc(p.id)}">Insert Image</button>
+              ${p.rightImage?`<button class="btn bad" type="button" data-right-remove="${esc(p.id)}">Remove Image</button>`:""}
+              <input class="file-input" type="file" accept="image/*" data-right-file="${esc(p.id)}">
+            </div>
+            ${p.rightImage?`<img src="${p.rightImage}" alt="Right match image">`:""}
+          </div>
+        </div>
+      </div>
+    </div>
+  `).join("");
+
+  list.querySelectorAll("[data-remove-pair]").forEach(b=>b.onclick=()=>{
+    syncDraftFromForm();
+    if(draft.pairs.length<=2){alert("Keep at least two matching pairs.");return;}
+    draft.pairs=draft.pairs.filter(p=>p.id!==b.dataset.removePair);
+    renderPairEditor();
+  });
+  const wire=(side)=>{
+    list.querySelectorAll(`[data-${side}-image]`).forEach(b=>b.onclick=()=>{
+      list.querySelector(`[data-${side}-file="${CSS.escape(b.dataset[side+"Image"])}"]`).click();
+    });
+    list.querySelectorAll(`[data-${side}-file]`).forEach(inp=>inp.onchange=async()=>{
+      const f=inp.files?.[0]; if(!f)return;
+      const p=draft.pairs.find(x=>x.id===inp.dataset[side+"File"]);
+      if(p){p[side+"Image"]=await fileToDataUrl(f);renderPairEditor();}
+    });
+    list.querySelectorAll(`[data-${side}-remove]`).forEach(b=>b.onclick=()=>{
+      const p=draft.pairs.find(x=>x.id===b.dataset[side+"Remove"]);
+      if(p){p[side+"Image"]=null;renderPairEditor();}
+    });
+  };
+  wire("left");wire("right");
+}
+function updateEditorType(){
+  const t=document.getElementById("questionType").value;
+  draft.type=t;
+  document.getElementById("flashcardEditor").classList.toggle("hidden",t!=="flashcard");
+  document.getElementById("choicesEditor").classList.toggle("hidden",!["multiple-choice","multiple-select"].includes(t));
+  document.getElementById("matchingEditor").classList.toggle("hidden",t!=="matching");
+  document.getElementById("choiceInstruction").textContent=
+    t==="multiple-choice"?"Choose exactly one correct answer.":"Choose every answer that should count as correct.";
+  renderChoiceEditor();
+}
+function questionIssues(q){
+  const issues=[];
+  if(!q.groupId || !project.groups.some(g=>g.id===q.groupId)) issues.push("Question has no valid group.");
+  if(!String(q.questionText||"").trim() && !q.questionImage) issues.push("Question needs text or an image.");
+  if(q.type==="flashcard"){
+    if(!String(q.answerText||"").trim() && !q.answerImage) issues.push("Flash card needs answer text or an answer image.");
+  }else if(q.type==="multiple-choice" || q.type==="multiple-select"){
+    if(!Array.isArray(q.choices) || q.choices.length<2) issues.push("Question needs at least two answer choices.");
+    else{
+      q.choices.forEach((c,i)=>{if(!String(c.text||"").trim()&&!c.image)issues.push(`Answer ${i+1} is blank.`)});
+      const correct=q.choices.filter(c=>c.correct).length;
+      if(q.type==="multiple-choice" && correct!==1) issues.push("Multiple choice needs exactly one correct answer.");
+      if(q.type==="multiple-select" && correct<1) issues.push("Pick Multiple needs at least one correct answer.");
+    }
+  }else if(q.type==="matching"){
+    if(!Array.isArray(q.pairs)||q.pairs.length<2) issues.push("Matching needs at least two pairs.");
+    else q.pairs.forEach((p,i)=>{
+      if(!String(p.leftText||"").trim()&&!p.leftImage)issues.push(`Pair ${i+1} left side is blank.`);
+      if(!String(p.rightText||"").trim()&&!p.rightImage)issues.push(`Pair ${i+1} right side is blank.`);
+    });
+  }
+  return issues;
+}
+function validateProject(){
+  const issues=[];
+  if(!String(project.moduleName||"").trim()) issues.push({scope:"Project",message:"Module / course name is blank."});
+  if(!project.groups.length) issues.push({scope:"Project",message:"No groups have been created."});
+  project.groups.forEach((g,i)=>{
+    if(!String(g.name||"").trim()) issues.push({scope:`Group ${i+1}`,message:"Group name is blank."});
+  });
+  project.questions.forEach((q,i)=>questionIssues(q).forEach(m=>issues.push({scope:`Question ${i+1}`,message:m,id:q.id})));
+  return issues;
+}
+function saveCurrentQuestion(){
+  syncDraftFromForm();
+  if(!project.groups.length){alert("Create a group first.");showView("groups");return;}
+  const q={
+    id:editingId || uid("card"),
+    groupId:draft.groupId,
+    type:draft.type,
+    questionText:draft.questionText.trim(),
+    questionImage:draft.questionImage,
+    answerText:draft.type==="flashcard"?draft.answerText.trim():null,
+    answerImage:draft.type==="flashcard"?draft.answerImage:null,
+    choices:["multiple-choice","multiple-select"].includes(draft.type)
+      ? draft.choices.map(c=>({id:c.id,text:c.text.trim(),image:c.image,correct:!!c.correct}))
+      : null,
+    shuffleChoices:["multiple-choice","multiple-select"].includes(draft.type)?!!draft.shuffleChoices:null,
+    pairs:draft.type==="matching"
+      ? draft.pairs.map(p=>({id:p.id,leftText:p.leftText.trim(),leftImage:p.leftImage,rightText:p.rightText.trim(),rightImage:p.rightImage}))
+      : null,
+    updatedAt:new Date().toISOString()
+  };
+  const problems=questionIssues(q);
+  if(problems.length && !confirm("This question has validation issues:\n\n- "+problems.join("\n- ")+"\n\nSave it anyway?")) return;
+  const idx=project.questions.findIndex(x=>x.id===q.id);
+  if(idx>=0) project.questions[idx]={...project.questions[idx],...q};
+  else project.questions.push({...q,createdAt:new Date().toISOString()});
+  saveProject();
+  newQuestion();
+  showView("bank");
+}
+function newQuestion(){
+  editingId=null;
+  draft=emptyDraft();
+  draft.groupId=project.groups[0]?.id || "";
+  fillFormFromDraft();
+  document.getElementById("saveQuestionBtn").textContent="Save Question";
+}
+function editQuestion(id){
+  const q=project.questions.find(x=>x.id===id); if(!q)return;
+  editingId=id;
+  draft={
+    ...emptyDraft(),
+    groupId:q.groupId,type:q.type,questionText:q.questionText||"",questionImage:q.questionImage||null,
+    answerText:q.answerText||"",answerImage:q.answerImage||null,
+    choices:q.choices?JSON.parse(JSON.stringify(q.choices)):emptyDraft().choices,
+    shuffleChoices:q.shuffleChoices!==false,
+    pairs:q.pairs?JSON.parse(JSON.stringify(q.pairs)):emptyDraft().pairs
+  };
+  fillFormFromDraft();
+  document.getElementById("saveQuestionBtn").textContent="Update Question";
+  showView("questions");
+}
+function duplicateQuestion(id){
+  const q=project.questions.find(x=>x.id===id); if(!q)return;
+  const copy=JSON.parse(JSON.stringify(q));
+  copy.id=uid("card");copy.createdAt=new Date().toISOString();copy.updatedAt=copy.createdAt;
+  if(copy.choices) copy.choices=copy.choices.map(c=>({...c,id:uid("choice")}));
+  if(copy.pairs) copy.pairs=copy.pairs.map(p=>({...p,id:uid("pair")}));
+  project.questions.push(copy);saveProject();renderQuestionBank();
+}
+function deleteQuestion(id){
+  const q=project.questions.find(x=>x.id===id); if(!q)return;
+  if(!confirm("Delete this question?\n\n"+(q.questionText||"[image question]")))return;
+  project.questions=project.questions.filter(x=>x.id!==id);saveProject();renderQuestionBank();
+}
+function renderQuestionBank(){
+  renderGroupSelects();
+  const search=document.getElementById("bankSearch").value.trim().toLowerCase();
+  const gf=document.getElementById("bankGroupFilter").value;
+  const tf=document.getElementById("bankTypeFilter").value;
+  let qs=project.questions.filter(q=>{
+    if(gf&&q.groupId!==gf)return false;
+    if(tf&&q.type!==tf)return false;
+    const hay=(q.questionText+" "+groupName(q.groupId)+" "+typeLabel(q.type)).toLowerCase();
+    return !search||hay.includes(search);
+  });
+  const el=document.getElementById("questionList");
+  if(!qs.length){el.innerHTML='<div class="empty">No questions match the current filters.</div>';return;}
+  el.innerHTML=qs.map((q)=>{
+    const issues=questionIssues(q).length;
+    return `<div class="qrow">
+      <div class="qrow-top">
+        <div>
+          <div class="qrow-title">${esc(q.questionText||"[Image-only question]")}</div>
+          <div class="qrow-meta">
+            <span class="badge">${esc(groupName(q.groupId))}</span>
+            <span class="badge">${esc(typeLabel(q.type))}</span>
+            ${q.questionImage?'<span class="badge">Question image</span>':""}
+            ${issues?`<span class="badge" style="color:var(--warn)">${issues} issue${issues===1?"":"s"}</span>`:""}
+          </div>
+        </div>
+      </div>
+      <div class="qrow-actions">
+        <button class="btn" data-edit="${esc(q.id)}">Edit</button>
+        <button class="btn" data-preview="${esc(q.id)}">Preview</button>
+        <button class="btn" data-duplicate="${esc(q.id)}">Duplicate</button>
+        <button class="btn bad" data-delete="${esc(q.id)}">Delete</button>
+      </div>
+    </div>`;
+  }).join("");
+  el.querySelectorAll("[data-edit]").forEach(b=>b.onclick=()=>editQuestion(b.dataset.edit));
+  el.querySelectorAll("[data-preview]").forEach(b=>b.onclick=()=>previewQuestion(project.questions.find(q=>q.id===b.dataset.preview)));
+  el.querySelectorAll("[data-duplicate]").forEach(b=>b.onclick=()=>duplicateQuestion(b.dataset.duplicate));
+  el.querySelectorAll("[data-delete]").forEach(b=>b.onclick=()=>deleteQuestion(b.dataset.delete));
+}
+function renderGroupManager(){
+  const el=document.getElementById("groupManager");
+  if(!project.groups.length){el.innerHTML='<div class="empty">No groups yet.</div>';return;}
+  el.innerHTML=project.groups.map((g,i)=>{
+    const count=project.questions.filter(q=>q.groupId===g.id).length;
+    return `<div class="qrow">
+      <div class="row">
+        <strong style="width:28px">${i+1}.</strong>
+        <input type="text" value="${esc(g.name)}" data-group-name="${esc(g.id)}" style="flex:1">
+        <span class="small muted">${count} questions</span>
+        <button class="btn bad" data-delete-group="${esc(g.id)}">Delete</button>
+      </div>
+    </div>`;
+  }).join("");
+  el.querySelectorAll("[data-group-name]").forEach(inp=>inp.onchange=()=>{
+    const g=project.groups.find(x=>x.id===inp.dataset.groupName);
+    if(g){g.name=inp.value.trim();saveProject();renderAll();}
+  });
+  el.querySelectorAll("[data-delete-group]").forEach(b=>b.onclick=()=>{
+    const id=b.dataset.deleteGroup;
+    const g=project.groups.find(x=>x.id===id);
+    const count=project.questions.filter(q=>q.groupId===id).length;
+    if(count){alert(`"${g.name}" still contains ${count} question(s). Move or delete those questions first.`);return;}
+    if(confirm(`Delete group "${g.name}"?`)){project.groups=project.groups.filter(x=>x.id!==id);saveProject();renderAll();}
+  });
+}
+function addGroup(){
+  const inp=document.getElementById("newGroupName");
+  const name=inp.value.trim();
+  if(!name)return;
+  if(project.groups.some(g=>g.name.toLowerCase()===name.toLowerCase())){alert("A group with that name already exists.");return;}
+  const g={id:uid("group"),name,createdAt:new Date().toISOString()};
+  project.groups.push(g);inp.value="";saveProject();
+  if(!draft.groupId)draft.groupId=g.id;
+  renderAll();
+}
+function renderValidation(){
+  const issues=validateProject();
+  const el=document.getElementById("validationReport");
+  if(!issues.length){el.innerHTML='<div class="ok"><strong>PASS</strong><br>No validation problems found.</div>';return;}
+  el.innerHTML=issues.map(i=>`<div class="issue"><strong>${esc(i.scope)}</strong><br>${esc(i.message)}</div>`).join("");
+}
+function normalizedBank(bankVersion=1){
+  return {
+    schemaVersion:1,
+    bankVersion:Number(bankVersion)||1,
+    module:{
+      id:"module_"+(project.moduleName||"untitled").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,""),
+      name:project.moduleName||"Untitled Module"
+    },
+    groups:project.groups.map((g,i)=>({id:g.id,name:g.name,order:i+1})),
+    cards:project.questions.map((q,i)=>({
+      id:q.id,groupId:q.groupId,type:q.type,order:i+1,status:questionIssues(q).length?"incomplete":"complete",
+      question:{text:q.questionText||"",image:q.questionImage||null},
+      ...(q.type==="flashcard"?{answer:{text:q.answerText||"",image:q.answerImage||null}}:{}),
+      ...(q.type==="multiple-choice"||q.type==="multiple-select"?{
+        choices:q.choices.map(c=>({id:c.id,text:c.text,image:c.image,correct:!!c.correct})),
+        shuffleChoices:q.shuffleChoices!==false
+      }:{}),
+      ...(q.type==="matching"?{
+        pairs:q.pairs.map(p=>({id:p.id,left:{text:p.leftText,image:p.leftImage},right:{text:p.rightText,image:p.rightImage}}))
+      }:{})
+    })),
+    generatedAt:new Date().toISOString()
+  };
+}
+function bytesToBase64(bytes){
+  let binary="";
+  const chunk=0x8000;
+  for(let i=0;i<bytes.length;i+=chunk){
+    binary+=String.fromCharCode(...bytes.subarray(i,Math.min(i+chunk,bytes.length)));
+  }
+  return btoa(binary);
+}
+async function encryptBank(bank,passphrase,iterations){
+  if(!window.crypto?.subtle) throw new Error("Web Crypto is not available in this browser.");
+
+  const enc=new TextEncoder();
+  const salt=crypto.getRandomValues(new Uint8Array(16));
+  const iv=crypto.getRandomValues(new Uint8Array(12));
+
+  const material=await crypto.subtle.importKey(
+    "raw",enc.encode(passphrase),"PBKDF2",false,["deriveKey"]
+  );
+
+  const key=await crypto.subtle.deriveKey(
+    {name:"PBKDF2",salt,iterations,hash:"SHA-256"},
+    material,
+    {name:"AES-GCM",length:256},
+    false,
+    ["encrypt"]
+  );
+
+  const plaintext=enc.encode(JSON.stringify(bank));
+  const encrypted=await crypto.subtle.encrypt(
+    {name:"AES-GCM",iv},
+    key,
+    plaintext
+  );
+
+  return {
+    format:"question-bank-encrypted-v1",
+    kdf:{
+      name:"PBKDF2",
+      hash:"SHA-256",
+      iterations,
+      salt:bytesToBase64(salt)
+    },
+    cipher:{
+      name:"AES-GCM",
+      keyLength:256,
+      iv:bytesToBase64(iv)
+    },
+    ciphertext:bytesToBase64(new Uint8Array(encrypted))
+  };
+}
+
+function replaceAllLiteral(text,needle,value){
+  return String(text).split(needle).join(String(value));
+}
+function safeRepoName(v,fallback){
+  const s=String(v||"").trim().replace(/[^A-Za-z0-9._-]+/g,"-").replace(/^-+|-+$/g,"");
+  return s||fallback;
+}
+function deploymentConfig(){
+  const user=safeRepoName(document.getElementById("deployGithubUser").value,"Almighty1564");
+  const backendRepo=safeRepoName(document.getElementById("deployBackendRepo").value,"flashcard-bank");
+  const frontendRepo=safeRepoName(document.getElementById("deployFrontendRepo").value,"flashcard-srs");
+  const backendUrl=`https://${user.toLowerCase()}.github.io/${backendRepo}/`;
+  const frontendUrl=`https://${user.toLowerCase()}.github.io/${frontendRepo}/`;
+  return {user,backendRepo,frontendRepo,backendUrl,frontendUrl};
+}
+function renderDeployUrlPreview(){
+  const el=document.getElementById("deployUrlPreview");
+  if(!el)return;
+  const c=deploymentConfig();
+  el.innerHTML=`Backend Pages URL: <code>${esc(c.backendUrl)}</code><br>Frontend Pages URL: <code>${esc(c.frontendUrl)}</code>`;
+}
+function generatedBackendIndex(){
+  return replaceAllLiteral(
+    BACKEND_TEMPLATE,
+    "__MODULE_NAME__",
+    project.moduleName||"Question Bank"
+  );
+}
+function generatedFrontendIndex(){
+  const c=deploymentConfig();
+  let out=replaceAllLiteral(
+    FRONTEND_TEMPLATE,
+    "__MODULE_NAME__",
+    project.moduleName||"Question Bank"
+  );
+  out=replaceAllLiteral(out,"__BACKEND_URL__",c.backendUrl);
+  return out;
+}
+function textBytes(text){
+  return new TextEncoder().encode(String(text));
+}
+function concatBytes(parts){
+  let total=0;
+  for(const p of parts)total+=p.length;
+  const out=new Uint8Array(total);
+  let offset=0;
+  for(const p of parts){out.set(p,offset);offset+=p.length}
+  return out;
+}
+function u16(n){
+  return new Uint8Array([n&255,(n>>>8)&255]);
+}
+function u32(n){
+  return new Uint8Array([n&255,(n>>>8)&255,(n>>>16)&255,(n>>>24)&255]);
+}
+let crcTableCache=null;
+function crc32(bytes){
+  if(!crcTableCache){
+    crcTableCache=new Uint32Array(256);
+    for(let n=0;n<256;n++){
+      let c=n;
+      for(let k=0;k<8;k++){
+        c=(c&1)?(0xEDB88320^(c>>>1)):(c>>>1);
+      }
+      crcTableCache[n]=c>>>0;
+    }
+  }
+  let crc=0xFFFFFFFF;
+  for(const b of bytes){
+    crc=crcTableCache[(crc^b)&255]^(crc>>>8);
+  }
+  return (crc^0xFFFFFFFF)>>>0;
+}
+function dosDateTime(date=new Date()){
+  const year=Math.max(1980,date.getFullYear());
+  const time=((date.getHours()&31)<<11)|((date.getMinutes()&63)<<5)|(Math.floor(date.getSeconds()/2)&31);
+  const day=(((year-1980)&127)<<9)|(((date.getMonth()+1)&15)<<5)|(date.getDate()&31);
+  return {time,day};
+}
+function makeZip(files){
+  const locals=[];
+  const centrals=[];
+  let offset=0;
+  const dt=dosDateTime();
+
+  for(const file of files){
+    const nameBytes=textBytes(String(file.name).replace(/\\/g,"/"));
+    const data=file.data instanceof Uint8Array?file.data:textBytes(file.data);
+    const crc=crc32(data);
+
+    const local=concatBytes([
+      u32(0x04034b50),
+      u16(20),
+      u16(0x0800),
+      u16(0),
+      u16(dt.time),
+      u16(dt.day),
+      u32(crc),
+      u32(data.length),
+      u32(data.length),
+      u16(nameBytes.length),
+      u16(0),
+      nameBytes,
+      data
+    ]);
+    locals.push(local);
+
+    const central=concatBytes([
+      u32(0x02014b50),
+      u16(20),
+      u16(20),
+      u16(0x0800),
+      u16(0),
+      u16(dt.time),
+      u16(dt.day),
+      u32(crc),
+      u32(data.length),
+      u32(data.length),
+      u16(nameBytes.length),
+      u16(0),
+      u16(0),
+      u16(0),
+      u16(0),
+      u32(0),
+      u32(offset),
+      nameBytes
+    ]);
+    centrals.push(central);
+    offset+=local.length;
+  }
+
+  const localBytes=concatBytes(locals);
+  const centralBytes=concatBytes(centrals);
+  const end=concatBytes([
+    u32(0x06054b50),
+    u16(0),u16(0),
+    u16(files.length),u16(files.length),
+    u32(centralBytes.length),
+    u32(localBytes.length),
+    u16(0)
+  ]);
+
+  return new Blob([localBytes,centralBytes,end],{type:"application/zip"});
+}
+function downloadBlob(name,blob){
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement("a");
+  a.href=url;
+  a.download=name;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),1500);
+}
+function deploymentReadme(){
+  const c=deploymentConfig();
+  return `QUESTION BANK DEPLOYMENT PACKAGE
+
+MODULE
+------
+${project.moduleName||"Untitled Module"}
+
+BACKEND REPOSITORY
+------------------
+GitHub:
+https://github.com/${c.user}/${c.backendRepo}
+
+GitHub Pages:
+${c.backendUrl}
+
+Upload/replace these files in the repository ROOT:
+    index.html
+    manifest.json
+    master.enc.json
+
+FRONTEND REPOSITORY
+-------------------
+GitHub:
+https://github.com/${c.user}/${c.frontendRepo}
+
+GitHub Pages:
+${c.frontendUrl}
+
+Upload/replace:
+    index.html
+
+The generated frontend is already configured to load:
+    ${c.backendUrl}
+
+DO NOT UPLOAD
+-------------
+Do not upload your editable builder project JSON.
+Do not upload the bank passphrase.
+Do not upload plaintext cards-master.json.
+
+UPDATING THIS MODULE LATER
+--------------------------
+1. Open/import the same builder project.
+2. Edit questions/groups.
+3. Increment Bank Version.
+4. Prepare Encrypted Backend Files again.
+5. Generate a new deployment ZIP.
+6. Replace the repository files.
+
+STABLE QUESTION IDS
+-------------------
+Editing a question does not change its ID, so SRS progress remains attached.
+`;
+}
+function ensureDeploymentReady(){
+  if(!preparedEncrypted){
+    alert("Prepare the encrypted backend files first.");
+    return false;
+  }
+  renderDeployUrlPreview();
+  return true;
+}
+function backendRepoFiles(prefix=""){
+  return [
+    {name:prefix+"index.html",data:generatedBackendIndex()},
+    {name:prefix+"manifest.json",data:preparedEncrypted.manifest},
+    {name:prefix+"master.enc.json",data:preparedEncrypted.encrypted}
+  ];
+}
+function frontendRepoFiles(prefix=""){
+  return [
+    {name:prefix+"index.html",data:generatedFrontendIndex()}
+  ];
+}
+function previewQuestion(q=null){
+  if(!q){
+    syncDraftFromForm();
+    q={
+      groupId:draft.groupId,type:draft.type,questionText:draft.questionText,questionImage:draft.questionImage,
+      answerText:draft.answerText,answerImage:draft.answerImage,choices:draft.choices,pairs:draft.pairs
+    };
+  }
+  if(!q)return;
+  const el=document.getElementById("previewContent");
+  let body=`<div class="preview-card">
+    <div class="small muted">${esc(groupName(q.groupId))} • ${esc(typeLabel(q.type))}</div>
+    <h3>${esc(q.questionText||"[Image-only question]")}</h3>
+    ${q.questionImage?`<img src="${q.questionImage}" alt="Question image">`:""}`;
+  if(q.type==="flashcard"){
+    body+=`<div class="preview-answer"><strong>Answer</strong><div>${esc(q.answerText||"")}</div>${q.answerImage?`<img src="${q.answerImage}" alt="Answer image">`:""}</div>`;
+  }else if(q.type==="multiple-choice"||q.type==="multiple-select"){
+    body+=`<div class="preview-answer"><strong>Choices</strong>${(q.choices||[]).map(c=>`<div class="preview-choice ${c.correct?"correct":""}">${c.correct?"✓ ":""}${esc(c.text||"[Image answer]")}${c.image?`<br><img src="${c.image}" alt="Answer choice image">`:""}</div>`).join("")}</div>`;
+  }else if(q.type==="matching"){
+    body+=`<div class="preview-answer"><strong>Correct Matching Pairs</strong>${(q.pairs||[]).map(p=>`<div class="preview-choice">${esc(p.leftText||"[Image]")} → ${esc(p.rightText||"[Image]")}</div>`).join("")}</div>`;
+  }
+  body+="</div>";
+  el.innerHTML=body;
+  showView("preview");
+}
+function showView(name){
+  const map={questions:"questionsView",bank:"bankView",groups:"groupsView",validate:"validateView",project:"projectView",preview:"previewView"};
+  Object.values(map).forEach(id=>document.getElementById(id).classList.add("hidden"));
+  document.getElementById(map[name]).classList.remove("hidden");
+  document.querySelectorAll(".navbtn").forEach(b=>b.classList.toggle("active",b.dataset.view===name));
+  const titles={
+    questions:["Create Question","Create a new question or edit an existing one."],
+    bank:["Question Bank","Search, edit, duplicate, preview, or delete questions."],
+    groups:["Manage Groups","Create and organize groups for this module."],
+    validate:["Validate Bank","Find incomplete or invalid questions before building."],
+    project:["Project / Export","Back up the project or generate repository-ready deployment files."],
+    preview:["Question Preview","Preview how the authored content is structured."]
+  };
+  document.getElementById("viewTitle").textContent=titles[name][0];
+  document.getElementById("viewSub").textContent=titles[name][1];
+  const editingControls=name==="questions";
+  document.getElementById("newQuestionBtn").classList.toggle("hidden",!editingControls);
+  document.getElementById("previewBtn").classList.toggle("hidden",!editingControls);
+  document.getElementById("saveQuestionBtn").classList.toggle("hidden",!editingControls);
+  if(name==="bank")renderQuestionBank();
+  if(name==="groups")renderGroupManager();
+  if(name==="validate")renderValidation();
+}
+function renderAll(){
+  document.getElementById("moduleName").value=project.moduleName||"";
+  renderSidebar();renderGroupSelects();renderGroupManager();renderQuestionBank();
+  if(!draft.groupId && project.groups[0])draft.groupId=project.groups[0].id;
+  fillFormFromDraft();
+}
+
+document.getElementById("moduleName").addEventListener("input",()=>{project.moduleName=document.getElementById("moduleName").value;saveProject();});
+document.querySelectorAll(".navbtn").forEach(b=>b.onclick=()=>showView(b.dataset.view));
+document.getElementById("newQuestionBtn").onclick=()=>{newQuestion();showView("questions");};
+document.getElementById("saveQuestionBtn").onclick=saveCurrentQuestion;
+document.getElementById("previewBtn").onclick=()=>previewQuestion();
+document.getElementById("closePreviewBtn").onclick=()=>showView(editingId?"questions":"bank");
+document.getElementById("questionType").onchange=()=>{syncDraftFromForm();updateEditorType();};
+document.getElementById("addGroupBtn").onclick=addGroup;
+document.getElementById("newGroupName").onkeydown=e=>{if(e.key==="Enter")addGroup();};
+document.getElementById("runValidationBtn").onclick=renderValidation;
+document.getElementById("bankSearch").oninput=renderQuestionBank;
+document.getElementById("bankGroupFilter").onchange=renderQuestionBank;
+document.getElementById("bankTypeFilter").onchange=renderQuestionBank;
+
+document.getElementById("questionImageBtn").onclick=()=>document.getElementById("questionImageInput").click();
+document.getElementById("questionImageInput").onchange=async e=>{const f=e.target.files?.[0];if(f){draft.questionImage=await fileToDataUrl(f);renderImagePreview("question",draft.questionImage);}};
+document.getElementById("removeQuestionImageBtn").onclick=()=>{draft.questionImage=null;renderImagePreview("question",null);};
+
+document.getElementById("flashAnswerImageBtn").onclick=()=>document.getElementById("flashAnswerImageInput").click();
+document.getElementById("flashAnswerImageInput").onchange=async e=>{const f=e.target.files?.[0];if(f){draft.answerImage=await fileToDataUrl(f);renderImagePreview("flashAnswer",draft.answerImage);}};
+document.getElementById("removeFlashAnswerImageBtn").onclick=()=>{draft.answerImage=null;renderImagePreview("flashAnswer",null);};
+
+document.getElementById("addChoiceBtn").onclick=()=>{syncDraftFromForm();draft.choices.push({id:uid("choice"),text:"",image:null,correct:false});renderChoiceEditor();};
+document.getElementById("addPairBtn").onclick=()=>{syncDraftFromForm();draft.pairs.push({id:uid("pair"),leftText:"",leftImage:null,rightText:"",rightImage:null});renderPairEditor();};
+
+document.getElementById("exportProjectBtn").onclick=()=>{
+  project.moduleName=document.getElementById("moduleName").value;
+  saveProject();
+  download((project.moduleName||"question-bank").replace(/[^a-z0-9]+/gi,"-").toLowerCase()+"-project.json",JSON.stringify(project,null,2));
+};
+document.getElementById("importProjectBtn").onclick=()=>document.getElementById("importProjectInput").click();
+document.getElementById("importProjectInput").onchange=async e=>{
+  const f=e.target.files?.[0];if(!f)return;
+  try{
+    const obj=JSON.parse(await f.text());
+    if(!obj||!Array.isArray(obj.groups)||!Array.isArray(obj.questions))throw new Error("Not a valid builder project.");
+    if(!confirm("Replace the current local project with this imported project?"))return;
+    project={...blankProject(),...obj,format:PROJECT_FORMAT};
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(project));
+    newQuestion();renderAll();showView("bank");
+  }catch(err){alert(err.message||String(err));}
+  e.target.value="";
+};
+document.getElementById("buildPlainBankBtn").onclick=()=>{
+  project.moduleName=document.getElementById("moduleName").value;saveProject();
+  const issues=validateProject();
+  if(issues.length && !confirm(`Validation found ${issues.length} issue(s). Build cards-master.json anyway?`))return;
+  download("cards-master.json",JSON.stringify(normalizedBank(),null,2));
+};
+document.getElementById("prepareEncryptedBtn").onclick=async()=>{
+  try{
+    project.moduleName=document.getElementById("moduleName").value.trim();
+    saveProject();
+
+    const issues=validateProject();
+    if(issues.length){
+      showView("validate");
+      renderValidation();
+      alert(`Fix the ${issues.length} validation issue(s) before building the encrypted backend.`);
+      return;
+    }
+
+    const version=Math.max(1,parseInt(document.getElementById("bankVersionInput").value,10)||1);
+    const iterations=Math.max(100000,parseInt(document.getElementById("iterationInput").value,10)||600000);
+    const pass=document.getElementById("bankPassphrase").value;
+    const confirmPass=document.getElementById("bankPassphraseConfirm").value;
+
+    if(pass.length<12){
+      alert("Use a bank passphrase of at least 12 characters.");
+      return;
+    }
+    if(pass!==confirmPass){
+      alert("The two bank passphrases do not match.");
+      return;
+    }
+
+    const btn=document.getElementById("prepareEncryptedBtn");
+    const old=btn.textContent;
+    btn.disabled=true;
+    btn.textContent="Encrypting...";
+
+    try{
+      const bank=normalizedBank(version);
+      const envelope=await encryptBank(bank,pass,iterations);
+
+      const manifest={
+        format:"question-bank-manifest-v1",
+        schemaVersion:1,
+        bankVersion:version,
+        module:bank.module,
+        bank:"./master.enc.json",
+        generatedAt:bank.generatedAt,
+        cardCount:bank.cards.length,
+        groupCount:bank.groups.length
+      };
+
+      preparedEncrypted={
+        manifest:JSON.stringify(manifest,null,2),
+        encrypted:JSON.stringify(envelope)
+      };
+
+      renderDeployUrlPreview();
+      document.getElementById("encryptedOutput").classList.remove("hidden");
+      document.getElementById("encryptedMeta").textContent=
+        `${bank.module.name} • bankVersion ${version} • ${bank.groups.length} groups • ${bank.cards.length} questions • AES-256-GCM / PBKDF2-SHA-256 (${iterations.toLocaleString()} iterations)`;
+    }finally{
+      btn.disabled=false;
+      btn.textContent=old;
+    }
+  }catch(err){
+    alert(err.message||String(err));
+  }
+};
+
+document.getElementById("downloadManifestBtn").onclick=()=>{
+  if(!preparedEncrypted)return;
+  download("manifest.json",preparedEncrypted.manifest);
+};
+document.getElementById("downloadEncryptedBtn").onclick=()=>{
+  if(!preparedEncrypted)return;
+  download("master.enc.json",preparedEncrypted.encrypted);
+};
+
+
+["deployGithubUser","deployBackendRepo","deployFrontendRepo"].forEach(id=>{
+  document.getElementById(id).addEventListener("input",renderDeployUrlPreview);
+});
+renderDeployUrlPreview();
+
+document.getElementById("downloadBackendZipBtn").onclick=()=>{
+  if(!ensureDeploymentReady())return;
+  const c=deploymentConfig();
+  const files=[
+    ...backendRepoFiles(),
+    {
+      name:"README_UPLOAD.txt",
+      data:`Drag index.html, manifest.json, and master.enc.json into https://github.com/${c.user}/${c.backendRepo} repository root.`
+    }
+  ];
+  downloadBlob(`${c.backendRepo}-UPLOAD.zip`,makeZip(files));
+};
+
+document.getElementById("downloadFrontendZipBtn").onclick=()=>{
+  if(!ensureDeploymentReady())return;
+  const c=deploymentConfig();
+  const files=[
+    ...frontendRepoFiles(),
+    {
+      name:"README_UPLOAD.txt",
+      data:`Drag index.html into https://github.com/${c.user}/${c.frontendRepo} repository root. The frontend is already configured to use ${c.backendUrl}`
+    }
+  ];
+  downloadBlob(`${c.frontendRepo}-UPLOAD.zip`,makeZip(files));
+};
+
+document.getElementById("downloadCompleteZipBtn").onclick=()=>{
+  if(!ensureDeploymentReady())return;
+  const c=deploymentConfig();
+  const files=[
+    ...backendRepoFiles(`${c.backendRepo}/`),
+    ...frontendRepoFiles(`${c.frontendRepo}/`),
+    {name:"READ_ME_FIRST.txt",data:deploymentReadme()}
+  ];
+  const moduleSlug=(project.moduleName||"question-bank").replace(/[^A-Za-z0-9._-]+/g,"-");
+  downloadBlob(`${moduleSlug}-DEPLOY_PACKAGE.zip`,makeZip(files));
+};
+
+document.getElementById("resetProjectBtn").onclick=()=>{
+  if(!confirm("Delete the entire locally saved builder project? This cannot be undone unless you exported a backup."))return;
+  localStorage.removeItem(STORAGE_KEY);project=blankProject();editingId=null;draft=emptyDraft();renderAll();showView("questions");
+};
+
+renderAll();
+showView("questions");
+</script>
+
 </div>
 <script>
-async function openDeveloper(user){
- const p=await profileFor(user);
- document.getElementById("loginCard").classList.add("hidden");
- if(p.role!=="developer"){document.getElementById("denied").classList.remove("hidden");return;}
- document.getElementById("app").classList.remove("hidden");
- const [m,g,q]=await Promise.all([
-   sb.from("modules").select("id",{count:"exact",head:true}),
-   sb.from("question_groups").select("id",{count:"exact",head:true}),
-   sb.from("questions").select("id",{count:"exact",head:true})
- ]);
- document.getElementById("modCount").textContent=m.count??"?";
- document.getElementById("groupCount").textContent=g.count??"?";
- document.getElementById("qCount").textContent=q.count??"?";
-}
-document.getElementById("loginBtn").onclick=async()=>{
- const err=document.getElementById("error");err.textContent="";
- const {data,error}=await sb.auth.signInWithPassword({email:internalEmail(document.getElementById("username").value),password:document.getElementById("password").value});
- if(error){err.textContent=error.message;return;}
- try{await openDeveloper(data.user)}catch(e){err.textContent=e.message;}
-};
-(async()=>{const u=await currentUser();if(u) await openDeveloper(u);})();
-</script></main></body></html>
+(function(){
+  const lock=document.getElementById("developerLock");
+  const app=document.getElementById("developerApp");
+  const username=document.getElementById("developerUsernameInput");
+  const password=document.getElementById("developerPasswordInput");
+  const button=document.getElementById("developerUnlockBtn");
+  const error=document.getElementById("developerError");
+
+  async function unlock(){
+    error.textContent="";
+    const {data,error:authError}=await cloudSb.auth.signInWithPassword({
+      email:cloudInternalEmail(username.value),
+      password:password.value
+    });
+    if(authError){
+      error.textContent="Incorrect username or password.";
+      password.select();
+      return;
+    }
+    const {data:profile,error:profileError}=await cloudSb
+      .from("profiles").select("role").eq("id",data.user.id).single();
+    if(profileError || profile?.role!=="developer"){
+      await cloudSb.auth.signOut();
+      error.textContent="This account is not a developer.";
+      return;
+    }
+    password.value="";
+    lock.hidden=true;
+    app.hidden=false;
+  }
+
+  button.addEventListener("click",unlock);
+  password.addEventListener("keydown",e=>{if(e.key==="Enter")unlock();});
+  password.focus();
+})();
+</script>
+
+</body>
+</html>
