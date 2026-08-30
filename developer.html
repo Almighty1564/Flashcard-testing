@@ -163,21 +163,13 @@ details.advanced>summary{cursor:pointer;font-weight:800;color:#c9d1d9}
 }
 
 </style>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script>
-const cloudSb=supabase.createClient("https://semtnzdzpluhnkzxkquk.supabase.co","sb_publishable__iTA6kUw3yTS1f2W0kfOig_alnmzLcz");
-function cloudInternalEmail(username){
-  return String(username||"").trim().toLowerCase()+"@flashcard.invalid";
-}
-</script>
 </head>
 <body>
 <div id="developerLock">
   <h1>Developer Access</h1>
-  <div class="buildmark">CLOUD AUTH</div>
-  <p>Sign in with your developer account.</p>
-  <input id="developerUsernameInput" type="text" autocomplete="username" value="developer" placeholder="Username">
-  <input id="developerPasswordInput" type="password" autocomplete="current-password" placeholder="Password">
+  <div class="buildmark">HARD LOCK V8</div>
+  <p>Enter the developer password.</p>
+  <input id="developerPasswordInput" type="password" autocomplete="off" placeholder="Developer password">
   <button id="developerUnlockBtn" type="button">Unlock Developer</button>
   <div id="developerError"></div>
 </div>
@@ -218,7 +210,7 @@ function cloudInternalEmail(username){
   </aside>
 
   <main class="main">
-<a class="portal-home-btn" href="./index.html?v=cloud-original-ui-v2">← Back to Home</a>
+<a class="portal-home-btn" href="./index.html">← Back to Home</a>
     <div class="topbar">
       <div>
         <h2 id="viewTitle">Create Question</h2>
@@ -1511,46 +1503,34 @@ showView("questions");
 </div>
 <script>
 (function(){
+  const EXPECTED_HASH="1f5713fcb1eeb83a4a22806b701b5f0a1992adb97358a95ae4ef0d81c2833192";
   const lock=document.getElementById("developerLock");
   const app=document.getElementById("developerApp");
-  const username=document.getElementById("developerUsernameInput");
-  const password=document.getElementById("developerPasswordInput");
+  const input=document.getElementById("developerPasswordInput");
   const button=document.getElementById("developerUnlockBtn");
   const error=document.getElementById("developerError");
 
+  async function hash(text){
+    const data=new TextEncoder().encode(text);
+    const digest=await crypto.subtle.digest("SHA-256",data);
+    return Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,"0")).join("");
+  }
+
   async function unlock(){
     error.textContent="";
-    const {data,error:authError}=await cloudSb.auth.signInWithPassword({
-      email:cloudInternalEmail(username.value),
-      password:password.value
-    });
-
-    if(authError){
-      error.textContent="Incorrect username or password.";
-      password.select();
-      return;
+    if(await hash(input.value)===EXPECTED_HASH){
+      input.value="";
+      lock.hidden=true;
+      app.hidden=false;
+    }else{
+      error.textContent="Incorrect developer password.";
+      input.select();
     }
-
-    const {data:profile,error:profileError}=await cloudSb
-      .from("profiles")
-      .select("role")
-      .eq("id",data.user.id)
-      .single();
-
-    if(profileError || profile?.role!=="developer"){
-      await cloudSb.auth.signOut();
-      error.textContent="This account is not a developer.";
-      return;
-    }
-
-    password.value="";
-    lock.hidden=true;
-    app.hidden=false;
   }
 
   button.addEventListener("click",unlock);
-  password.addEventListener("keydown",e=>{if(e.key==="Enter")unlock();});
-  password.focus();
+  input.addEventListener("keydown",e=>{if(e.key==="Enter")unlock();});
+  input.focus();
 })();
 </script>
 

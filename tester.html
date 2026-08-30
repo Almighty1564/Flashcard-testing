@@ -49,9 +49,9 @@ h1{margin:0}
 <body>
 <div id="testerLock" class="access-lock">
   <h1>Tester Access</h1>
-  <p>Sign in to view the modules.</p>
-  <input id="testerUsernameInput" type="text" autocomplete="username" placeholder="Username">
-  <input id="testerPasswordInput" type="password" autocomplete="current-password" placeholder="Password">
+  <div style="color:#2f81f7;font-size:11px;font-weight:800;margin-bottom:8px">ACCESS BUILD V7</div>
+  <p>Enter the tester password to view the modules.</p>
+  <input id="testerPasswordInput" type="password" autocomplete="off" placeholder="Tester password">
   <button id="testerUnlockBtn" type="button">Unlock Tester</button>
   <div id="testerLockError" class="access-lock-error"></div>
 </div>
@@ -61,10 +61,12 @@ h1{margin:0}
 <main>
   <div class="top">
     <h1>Choose Module</h1>
-    <a class="back" href="./index.html?v=cloud-original-ui-v2">← Back</a>
+    <a class="back" href="./index.html">← Back</a>
   </div>
 
-  <div class="mods" id="moduleGrid"></div>
+  <div class="mods">
+    <a class="mod" href="./mod1.html?v=7">MOD 1<small>Open Test</small></a>
+    <div class="mod disabled">MOD 2<small>Not Added Yet</small></div>
     <div class="mod disabled">MOD 3<small>Not Added Yet</small></div>
     <div class="mod disabled">MOD 4<small>Not Added Yet</small></div>
     <div class="mod disabled">MOD 5<small>Not Added Yet</small></div>
@@ -75,80 +77,19 @@ h1{margin:0}
 
 
 
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script>
-const sb=supabase.createClient("https://semtnzdzpluhnkzxkquk.supabase.co","sb_publishable__iTA6kUw3yTS1f2W0kfOig_alnmzLcz");
-const lock=document.getElementById("testerLock");
-const app=document.getElementById("testerApp");
-const userInput=document.getElementById("testerUsernameInput");
-const passInput=document.getElementById("testerPasswordInput");
-const error=document.getElementById("testerLockError");
-
-function internalEmail(username){
-  return String(username||"").trim().toLowerCase()+"@flashcard.invalid";
-}
-
-async function showModulePicker(user){
-  const {data:profile,error:profileError}=await sb
-    .from("profiles").select("username,role").eq("id",user.id).single();
-  if(profileError) throw profileError;
-
-  const {data:modules,error:moduleError}=await sb
-    .from("modules").select("slug,name,is_published")
-    .eq("is_published",true);
-  if(moduleError) throw moduleError;
-
-  const available=new Map((modules||[]).map(m=>[m.slug,m]));
-  const html=[];
-  for(let i=1;i<=5;i++){
-    const slug="mod"+i;
-    const m=available.get(slug);
-    if(m){
-      html.push(`<a class="mod" href="./mod1.html?module=${slug}&v=cloud-original-ui-v2">${m.name||("MOD "+i)}<small>Open Test</small></a>`);
-    }else{
-      html.push(`<div class="mod disabled">MOD ${i}<small>Not Added Yet</small></div>`);
-    }
-  }
-  document.getElementById("moduleGrid").innerHTML=html.join("");
-  lock.hidden=true;
-  app.hidden=false;
-}
-
-async function signIn(){
-  error.textContent="";
-  const username=userInput.value.trim();
-  const password=passInput.value;
-  if(!username||!password){
-    error.textContent="Enter username and password.";
-    return;
-  }
-  const {data,error:authError}=await sb.auth.signInWithPassword({
-    email:internalEmail(username),
-    password
-  });
-  if(authError){
-    error.textContent="Incorrect username or password.";
-    return;
-  }
-  try{
-    await showModulePicker(data.user);
-    passInput.value="";
-  }catch(e){
-    error.textContent=e.message||String(e);
-  }
-}
-
-document.getElementById("testerUnlockBtn").addEventListener("click",signIn);
-passInput.addEventListener("keydown",e=>{if(e.key==="Enter")signIn();});
-
-(async()=>{
-  const {data:{session}}=await sb.auth.getSession();
-  if(session?.user){
-    try{await showModulePicker(session.user);}
-    catch(e){await sb.auth.signOut();userInput.focus();}
-  }else{
-    userInput.focus();
-  }
+(function(){
+ const EXPECTED_HASH="69bbc95c3e3d17f49d4d2ab4e7d429717822c6fbb390351189be6157a0ee7368";
+ const lock=document.getElementById("testerLock");
+ const app=document.getElementById("testerApp");
+ const input=document.getElementById("testerPasswordInput");
+ const error=document.getElementById("testerLockError");
+ async function sha256(t){const b=new TextEncoder().encode(t);const d=await crypto.subtle.digest("SHA-256",b);return [...new Uint8Array(d)].map(x=>x.toString(16).padStart(2,"0")).join("")}
+ function show(){lock.hidden=true;app.hidden=false}
+ async function unlock(){error.textContent="";const p=input.value; if(await sha256(p)===EXPECTED_HASH){sessionStorage.setItem("flashcard_tester_pass_v7",p);sessionStorage.setItem("flashcard_tester_unlocked_v7","1");input.value="";show()} else {error.textContent="Incorrect password.";input.select()}}
+ document.getElementById("testerUnlockBtn").addEventListener("click",unlock);
+ input.addEventListener("keydown",e=>{if(e.key==="Enter")unlock()});
+ if(sessionStorage.getItem("flashcard_tester_unlocked_v7")==="1" && sessionStorage.getItem("flashcard_tester_pass_v7")) show(); else input.focus();
 })();
 </script>
 </body>
