@@ -1,0 +1,132 @@
+<!doctype html><html><head><title>Study</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+:root{--bg:#0d1117;--panel:#161b22;--panel2:#0f141b;--line:#30363d;--text:#e6edf3;--muted:#8b949e;--blue:#2f81f7;--green:#238636;--red:#da3633;--yellow:#9e6a03}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+main{max-width:1050px;margin:45px auto;padding:20px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:20px;margin-bottom:16px}
+input,select,textarea{width:100%;background:#0d1117;color:var(--text);border:1px solid var(--line);border-radius:9px;padding:11px;font:inherit}
+button,.btn{border:1px solid var(--line);background:#21262d;color:var(--text);border-radius:9px;padding:10px 13px;font-weight:800;cursor:pointer;text-decoration:none;display:inline-block}
+.primary{background:var(--blue);border-color:var(--blue);color:white}.good{background:var(--green);border-color:#2ea043;color:white}.bad{background:#491717;border-color:#7d2727}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:14px}.muted{color:var(--muted)}.hidden{display:none!important}
+.field{display:grid;gap:6px;margin-bottom:12px}.field label{font-size:12px;color:var(--muted);font-weight:800}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap}.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.error{color:#ff7b72;margin-top:10px}.ok{color:#3fb950}.module{min-height:130px;display:flex;flex-direction:column;justify-content:center}
+.answer{border-top:1px solid var(--line);margin-top:16px;padding-top:16px}
+.stat{background:var(--panel2);border:1px solid var(--line);padding:10px;border-radius:9px}
+code{background:#0d1117;border:1px solid var(--line);padding:2px 5px;border-radius:5px}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+const SUPABASE_URL = "https://semtnzdzpluhnkzxkquk.supabase.co";
+const SUPABASE_KEY = "sb_publishable__iTA6kUw3yTS1f2W0kfOig_alnmzLcz";
+const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+function internalEmail(username){
+  return String(username||"").trim().toLowerCase()+"@flashcard.invalid";
+}
+async function currentUser(){
+  const {data:{session}} = await sb.auth.getSession();
+  return session?.user || null;
+}
+async function profileFor(user){
+  if(!user) return null;
+  const {data,error}=await sb.from("profiles").select("id,username,role").eq("id",user.id).single();
+  if(error) throw error;
+  return data;
+}
+async function logout(){
+  await sb.auth.signOut();
+  location.href="./index.html";
+}
+</script>
+</head><body><main>
+<div class="top"><div><h1 id="title">Study</h1><div id="status" class="muted"></div></div><div class="row"><a class="btn" href="./tester.html">← Modules</a><button onclick="logout()">Sign Out</button></div></div>
+<div id="loading" class="card">Loading...</div>
+<div id="app" class="hidden">
+ <div class="card">
+  <div class="field"><label>GROUP</label><select id="groupSelect"></select></div>
+  <div class="row">
+   <button class="primary" id="startDue">Study Due Cards</button>
+   <button id="startAll">Study All</button>
+  </div>
+ </div>
+ <div id="studyCard" class="card hidden">
+  <div class="top"><div id="groupName" class="muted"></div><div id="counter" class="muted"></div></div>
+  <h2 id="question"></h2>
+  <div id="answer" class="answer hidden"></div>
+  <div id="actions" class="row" style="margin-top:18px">
+   <button id="showAnswer" class="primary">Show Answer</button>
+  </div>
+ </div>
+ <div id="done" class="card hidden"><h2>Session complete</h2><button id="again" class="primary">Back to Groups</button></div>
+</div>
+<script>
+let user,moduleRow,groups=[],questions=[],progress={},queue=[],index=0,currentGroup=null;
+function answerText(q){return q.answer_data?.text ?? "";}
+function dueNow(p){return !p?.due_at || new Date(p.due_at)<=new Date();}
+function schedule(result,p){
+  let interval=Number(p?.interval_days||0), ease=Number(p?.ease||2.5), reps=Number(p?.reps||0), lapses=Number(p?.lapses||0);
+  if(result==="wrong"){interval=0;ease=Math.max(1.3,ease-.2);lapses++;}
+  if(result==="guessed"){interval=Math.max(1,interval*1.2||1);ease=Math.max(1.3,ease-.05);}
+  if(result==="correct"){interval=reps===0?1:reps===1?3:Math.max(1,interval*ease);}
+  if(result==="confident"){interval=reps===0?4:Math.max(1,interval*(ease+.15)*1.3);ease+=.05;}
+  reps++;
+  const due=new Date();
+  if(result==="wrong") due.setMinutes(due.getMinutes()+10); else due.setDate(due.getDate()+Math.max(1,Math.round(interval)));
+  return {interval_days:interval,ease,reps,lapses,due_at:due.toISOString()};
+}
+async function saveResult(result,q){
+  const p=progress[q.id]||{};
+  const s=schedule(result,p);
+  const payload={user_id:user.id,question_id:q.id,last_result:result,...s,total_reviews:Number(p.total_reviews||0)+1,last_reviewed_at:new Date().toISOString(),updated_at:new Date().toISOString()};
+  const {error}=await sb.from("card_progress").upsert(payload,{onConflict:"user_id,question_id"});
+  if(error) throw error;
+  progress[q.id]=payload;
+}
+function renderCard(){
+  if(index>=queue.length){document.getElementById("studyCard").classList.add("hidden");document.getElementById("done").classList.remove("hidden");return;}
+  const q=queue[index];
+  const g=groups.find(x=>x.id===q.group_id);
+  document.getElementById("studyCard").classList.remove("hidden");
+  document.getElementById("done").classList.add("hidden");
+  document.getElementById("groupName").textContent=g?.name||"";
+  document.getElementById("counter").textContent=`${index+1} / ${queue.length}`;
+  document.getElementById("question").textContent=q.question_text||"";
+  const ans=document.getElementById("answer"); ans.classList.add("hidden"); ans.innerHTML="";
+  document.getElementById("actions").innerHTML='<button id="showAnswer" class="primary">Show Answer</button>';
+  document.getElementById("showAnswer").onclick=()=>{
+    ans.textContent=answerText(q); ans.classList.remove("hidden");
+    document.getElementById("actions").innerHTML=`
+      <button data-r="wrong" class="bad">Wrong</button>
+      <button data-r="guessed">Guessed</button>
+      <button data-r="correct" class="primary">Correct</button>
+      <button data-r="confident" class="good">Confident</button>`;
+    document.querySelectorAll("[data-r]").forEach(b=>b.onclick=async()=>{b.disabled=true;await saveResult(b.dataset.r,q);index++;renderCard();});
+  };
+}
+function start(mode){
+ currentGroup=document.getElementById("groupSelect").value;
+ queue=questions.filter(q=>!currentGroup||q.group_id===currentGroup);
+ if(mode==="due") queue=queue.filter(q=>dueNow(progress[q.id]));
+ index=0; document.getElementById("done").classList.add("hidden");
+ if(!queue.length){document.getElementById("studyCard").classList.add("hidden");document.getElementById("done").classList.remove("hidden");document.getElementById("done").innerHTML='<h2>No cards in this selection.</h2><button id="again" class="primary">Back</button>';document.getElementById("again").onclick=()=>document.getElementById("done").classList.add("hidden");return;}
+ renderCard();
+}
+(async()=>{
+ user=await currentUser(); if(!user){location.href="./tester.html";return;}
+ const slug=new URLSearchParams(location.search).get("module");
+ let r=await sb.from("modules").select("id,slug,name,description").eq("slug",slug).single();
+ if(r.error){document.getElementById("loading").textContent=r.error.message;return;} moduleRow=r.data;
+ document.getElementById("title").textContent=moduleRow.name;
+ r=await sb.from("question_groups").select("id,name,sort_order").eq("module_id",moduleRow.id).order("sort_order"); if(r.error) throw r.error; groups=r.data||[];
+ r=await sb.from("questions").select("id,group_id,question_type,question_text,answer_data,sort_order").eq("module_id",moduleRow.id).eq("is_active",true).order("sort_order"); if(r.error) throw r.error; questions=r.data||[];
+ r=await sb.from("card_progress").select("*").eq("user_id",user.id); if(r.error) throw r.error; (r.data||[]).forEach(p=>progress[p.question_id]=p);
+ document.getElementById("groupSelect").innerHTML='<option value="">All Groups</option>'+groups.map(g=>`<option value="${g.id}">${g.name}</option>`).join("");
+ document.getElementById("status").textContent=`${groups.length} groups • ${questions.length} questions • progress saved to cloud`;
+ document.getElementById("loading").classList.add("hidden"); document.getElementById("app").classList.remove("hidden");
+ document.getElementById("startDue").onclick=()=>start("due"); document.getElementById("startAll").onclick=()=>start("all");
+})().catch(e=>document.getElementById("loading").textContent=e.message);
+</script></main></body></html>
