@@ -185,11 +185,14 @@ details.advanced>summary{cursor:pointer;font-weight:800;color:#c9d1d9}
 .access-lock-error{color:#f85149;font-size:12px;margin-top:10px;min-height:17px}
 .access-locked{display:none!important}
 
+
+[hidden]{display:none!important}
 </style>
 </head>
 <body>
 <div id="developerLock" class="access-lock">
-  <h1>Developer Access</h1><div style="color:#3fb950;font-size:11px;font-weight:800;margin-bottom:8px">HARD LOCK BUILD V6</div>
+  <h1>Developer Access</h1>
+  <div style="color:#3fb950;font-size:11px;font-weight:800;margin-bottom:8px">HARD GATE V7</div>
   <p>Enter the developer password.</p>
   <input id="developerPasswordInput" type="password" autocomplete="off" placeholder="Developer password">
   <button id="developerUnlockBtn" type="button">Unlock Developer</button>
@@ -198,7 +201,8 @@ details.advanced>summary{cursor:pointer;font-weight:800;color:#c9d1d9}
 
 
 
-<div class="shell access-locked" id="developerApp" style="display:none">
+
+<div class="shell" id="developerApp" hidden>
   <aside class="sidebar">
     <div class="brand">
       <h1>Question Bank Builder</h1>
@@ -1527,37 +1531,17 @@ showView("questions");
 
 <script>
 (function(){
-  const EXPECTED_HASH="1f5713fcb1eeb83a4a22806b701b5f0a1992adb97358a95ae4ef0d81c2833192";
-  const lock=document.getElementById("developerLock");
-  const app=document.getElementById("developerApp");
-  const input=document.getElementById("developerPasswordInput");
-  const button=document.getElementById("developerUnlockBtn");
-  const error=document.getElementById("developerLockError");
-
-  async function sha256(text){
-    const bytes=new TextEncoder().encode(text);
-    const digest=await crypto.subtle.digest("SHA-256",bytes);
-    return [...new Uint8Array(digest)].map(b=>b.toString(16).padStart(2,"0")).join("");
-  }
-
-  async function unlock(){
-    error.textContent="";
-    const actual=await sha256(input.value);
-    if(actual===EXPECTED_HASH){
-      input.value="";
-      lock.style.display="none";
-      app.classList.remove("access-locked"); app.style.display="";
-    }else{
-      error.textContent="Incorrect password.";
-      input.select();
-    }
-  }
-
-  button.addEventListener("click",unlock);
-  input.addEventListener("keydown",e=>{if(e.key==="Enter")unlock();});
-  input.focus();
+ const EXPECTED_HASH="1f5713fcb1eeb83a4a22806b701b5f0a1992adb97358a95ae4ef0d81c2833192";
+ const lock=document.getElementById("developerLock");
+ const app=document.getElementById("developerApp");
+ const input=document.getElementById("developerPasswordInput");
+ const error=document.getElementById("developerLockError");
+ async function sha256(t){const b=new TextEncoder().encode(t);const d=await crypto.subtle.digest("SHA-256",b);return [...new Uint8Array(d)].map(x=>x.toString(16).padStart(2,"0")).join("")}
+ async function unlock(){error.textContent="";if(await sha256(input.value)===EXPECTED_HASH){input.value="";lock.hidden=true;app.hidden=false}else{error.textContent="Incorrect password.";input.select()}}
+ document.getElementById("developerUnlockBtn").addEventListener("click",unlock);
+ input.addEventListener("keydown",e=>{if(e.key==="Enter")unlock()});
+ input.focus();
 })();
 </script>
-
 </body>
 </html>

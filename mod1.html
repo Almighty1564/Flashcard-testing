@@ -88,7 +88,7 @@ input[type=text],input[type=password],select{width:100%;background:#0d1117;color
 <aside class="sidebar">
   <div class="brand">
     <h1 id="sideModule">Study Program</h1>
-    <div class="build">TESTER MODE • OLD + NEW BANK SUPPORT</div>
+    <div class="build">TESTER MODE • AUTO UNLOCK V7</div>
   </div>
 
   <div class="panel" style="padding:10px;margin:10px 0">
@@ -113,7 +113,7 @@ input[type=text],input[type=password],select{width:100%;background:#0d1117;color
 </aside>
 
 <main class="main">
-<a class="back-modules" href="./tester.html?v=6">← Back to Modules</a>
+<a class="back-modules" href="./tester.html?v=7">← Back to Modules</a>
   <div class="topbar">
     <div>
       <h2 id="pageTitle">Question Bank Study Program</h2>
@@ -483,10 +483,13 @@ function renderSidebar(){
     openDueReviews();
   });
 }
-async function unlockBank(){
+async function unlockBank(passphrase){
   backendBase=normalizeBase(BACKEND_BASE);
-  const passphrase=prompt("Enter the bank passphrase:");
-  if(!passphrase)return false;
+  passphrase=passphrase || sessionStorage.getItem("flashcard_tester_pass_v7");
+  if(!passphrase){
+    location.replace("./tester.html?v=7");
+    return false;
+  }
 
   const mres=await fetch(backendBase+"manifest.json?_="+Date.now(),{cache:"no-store"});
   if(!mres.ok)throw new Error("Could not load manifest.json from that backend.");
@@ -887,7 +890,7 @@ function selectedCustomGroups(){
 }
 
 document.getElementById("unlockBtn").onclick=async()=>{
-  try{await unlockBank()}catch(e){alert(e.message||String(e))}
+  try{await unlockBank(sessionStorage.getItem("flashcard_tester_pass_v7"))}catch(e){alert(e.message||String(e))}
 };
 document.getElementById("customBtn").onclick=showCustom;
 document.getElementById("progressBtn").onclick=showOverallProgress;
@@ -925,8 +928,18 @@ document.getElementById("importInput").onchange=async e=>{
   e.target.value="";
 };
 
-state=defaultState();
-renderSidebar();
+if(sessionStorage.getItem("flashcard_tester_unlocked_v7")!=="1" || !sessionStorage.getItem("flashcard_tester_pass_v7")){
+  location.replace("./tester.html?v=7");
+}else{
+  state=defaultState();
+  renderSidebar();
+  unlockBank(sessionStorage.getItem("flashcard_tester_pass_v7")).catch(e=>{
+    sessionStorage.removeItem("flashcard_tester_unlocked_v7");
+    sessionStorage.removeItem("flashcard_tester_pass_v7");
+    alert("Tester password could not unlock MOD 1.");
+    location.replace("./tester.html?v=7");
+  });
+}
 </script>
 </body>
 </html>
