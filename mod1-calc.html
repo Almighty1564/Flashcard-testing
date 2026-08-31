@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MOD 1 — Load Calculation Practice</title>
+<style>
+  body{
+    margin:0;padding:18px 14px 60px;
+    background:#0f1317;color:#e4eaef;
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    font-size:16px;line-height:1.5;
+  }
+  header{max-width:680px;margin:0 auto 16px}
+  h1{font-size:1.15rem;font-weight:650;margin:0 0 2px;letter-spacing:-.01em}
+  header p{margin:0;color:#8d9aa7;font-size:.85rem}
+</style>
+</head>
+<body>
+  <header>
+    <h1>MOD 1 — Load calculation practice</h1>
+    <p>Ten problem types. New numbers every time.</p>
+  </header>
+
+  <div id="calcHost"></div>
+
+  <script src="mod1-calc.js"></script>
+  <script>
+    Mod1Calc.mount(document.getElementById('calcHost'), { mode: 'gen' });
+  </script>
+</body>
+</html>
