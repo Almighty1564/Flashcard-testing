@@ -75,6 +75,47 @@ input[type=text],input[type=password],select{width:100%;background:#0d1117;color
 }
 
 #calcHost{--m1-go-fg:#fff}
+
+/* --- sidebar: brand, rank, icon actions, disclosures --- */
+.brand-mark{display:flex;align-items:center;gap:9px}
+.brand-mark svg{width:22px;height:22px;color:var(--accent);flex:none}
+.brand-mark h1{font-size:20px;margin:0;letter-spacing:.5px;font-weight:900}
+
+.rank-card{border:1px solid var(--line);background:var(--panel2);border-radius:10px;padding:11px 12px;margin:12px 0}
+.rank-card .rank-line{display:flex;align-items:baseline;gap:6px}
+.rank-card .rank-pos{font-size:22px;font-weight:900;line-height:1}
+.rank-card .rank-of{font-size:12px;color:var(--muted)}
+.rank-card .rank-sub{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.4px;margin-top:5px}
+.rank-bar{height:6px;background:#202731;border-radius:999px;overflow:hidden;margin-top:8px}
+.rank-bar i{display:block;height:100%;background:var(--accent);border-radius:999px}
+
+.icon-btn{display:grid;grid-template-columns:20px minmax(0,1fr);gap:10px;align-items:center;
+  width:100%;text-align:left;border:1px solid var(--line);background:#21262d;color:var(--text);
+  padding:11px 12px;border-radius:9px;font-weight:750;margin-top:8px}
+.icon-btn:hover{border-color:#6e7681}
+.icon-btn:disabled{opacity:.45;cursor:not-allowed}
+.icon-btn svg{width:18px;height:18px;color:var(--accent)}
+.icon-btn.sub{margin-top:6px;background:var(--panel2);font-weight:650;font-size:13px}
+.icon-btn.sub svg{color:var(--muted)}
+
+.disclosure{border:1px solid var(--line);border-radius:10px;background:var(--panel2);margin-top:10px;overflow:hidden}
+.disclosure>summary{display:grid;grid-template-columns:20px minmax(0,1fr) 14px;gap:10px;align-items:center;
+  padding:11px 12px;cursor:pointer;font-weight:750;list-style:none}
+.disclosure>summary::-webkit-details-marker{display:none}
+.disclosure>summary svg.lead{width:18px;height:18px;color:var(--accent)}
+.disclosure>summary .chev{width:14px;height:14px;color:var(--muted);transition:transform .15s}
+.disclosure[open]>summary .chev{transform:rotate(90deg)}
+.disclosure .body{padding:0 10px 10px}
+.disclosure .count{font-size:10px;color:var(--muted);font-weight:600}
+
+/* --- report issue --- */
+.report-btn{display:inline-flex;align-items:center;gap:7px}
+.report-btn svg{width:15px;height:15px}
+.report-box{border:1px solid var(--warn);background:#241c0d;border-radius:10px;padding:14px;margin-top:16px}
+.report-box h4{margin:0 0 4px;font-size:14px}
+.report-box textarea{width:100%;background:#0d1117;color:var(--text);border:1px solid var(--line);
+  border-radius:8px;padding:10px;min-height:74px;resize:vertical;margin-top:8px}
+.report-box select{margin-top:8px}
 .back-modules{
   display:inline-block;margin-bottom:14px;text-decoration:none;
   background:#21262d;color:#e6edf3;border:1px solid #30363d;
@@ -88,14 +129,24 @@ input[type=text],input[type=password],select{width:100%;background:#0d1117;color
 <div class="shell">
 <aside class="sidebar">
   <div class="brand">
-    <h1 id="sideModule">Study Program</h1>
-    <div class="build">TESTER MODE • CLOUD V8</div>
+    <div class="brand-mark">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M22 8.5 12 3 2 8.5l10 5.5 10-5.5Z"/><path d="M6 11v5.5c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5V11"/>
+      </svg>
+      <h1>STUDXX</h1>
+    </div>
+    <div class="build"><span id="sideModule">MOD 1</span> • TESTER MODE</div>
   </div>
 
-  <div class="panel" style="padding:10px;margin:10px 0">
-    <div class="small muted">CLOUD BACKEND</div>
-    <div class="small" id="backendLabel" style="word-break:break-all;margin-top:4px">Supabase</div>
+  <div class="rank-card">
+    <div class="rank-line">
+      <span class="rank-pos" id="rankPos">—</span>
+      <span class="rank-of" id="rankOf">of —</span>
+    </div>
+    <div class="rank-sub">Material memorized</div>
+    <div class="rank-bar"><i id="rankBar" style="width:0%"></i></div>
   </div>
+
   <button id="unlockBtn" class="btn primary full">Refresh From Cloud</button>
 
   <div class="stats">
@@ -104,14 +155,69 @@ input[type=text],input[type=password],select{width:100%;background:#0d1117;color
     <div class="stat"><span>Reviews</span><strong id="statReviews">0</strong></div>
   </div>
 
-  <button id="customBtn" class="btn full" disabled>Build Custom Test</button>
-  <button id="progressBtn" class="btn full" disabled>Overall Progress</button>
-  <button id="calcBtn" class="btn full">Practice Calculations</button>
-  <button id="exportBtn" class="btn full">Export Progress</button>
-  <button id="importBtn" class="btn full">Import Progress</button>
-  <input id="importInput" class="file-input" type="file" accept=".json,application/json">
+  <button id="customBtn" class="icon-btn" disabled>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M4 4a2 2 0 0 1 2-2h7l5 5v4"/><path d="M13 2v5h5"/>
+      <path d="M4 4v16a2 2 0 0 0 2 2h5"/>
+      <path d="m16.5 15.5 3.4 3.4-3.2 1.3.9-3.3Z"/><path d="m18.6 13.4 2.1 2.1"/>
+    </svg>
+    <span>Build Custom Test</span>
+  </button>
 
-  <div id="groupList" class="group-list"></div>
+  <button id="progressBtn" class="icon-btn" disabled>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <path d="M12 3a9 9 0 1 0 9 9h-9V3Z"/><path d="M15.5 3.6A9 9 0 0 1 20.4 8.5L15.5 10V3.6Z"/>
+    </svg>
+    <span>Overall Progress</span>
+  </button>
+
+  <button id="calcBtn" class="icon-btn">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+      <rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8"/>
+      <path d="M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01M8 19h.01M12 19h4"/>
+    </svg>
+    <span>Practice Calculations</span>
+  </button>
+
+  <details class="disclosure" id="groupsDisclosure">
+    <summary>
+      <svg class="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 6h16M4 12h16M4 18h10"/>
+      </svg>
+      <span>Groups <span class="count" id="groupCount"></span></span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+    </summary>
+    <div class="body"><div id="groupList" class="group-list"></div></div>
+  </details>
+
+  <details class="disclosure">
+    <summary>
+      <svg class="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <circle cx="12" cy="12" r="3"/>
+        <path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-2.9 1.2v.2a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-2.9-1.2l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1A1.7 1.7 0 0 0 3 15a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.2-2.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1A1.7 1.7 0 0 0 10 4.1V4a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 2.9 1.2l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1A1.7 1.7 0 0 0 21 11a2 2 0 1 1 0 4h-.2a1.7 1.7 0 0 0-1.4 1Z"/>
+      </svg>
+      <span>Settings</span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+    </summary>
+    <div class="body">
+      <button id="exportBtn" class="icon-btn sub">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 3v12"/><path d="m7 10 5 5 5-5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>
+        </svg>
+        <span>Export progress</span>
+      </button>
+      <button id="importBtn" class="icon-btn sub">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 15V3"/><path d="m7 8 5-5 5 5"/><path d="M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/>
+        </svg>
+        <span>Import progress</span>
+      </button>
+      <div class="small muted" style="margin-top:10px;line-height:1.5">
+        Backend: <span id="backendLabel">Supabase</span>
+      </div>
+      <input id="importInput" class="file-input" type="file" accept=".json,application/json">
+    </div>
+  </details>
 </aside>
 
 <main class="main">
@@ -148,8 +254,33 @@ input[type=text],input[type=password],select{width:100%;background:#0d1117;color
       <div id="questionText" class="question-text"></div>
       <div id="questionImageWrap"></div>
       <div id="interaction"></div>
+      <div id="reportBox" class="report-box hidden">
+        <h4>Report a problem</h4>
+        <div class="muted small">Goes straight to the developer with the question attached.</div>
+        <select id="reportReason">
+          <option value="">What is wrong with it?</option>
+          <option value="wrong-answer">The marked answer is wrong</option>
+          <option value="typo">Typo or wording error</option>
+          <option value="image">Image is missing or wrong</option>
+          <option value="duplicate">Duplicate of another question</option>
+          <option value="unclear">Question is unclear or ambiguous</option>
+          <option value="other">Something else</option>
+        </select>
+        <textarea id="reportDetails" placeholder="Optional — what should it say instead?"></textarea>
+        <div class="rating-row">
+          <button id="reportCancelBtn" class="btn">Cancel</button>
+          <button id="reportSendBtn" class="btn warn">Send Report</button>
+        </div>
+        <div id="reportStatus" class="small muted" style="margin-top:8px"></div>
+      </div>
       <div class="rating-row">
         <button id="skipBtn" class="btn">Skip</button>
+        <button id="reportBtn" class="btn report-btn" title="Flag a problem with this question">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 21V4h11l-1.2 3H20l-1.5 4.5L20 16H8.5L8 14H4"/>
+          </svg>
+          <span>Report issue</span>
+        </button>
       </div>
     </div>
   </section>
@@ -319,6 +450,7 @@ function renderSidebar(){
   }
 
   document.getElementById("sideModule").textContent=bank.module?.name||"Question Bank";
+  document.getElementById("groupCount").textContent="("+groups().length+")";
   document.getElementById("statDue").textContent=dueCards(null).length;
   document.getElementById("statLearned").textContent=Object.keys(state.progress).filter(id=>(state.progress[id]?.reps||0)>0).length;
   document.getElementById("statReviews").textContent=state.totalReviews||0;
@@ -338,6 +470,23 @@ function renderSidebar(){
     renderSidebar();
     openDueReviews();
   });
+}
+
+/* ---- ranking ---------------------------------------------------- */
+async function refreshRank(){
+  const pos=document.getElementById("rankPos");
+  const of=document.getElementById("rankOf");
+  const bar=document.getElementById("rankBar");
+  try{
+    const r=await FC.memorizedRank(MODULE_SLUG);
+    if(!r){ pos.textContent="—"; of.textContent="unranked"; bar.style.width="0%"; return; }
+    pos.textContent="#"+r.myRank;
+    of.textContent="of "+r.totalUsers+" • "+r.myLearned+"/"+r.bankSize+" learned";
+    const pct=r.bankSize?Math.round(r.myLearned/r.bankSize*100):0;
+    bar.style.width=Math.max(pct,2)+"%";
+  }catch(_){
+    pos.textContent="—"; of.textContent="unavailable"; bar.style.width="0%";
+  }
 }
 async function loadFromCloud(){
   const btn=document.getElementById("unlockBtn");
@@ -361,6 +510,7 @@ async function loadFromCloud(){
       `${groups().length} groups • ${cards().length} questions • progress synced to your account`;
     renderSidebar();
     openDueReviews();
+    refreshRank();
     return true;
   }finally{
     btn.disabled=false;
@@ -388,6 +538,7 @@ function loadCurrent(){
   renderCard();
 }
 function renderCard(){
+  hideReportBox();
   hideViews();
   document.getElementById("studyView").classList.remove("hidden");
   document.getElementById("questionMeta").innerHTML=`
@@ -585,6 +736,39 @@ function recordAndNext(result){
   renderSidebar();
   loadCurrent();
 }
+/* ---- report issue ------------------------------------------------ */
+function hideReportBox(){
+  const box=document.getElementById("reportBox");
+  box.classList.add("hidden");
+  document.getElementById("reportReason").value="";
+  document.getElementById("reportDetails").value="";
+  document.getElementById("reportStatus").textContent="";
+  document.getElementById("reportSendBtn").disabled=false;
+}
+function toggleReportBox(){
+  const box=document.getElementById("reportBox");
+  if(!currentCard)return;
+  box.classList.contains("hidden") ? box.classList.remove("hidden") : hideReportBox();
+}
+async function sendReport(){
+  if(!currentCard)return;
+  const reason=document.getElementById("reportReason").value;
+  const status=document.getElementById("reportStatus");
+  if(!reason){ status.textContent="Pick what is wrong with it first."; return; }
+
+  const btn=document.getElementById("reportSendBtn");
+  btn.disabled=true;
+  status.textContent="Sending…";
+  try{
+    await FC.reportQuestion(currentCard.id, bank?.module?.id, reason,
+      document.getElementById("reportDetails").value);
+    status.textContent="Report sent. Thanks.";
+    setTimeout(hideReportBox,1200);
+  }catch(e){
+    status.textContent=e.message||String(e);
+    btn.disabled=false;
+  }
+}
 function skipCurrent(){
   if(!session||!currentCard)return;
   markUnanswered(currentCard.id);
@@ -616,6 +800,7 @@ function finishSession(){
   showDebrief(summary);
 }
 function showDebrief(summary){
+  refreshRank();
   hideViews();
   document.getElementById("debriefView").classList.remove("hidden");
   document.getElementById("debriefTitle").textContent="Session Complete";
@@ -751,6 +936,9 @@ document.getElementById("closeCustomBtn").onclick=openDueReviews;
 document.getElementById("closeProgressBtn").onclick=openDueReviews;
 document.getElementById("skipBtn").onclick=skipCurrent;
 document.getElementById("calcBtn").onclick=showCalc;
+document.getElementById("reportBtn").onclick=toggleReportBox;
+document.getElementById("reportCancelBtn").onclick=hideReportBox;
+document.getElementById("reportSendBtn").onclick=sendReport;
 document.getElementById("closeCalcBtn").onclick=openDueReviews;
 document.getElementById("customAllBtn").onclick=()=>document.querySelectorAll("[data-custom-group]").forEach(x=>x.checked=true);
 document.getElementById("customNoneBtn").onclick=()=>document.querySelectorAll("[data-custom-group]").forEach(x=>x.checked=false);

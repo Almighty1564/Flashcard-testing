@@ -345,6 +345,61 @@
   }
 
   /* ---------------------------------------------------------------
+     QUESTION REPORTS
+     --------------------------------------------------------------- */
+
+  async function reportQuestion(questionId, moduleId, reason, details) {
+    var session = await getSession();
+    if (!session) throw new Error("Not signed in.");
+    if (!reason) throw new Error("Pick what is wrong with the question.");
+
+    var res = await client.from("question_reports").insert({
+      question_id: questionId,
+      module_id: moduleId || null,
+      user_id: session.user.id,
+      reason: reason,
+      details: (details || "").slice(0, 2000) || null
+    });
+    if (res.error) throw new Error(res.error.message);
+  }
+
+  /* Developer only. Returns [] if the role check fails. */
+  async function listReports(moduleSlug) {
+    var res = await client.rpc("list_question_reports", {
+      p_module_slug: moduleSlug || null
+    });
+    if (res.error) throw new Error(res.error.message);
+    return res.data || [];
+  }
+
+  async function setReportStatus(id, status) {
+    var res = await client.rpc("set_report_status", { p_id: id, p_status: status });
+    if (res.error) throw new Error(res.error.message);
+  }
+
+  /* ---------------------------------------------------------------
+     RANKING
+     --------------------------------------------------------------- */
+
+  /* { myRank, totalUsers, myLearned, topLearned, bankSize } or null. */
+  async function memorizedRank(moduleSlug) {
+    var res = await client.rpc("memorized_rank", { p_module_slug: moduleSlug });
+    if (res.error) {
+      console.warn("Rank lookup failed:", res.error.message);
+      return null;
+    }
+    var row = (res.data || [])[0];
+    if (!row) return null;
+    return {
+      myRank: row.my_rank,
+      totalUsers: row.total_users,
+      myLearned: row.my_learned,
+      topLearned: row.top_learned,
+      bankSize: row.bank_size
+    };
+  }
+
+  /* ---------------------------------------------------------------
      EXPORT
      --------------------------------------------------------------- */
 
@@ -367,6 +422,10 @@
     signPaths: signPaths,
     signedUrl: signedUrl,
     uploadImage: uploadImage,
-    removeImages: removeImages
+    removeImages: removeImages,
+    reportQuestion: reportQuestion,
+    listReports: listReports,
+    setReportStatus: setReportStatus,
+    memorizedRank: memorizedRank
   };
 })();
