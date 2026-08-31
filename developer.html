@@ -85,12 +85,50 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent)}
 .footer-note{font-size:11px;color:var(--muted);margin-top:14px}
 .file-input{display:none}
 .danger-zone{border-color:#5c2424}
+/* --- icon navigation --- */
+.nav-section{font-size:10px;font-weight:800;color:var(--muted);letter-spacing:.6px;
+  text-transform:uppercase;margin:16px 0 7px;padding-left:2px}
+.navbtn{display:grid;grid-template-columns:19px minmax(0,1fr) auto;gap:10px;align-items:center;
+  width:100%;text-align:left;margin-bottom:7px}
+.navbtn svg{width:17px;height:17px;color:var(--muted)}
+.navbtn.active{background:#1f2d3d;border-color:#305d8c}
+.navbtn.active svg{color:var(--accent)}
+.navbtn .pill{font-size:10px;font-weight:800;border-radius:999px;padding:2px 7px;
+  background:#5e4513;border:1px solid #8a6919;color:#f0c257}
+
+/* --- collapsible sidebar sections --- */
+.dev-fold{border:1px solid var(--line);border-radius:10px;background:var(--panel2);
+  margin-top:12px;overflow:hidden}
+.dev-fold>summary{display:grid;grid-template-columns:19px minmax(0,1fr) 14px;gap:10px;
+  align-items:center;padding:11px 12px;cursor:pointer;font-weight:800;list-style:none}
+.dev-fold>summary::-webkit-details-marker{display:none}
+.dev-fold>summary svg.lead{width:17px;height:17px;color:var(--accent)}
+.dev-fold>summary .chev{width:13px;height:13px;color:var(--muted);transition:transform .15s}
+.dev-fold[open]>summary .chev{transform:rotate(90deg)}
+.dev-fold .fold-body{padding:0 10px 10px}
+
+/* --- reports --- */
+.report-card{border:1px solid var(--line);border-radius:11px;background:var(--panel2);
+  padding:14px;border-left:3px solid var(--warn)}
+.report-card.resolved{border-left-color:var(--good);opacity:.72}
+.report-card.dismissed{border-left-color:var(--gray);opacity:.55}
+.report-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start}
+.report-reason{font-weight:850;font-size:14px}
+.report-q{margin-top:7px;font-size:13px;line-height:1.45;color:var(--text)}
+.report-meta{font-size:11px;color:var(--muted);margin-top:7px}
+.report-note{margin-top:9px;padding:9px 11px;border-radius:8px;background:#0d1117;
+  border:1px solid var(--line);font-size:12.5px;line-height:1.5;white-space:pre-wrap}
+.report-actions{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px}
+
+.stud-input{width:74px;padding:6px 8px;font-size:12px;text-align:center}
+
 @media(max-width:900px){
   .shell{grid-template-columns:1fr}
   .sidebar{position:relative;height:auto;border-right:0;border-bottom:1px solid var(--line)}
   .grid2,.grid3,.list-toolbar{grid-template-columns:1fr}
   .match-grid{grid-template-columns:1fr}
   .arrow{transform:rotate(90deg)}
+  .stats{grid-template-columns:repeat(3,1fr)}
 }
 
 .help{
@@ -207,16 +245,49 @@ details.advanced>summary{cursor:pointer;font-weight:800;color:#c9d1d9}
       <div class="stat"><span>Issues</span><strong id="statIssues">0</strong></div>
     </div>
 
-    <button class="btn navbtn active" data-view="questions">Create Question</button>
-    <button class="btn navbtn" data-view="bank">Question Bank</button>
-    <button class="btn navbtn" data-view="groups">Manage Groups</button>
-    <button class="btn navbtn" data-view="validate">Validate Bank</button>
-    <button class="btn navbtn" data-view="testers">Testers</button>
-    <button class="btn navbtn" data-view="reports">Reported Issues <span id="reportBadge" class="badge" style="display:none;border-color:#8a6919;color:#d29922">0</span></button>
-    <button class="btn navbtn" data-view="project">Project / Export</button>
+    <div class="nav-section">Author</div>
+    <button class="btn navbtn active" data-view="questions">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>
+      <span>Create Question</span><span></span>
+    </button>
+    <button class="btn navbtn" data-view="bank">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6a2 2 0 0 1 2-2h13v16H6a2 2 0 0 0-2 2V6Z"/><path d="M8 4v14"/></svg>
+      <span>Question Bank</span><span></span>
+    </button>
+    <button class="btn navbtn" data-view="groups">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="7" height="7" rx="1.5"/><rect x="14" y="4" width="7" height="7" rx="1.5"/><rect x="3" y="15" width="7" height="5" rx="1.5"/><rect x="14" y="15" width="7" height="5" rx="1.5"/></svg>
+      <span>Manage Groups</span><span></span>
+    </button>
 
-    <div class="section-title" style="margin-top:18px">Groups</div>
-    <div id="sidebarGroups" class="group-list"></div>
+    <div class="nav-section">Review</div>
+    <button class="btn navbtn" data-view="validate">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 6v6c0 4.4 3.4 8.3 8 9 4.6-.7 8-4.6 8-9V6l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg>
+      <span>Validate Bank</span><span></span>
+    </button>
+    <button class="btn navbtn" data-view="reports">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 21V4h11l-1.2 3H20l-1.5 4.5L20 16H8.5L8 14H4"/></svg>
+      <span>Reported Issues</span>
+      <span class="pill" id="reportBadge" style="display:none">0</span>
+    </button>
+    <button class="btn navbtn" data-view="testers">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 20v-1.5a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4V20"/><circle cx="9" cy="7" r="3.2"/><path d="M17 4.2a3.2 3.2 0 0 1 0 6M22 20v-1.5a4 4 0 0 0-3-3.8"/></svg>
+      <span>Testers</span><span></span>
+    </button>
+
+    <div class="nav-section">Data</div>
+    <button class="btn navbtn" data-view="project">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 8v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8"/><rect x="2" y="3" width="20" height="5" rx="1.5"/><path d="M10 12h4"/></svg>
+      <span>Project / Export</span><span></span>
+    </button>
+
+    <details class="dev-fold">
+      <summary>
+        <svg class="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+        <span>Groups <span class="small muted" id="devGroupCount"></span></span>
+        <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+      </summary>
+      <div class="fold-body"><div id="sidebarGroups" class="group-list"></div></div>
+    </details>
 
     <div class="footer-note">
       Every change saves to Supabase automatically. Sign in anywhere to keep working.
@@ -531,7 +602,8 @@ details.advanced>summary{cursor:pointer;font-weight:800;color:#c9d1d9}
           </div>
           <button id="refreshTestersBtn" class="btn" type="button">Refresh</button>
         </div>
-        <div id="onlineList" class="small muted" style="margin-top:12px"></div>
+        <div class="small muted" style="margin-top:12px">Set each account's stud number below. Blank falls back to the digits in the username.</div>
+        <div id="onlineList" class="small muted" style="margin-top:6px"></div>
       </div>
 
       <div class="panel">
@@ -949,6 +1021,8 @@ function renderSidebar(){
   el.innerHTML=project.groups.length?project.groups.map((g,i)=>`
     <div class="group-pill"><strong>${i+1}. ${esc(g.name)}</strong><span>${counts[g.id]||0} questions</span></div>
   `).join(""):`<div class="small muted">No groups yet.</div>`;
+  const gc=document.getElementById("devGroupCount");
+  if(gc)gc.textContent="("+project.groups.length+")";
 }
 function renderGroupSelects(){
   const opts=project.groups.map((g,i)=>`<option value="${esc(g.id)}">${i+1}. ${esc(g.name)}</option>`).join("");
@@ -1256,7 +1330,7 @@ function timeAgo(ms){
 async function loadTesters(){
   const sb=FC.client;
   const [pRes,prRes]=await Promise.all([
-    sb.from("profiles").select("id, username, role"),
+    sb.from("profiles").select("id, username, role, stud_number"),
     sb.from("presence").select("user_id, last_seen_at")
   ]);
   if(pRes.error) throw new Error(pRes.error.message);
@@ -1267,6 +1341,7 @@ async function loadTesters(){
     id:p.id,
     username:p.username||"(no username)",
     role:p.role||"",
+    studNumber:p.stud_number||"",
     lastSeen:seen[p.id]||0
   })).sort((a,b)=>(b.lastSeen-a.lastSeen)||a.username.localeCompare(b.username));
 }
@@ -1279,13 +1354,34 @@ function renderOnline(){
   document.getElementById("onlineList").innerHTML = testersCache.length
     ? testersCache.map(t=>{
         const on=now-t.lastSeen<ONLINE_WINDOW_MS;
-        return `<div class="row" style="gap:8px;padding:5px 0">
+        const auto=(t.username.match(/(\d+)\s*$/)||[])[1]||"";
+        return `<div class="row" style="gap:9px;padding:7px 0;border-top:1px solid var(--line)">
           <span style="width:9px;height:9px;border-radius:50%;flex:0 0 9px;background:${on?"#3fb950":"#6e7681"};display:inline-block"></span>
-          <strong style="color:#e6edf3">${esc(t.username)}</strong>
-          <span>${on?"online now":(t.lastSeen?"last seen "+timeAgo(now-t.lastSeen):"never signed in")}</span>
+          <strong style="color:#e6edf3;flex:1;min-width:110px">${esc(t.username)}</strong>
+          <input class="stud-input" data-stud-for="${esc(t.id)}" value="${esc(t.studNumber)}"
+                 placeholder="${esc(auto||"--")}" title="Stud number shown in the study app">
+          <span style="flex-basis:100%;font-size:11px">${on?"online now":(t.lastSeen?"last seen "+timeAgo(now-t.lastSeen):"never signed in")}</span>
         </div>`;
       }).join("")
     : "No accounts visible. Check the developer RLS policies.";
+
+  document.querySelectorAll("[data-stud-for]").forEach(inp=>{
+    inp.onchange=async()=>{
+      const prev=inp.value;
+      inp.disabled=true;
+      try{
+        await FC.setStudNumber(inp.dataset.studFor,inp.value);
+        const t=testersCache.find(x=>x.id===inp.dataset.studFor);
+        if(t)t.studNumber=inp.value.trim();
+        inp.style.borderColor="#2ea043";
+        setTimeout(()=>{inp.style.borderColor="";},900);
+      }catch(e){
+        alert(e.message||String(e));
+        inp.value=prev;
+      }
+      inp.disabled=false;
+    };
+  });
 }
 function fillTesterSelect(){
   const sel=document.getElementById("testerSelect");
@@ -1814,17 +1910,15 @@ function renderReports(){
   list.innerHTML=rows.map(r=>{
     const when=new Date(r.created_at).toLocaleString();
     const known=project.questions.some(q=>q.id===r.question_id);
-    return `<div class="qrow">
-      <div class="qrow-top">
-        <div class="qrow-title">${esc(r.question_text||"[Image-only question]")}</div>
+    return `<div class="report-card ${esc(r.status)}">
+      <div class="report-head">
+        <div class="report-reason">${esc(reportReasonLabel(r.reason))}</div>
         <span class="badge" style="${reportStatusStyle(r.status)}">${esc(r.status)}</span>
       </div>
-      <div class="qrow-meta">
-        <strong>${esc(reportReasonLabel(r.reason))}</strong> —
-        ${esc(r.username)} • ${esc(r.group_name)} • ${esc(when)}
-      </div>
-      ${r.details?`<div class="qrow-meta" style="color:#e6edf3;margin-top:8px;white-space:pre-wrap">${esc(r.details)}</div>`:""}
-      <div class="qrow-actions">
+      <div class="report-q">${esc(r.question_text||"[Image-only question]")}</div>
+      <div class="report-meta">${esc(r.username)} • ${esc(r.group_name)} • ${esc(when)}</div>
+      ${r.details?`<div class="report-note">${esc(r.details)}</div>`:""}
+      <div class="report-actions">
         <button class="btn primary" data-report-edit="${esc(r.question_id)}" ${known?"":"disabled title='Question is not in the loaded module'"}>Open in Editor</button>
         ${r.status!=="resolved"?`<button class="btn good" data-report-status="resolved" data-report-id="${esc(r.id)}">Mark Fixed</button>`:""}
         ${r.status!=="dismissed"?`<button class="btn" data-report-status="dismissed" data-report-id="${esc(r.id)}">Dismiss</button>`:""}

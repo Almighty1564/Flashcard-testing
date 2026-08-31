@@ -133,7 +133,7 @@ input[type=text],input[type=password],select{width:100%;background:#0d1117;color
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M22 8.5 12 3 2 8.5l10 5.5 10-5.5Z"/><path d="M6 11v5.5c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5V11"/>
       </svg>
-      <h1>STUDXX</h1>
+      <h1 id="brandName">Stud--</h1>
     </div>
     <div class="build"><span id="sideModule">MOD 1</span> • TESTER MODE</div>
   </div>
@@ -981,6 +981,9 @@ document.getElementById("importInput").onchange=async e=>{
   let profile=null;
   try{ profile=await FC.requireUser(); }catch(_){ profile=null; }
   if(!profile){ location.replace("./tester.html"); return; }
+
+  const stud=FC.studLabel(profile);
+  document.getElementById("brandName").textContent = stud ? ("Stud"+stud) : "Study";
 
   try{
     await loadFromCloud();

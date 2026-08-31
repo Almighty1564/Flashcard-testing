@@ -65,7 +65,7 @@
 
     var res = await client
       .from("profiles")
-      .select("id, username, role")
+      .select("id, username, role, stud_number")
       .eq("id", session.user.id)
       .maybeSingle();
 
@@ -377,6 +377,22 @@
     if (res.error) throw new Error(res.error.message);
   }
 
+  /* Stud number for display: explicit value, else digits from the
+     username (tester07 -> 07), else null. */
+  function studLabel(profile) {
+    if (!profile) return null;
+    if (profile.stud_number) return String(profile.stud_number);
+    var m = String(profile.username || "").match(/(\d+)\s*$/);
+    return m ? m[1] : null;
+  }
+
+  async function setStudNumber(userId, value) {
+    var res = await client.rpc("set_stud_number", {
+      p_user_id: userId, p_value: value == null ? "" : String(value)
+    });
+    if (res.error) throw new Error(res.error.message);
+  }
+
   /* ---------------------------------------------------------------
      RANKING
      --------------------------------------------------------------- */
@@ -426,6 +442,8 @@
     reportQuestion: reportQuestion,
     listReports: listReports,
     setReportStatus: setReportStatus,
-    memorizedRank: memorizedRank
+    memorizedRank: memorizedRank,
+    studLabel: studLabel,
+    setStudNumber: setStudNumber
   };
 })();
