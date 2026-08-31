@@ -1,0 +1,416 @@
+/* ==========================================================================
+   theme.css — visual layer for the Flashcard Portal
+   --------------------------------------------------------------------------
+   Loads AFTER each page's inline <style>. Overrides appearance only.
+   No markup, no IDs, no classes, no JS behavior is touched.
+   Delete the one <link> line from a page to revert that page instantly.
+   ========================================================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap');
+
+/* --------------------------------------------------------------------------
+   1. Tokens
+   Deep navy ground instead of grey-black. Teal carries "signal";
+   sand is reserved for one thing only — mastery — so the progress bar
+   reads cool-to-warm as a student improves.
+   -------------------------------------------------------------------------- */
+:root{
+  --ink:#0E1520;
+  --surface:#17202E;
+  --surface-2:#111A26;
+  --rule:#2A3648;
+  --rule-soft:#202B3B;
+  --paper:#E7EDF6;
+  --dim:#8798AE;
+
+  --signal:#4EC9C0;
+  --signal-deep:#1E7C78;
+  --sand:#E8C88E;
+  --good:#5BC98A;
+  --warn:#E0A44A;
+  --bad:#F0705F;
+
+  --font-display:'Space Grotesk',ui-sans-serif,system-ui,sans-serif;
+  --font-body:'IBM Plex Sans',ui-sans-serif,system-ui,-apple-system,sans-serif;
+  --font-num:'IBM Plex Mono',ui-monospace,SFMono-Regular,monospace;
+
+  --r-lg:14px;
+  --r-md:10px;
+  --r-sm:7px;
+
+  /* Remap every legacy variable the pages already consume. */
+  --bg:var(--ink);
+  --panel:var(--surface);
+  --panel2:var(--surface-2);
+  --line:var(--rule);
+  --text:var(--paper);
+  --muted:var(--dim);
+  --accent:var(--signal);
+  --blue:var(--signal);
+  --green:var(--good);
+  --red:var(--bad);
+  --yellow:var(--warn);
+  --gray:#5C6B80;
+  --radius:var(--r-lg);
+
+  color-scheme:dark;
+}
+
+/* --------------------------------------------------------------------------
+   2. Typography
+   -------------------------------------------------------------------------- */
+body{
+  font-family:var(--font-body);
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+  letter-spacing:.005em;
+}
+
+h1,h2,h3,h4{
+  font-family:var(--font-display);
+  letter-spacing:-.018em;
+  line-height:1.15;
+}
+h1{font-weight:600}
+h2{font-weight:600;font-size:1.45rem}
+h3{font-weight:600;font-size:1.1rem}
+h4{font-weight:600;font-size:.95rem;color:var(--paper)}
+
+p,li{max-width:68ch;line-height:1.6}
+.small{font-size:12.5px;line-height:1.5}
+.muted{color:var(--dim)}
+
+/* Numeric readouts get the mono face. Labels do not — mono on labels is
+   decoration; mono on measurements is legibility. */
+.stat strong,
+.summary-box strong,
+.score strong{
+  font-family:var(--font-num);
+  font-weight:600;
+  font-variant-numeric:tabular-nums;
+  letter-spacing:-.02em;
+}
+
+/* Small caps labels read as shouting at this size. */
+.stat span{
+  text-transform:none;
+  font-size:11px;
+  font-weight:500;
+  letter-spacing:.01em;
+  color:var(--dim);
+}
+
+/* --------------------------------------------------------------------------
+   3. Surfaces
+   Radius encodes hierarchy: containers round, controls tighter, pills round.
+   -------------------------------------------------------------------------- */
+.panel,
+.card,
+.question-card{
+  background:var(--surface);
+  border:1px solid var(--rule-soft);
+  border-radius:var(--r-lg);
+  box-shadow:0 1px 0 rgba(255,255,255,.03) inset;
+}
+
+.sidebar{
+  background:#0B111B;
+  border-right:1px solid var(--rule-soft);
+}
+
+.stat,
+.summary-box,
+.check-item,
+.match-row,
+.priority{
+  background:var(--surface-2);
+  border:1px solid var(--rule-soft);
+  border-radius:var(--r-md);
+}
+
+.badge{
+  border:1px solid var(--rule);
+  border-radius:999px;
+  padding:3px 9px;
+  font-size:11px;
+  color:var(--dim);
+}
+
+.empty{
+  border:1px dashed var(--rule);
+  border-radius:var(--r-lg);
+  background:transparent;
+}
+
+/* --------------------------------------------------------------------------
+   4. Controls
+   -------------------------------------------------------------------------- */
+button,.btn,.back{
+  font-family:var(--font-body);
+  font-weight:600;
+  letter-spacing:.005em;
+  border-radius:var(--r-sm);
+  background:#1E2836;
+  border:1px solid var(--rule);
+  color:var(--paper);
+  transition:background .12s ease,border-color .12s ease;
+}
+button:hover,.btn:hover,.back:hover{
+  background:#243040;
+  border-color:#3D4C63;
+}
+
+.btn.primary,.primary{
+  background:var(--signal);
+  border-color:var(--signal);
+  color:#06231F;
+  font-weight:700;
+}
+.btn.primary:hover,.primary:hover{
+  background:#5FD8CF;
+  border-color:#5FD8CF;
+}
+
+.btn.good,.good{background:#1B5738;border-color:#2C7A52;color:#DFF5E8}
+.btn.warn,.warn{background:#5A4114;border-color:#8A6520;color:#F7E3BE}
+.btn.bad,.bad{background:#59211C;border-color:#8A3A31;color:#FBDDD7}
+
+.btn:disabled,button:disabled{opacity:.38;cursor:not-allowed}
+
+input,select,textarea,
+input[type=text],input[type=password]{
+  background:var(--surface-2);
+  border:1px solid var(--rule);
+  border-radius:var(--r-sm);
+  color:var(--paper);
+  font-family:var(--font-body);
+}
+input::placeholder,textarea::placeholder{color:#5F7089}
+
+input:focus,select:focus,textarea:focus{
+  outline:none;
+  border-color:var(--signal);
+  box-shadow:0 0 0 3px rgba(78,201,192,.16);
+}
+
+.field label{
+  text-transform:none;
+  font-size:11.5px;
+  font-weight:600;
+  letter-spacing:.01em;
+  color:var(--dim);
+}
+
+/* Keyboard users get a visible ring everywhere. */
+:focus-visible{
+  outline:2px solid var(--signal);
+  outline-offset:2px;
+  border-radius:var(--r-sm);
+}
+
+/* --------------------------------------------------------------------------
+   5. Signature element — the mastery bar
+   This is the one place the design spends boldness. The segments run cool
+   (untested) to warm (confident), so a glance at the bar tells you where a
+   group sits without reading the number.
+   -------------------------------------------------------------------------- */
+.bar{
+  height:22px;
+  background:#141D2A;
+  border:1px solid var(--rule-soft);
+  border-radius:var(--r-sm);
+  overflow:hidden;
+  display:flex;
+}
+.seg{height:100%;transition:width .3s ease}
+.seg.confident{background:var(--sand)}
+.seg.correct{background:var(--signal)}
+.seg.guessed{background:var(--warn)}
+.seg.wrong{background:var(--bad)}
+.seg.unanswered{background:#4A5A70}
+.seg.untested{background:#1B2533}
+
+.progress-row{
+  border-top:1px solid var(--rule-soft);
+  padding:14px 0;
+}
+.rank{
+  font-family:var(--font-num);
+  font-weight:500;
+  font-size:15px;
+  color:#5F7089;
+}
+.score strong{font-size:21px;color:var(--paper)}
+.score span{color:var(--dim);font-size:10.5px}
+
+/* --------------------------------------------------------------------------
+   6. Study interactions
+   -------------------------------------------------------------------------- */
+.question-text{
+  font-family:var(--font-display);
+  font-weight:600;
+  font-size:26px;
+  line-height:1.3;
+  letter-spacing:-.014em;
+}
+.answer-box{
+  border-top:1px solid var(--rule-soft);
+  font-size:18px;
+  line-height:1.55;
+  color:#D6DFEC;
+}
+
+.choice-option{
+  background:var(--surface-2);
+  border:1px solid var(--rule-soft);
+  border-radius:var(--r-md);
+  transition:border-color .12s ease,background .12s ease;
+}
+.choice-option:hover{border-color:#3D4C63;background:#16202D}
+.choice-option.correct-reveal{
+  border-color:var(--signal);
+  background:rgba(78,201,192,.07);
+}
+.choice-option.wrong-selected{
+  border-color:var(--bad);
+  background:rgba(240,112,95,.07);
+}
+.choice-option input{accent-color:var(--signal)}
+
+.feedback{border-radius:var(--r-md);border-left-width:3px;font-size:14px}
+.feedback.good{background:rgba(91,201,138,.09);border-color:var(--good)}
+.feedback.bad{background:rgba(240,112,95,.09);border-color:var(--bad)}
+
+.group-btn{
+  background:var(--surface-2);
+  border:1px solid var(--rule-soft);
+  border-radius:var(--r-md);
+  transition:border-color .12s ease,background .12s ease;
+}
+.group-btn:hover{border-color:#3D4C63}
+.group-btn.active{
+  border-color:var(--signal);
+  background:rgba(78,201,192,.09);
+}
+.group-name{font-weight:600;letter-spacing:.002em}
+.group-meta{color:var(--dim);font-size:11px}
+
+.match-source{
+  background:#16202D;
+  border:1px solid var(--rule);
+  border-radius:var(--r-sm);
+}
+.match-source.selected{
+  border-color:var(--signal);
+  background:rgba(78,201,192,.11);
+}
+.drop-zone{
+  border:1px dashed #3D4C63;
+  border-radius:var(--r-sm);
+  color:var(--dim);
+}
+.drop-zone.correct-reveal{border-color:var(--signal)}
+.drop-zone.wrong-reveal{border-color:var(--bad)}
+
+.report-btn{margin-left:auto}
+
+/* --------------------------------------------------------------------------
+   7. Portal landing (index.html)
+   Two doors. Weight tells you which one you probably want.
+   -------------------------------------------------------------------------- */
+main h1{
+  font-size:clamp(30px,7vw,44px);
+  font-weight:600;
+  letter-spacing:-.028em;
+  margin-bottom:34px;
+}
+
+.choice{
+  min-height:220px;
+  border-radius:var(--r-lg);
+  font-family:var(--font-display);
+  font-size:19px;
+  font-weight:600;
+  letter-spacing:.14em;
+  gap:0;
+  transition:transform .14s ease,border-color .14s ease;
+}
+.choice span{
+  font-size:26px;
+  margin-bottom:18px;
+  opacity:.5;
+}
+.choice.tester{
+  background:linear-gradient(168deg,#1E5F5C 0%,#123E3D 100%);
+  border:1px solid #2E7A76;
+  color:#DFF6F3;
+}
+.choice.developer{
+  background:var(--surface);
+  border:1px solid var(--rule);
+  color:var(--paper);
+}
+.choice:hover{filter:none;transform:translateY(-2px)}
+.choice.tester:hover{border-color:var(--signal)}
+.choice.developer:hover{border-color:var(--sand)}
+
+/* --------------------------------------------------------------------------
+   8. Module picker + sign-in (tester.html)
+   -------------------------------------------------------------------------- */
+.mod{
+  background:var(--surface);
+  border:1px solid var(--rule-soft);
+  border-radius:var(--r-lg);
+  font-family:var(--font-display);
+  font-size:21px;
+  font-weight:600;
+  letter-spacing:-.01em;
+  transition:border-color .14s ease,background .14s ease;
+}
+.mod:hover{
+  border-color:var(--signal);
+  background:#16202D;
+}
+.mod small{color:var(--dim);font-weight:500;font-size:12px}
+
+.access-lock{
+  background:var(--surface);
+  border:1px solid var(--rule-soft);
+  border-radius:var(--r-lg);
+  font-family:var(--font-body);
+  color:var(--paper);
+  box-shadow:0 18px 50px rgba(0,0,0,.4);
+}
+.access-lock h1{font-family:var(--font-display);font-weight:600;font-size:23px}
+.access-lock p{color:var(--dim)}
+.access-lock input{
+  background:var(--surface-2);
+  border:1px solid var(--rule);
+  border-radius:var(--r-sm);
+  color:var(--paper);
+}
+.access-lock button{
+  background:var(--signal);
+  border:1px solid var(--signal);
+  border-radius:var(--r-sm);
+  color:#06231F;
+  font-weight:700;
+}
+.access-lock button:hover{background:#5FD8CF;border-color:#5FD8CF}
+.access-lock-error{color:var(--bad);font-size:12.5px}
+
+/* --------------------------------------------------------------------------
+   9. Accessibility floor
+   -------------------------------------------------------------------------- */
+@media (prefers-reduced-motion:reduce){
+  *,*::before,*::after{
+    animation-duration:.01ms!important;
+    transition-duration:.01ms!important;
+  }
+  .choice:hover{transform:none}
+}
+
+@media (max-width:850px){
+  .question-text{font-size:21px}
+  .bar{height:18px}
+}
