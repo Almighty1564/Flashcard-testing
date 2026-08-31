@@ -1330,7 +1330,7 @@ function timeAgo(ms){
 async function loadTesters(){
   const sb=FC.client;
   const [pRes,prRes]=await Promise.all([
-    sb.from("profiles").select("id, username, role, stud_number"),
+    sb.from("profiles").select("*"),
     sb.from("presence").select("user_id, last_seen_at")
   ]);
   if(pRes.error) throw new Error(pRes.error.message);

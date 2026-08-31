@@ -65,7 +65,7 @@
 
     var res = await client
       .from("profiles")
-      .select("id, username, role, stud_number")
+      .select("*")
       .eq("id", session.user.id)
       .maybeSingle();
 
@@ -382,6 +382,7 @@
   function studLabel(profile) {
     if (!profile) return null;
     if (profile.stud_number) return String(profile.stud_number);
+    /* stud_number may not exist yet — fall through to the username */
     var m = String(profile.username || "").match(/(\d+)\s*$/);
     return m ? m[1] : null;
   }
@@ -390,7 +391,12 @@
     var res = await client.rpc("set_stud_number", {
       p_user_id: userId, p_value: value == null ? "" : String(value)
     });
-    if (res.error) throw new Error(res.error.message);
+    if (res.error) {
+      if (/set_stud_number|stud_number/i.test(res.error.message || "")) {
+        throw new Error("Stud numbers need the latest SQL migration. Run supabase-reports-and-rank.sql.");
+      }
+      throw new Error(res.error.message);
+    }
   }
 
   /* ---------------------------------------------------------------
