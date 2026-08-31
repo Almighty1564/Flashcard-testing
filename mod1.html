@@ -74,6 +74,7 @@ input[type=text],input[type=password],select{width:100%;background:#0d1117;color
  .question-text{font-size:20px}
 }
 
+#calcHost{--m1-go-fg:#fff}
 .back-modules{
   display:inline-block;margin-bottom:14px;text-decoration:none;
   background:#21262d;color:#e6edf3;border:1px solid #30363d;
@@ -105,6 +106,7 @@ input[type=text],input[type=password],select{width:100%;background:#0d1117;color
 
   <button id="customBtn" class="btn full" disabled>Build Custom Test</button>
   <button id="progressBtn" class="btn full" disabled>Overall Progress</button>
+  <button id="calcBtn" class="btn full">Practice Calculations</button>
   <button id="exportBtn" class="btn full">Export Progress</button>
   <button id="importBtn" class="btn full">Import Progress</button>
   <input id="importInput" class="file-input" type="file" accept=".json,application/json">
@@ -199,12 +201,24 @@ input[type=text],input[type=password],select{width:100%;background:#0d1117;color
     <h4 style="margin-top:24px">Not Tested</h4>
     <div id="untestedGroups" class="check-grid"></div>
   </section>
+
+  <section id="calcView" class="hidden">
+    <div class="builder-toolbar" style="margin-bottom:16px">
+      <div>
+        <h3 style="margin:0">Practice Calculations</h3>
+        <div class="muted small">Generated fresh every time. Not scored against your SRS progress.</div>
+      </div>
+      <button id="closeCalcBtn" class="btn">Back</button>
+    </div>
+    <div id="calcHost"></div>
+  </section>
 </main>
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="./supabase-config.js"></script>
 <script src="./cloud.js"></script>
+<script src="./mod1-calc.js?v=8"></script>
 <script>
 const MODULE_SLUG=new URLSearchParams(location.search).get("module")||"mod1";
 
@@ -292,7 +306,7 @@ function markUnanswered(cardId){
   pushCard(cardId);
 }
 function hideViews(){
-  ["lockedView","emptyView","studyView","customView","debriefView","progressView"].forEach(id=>document.getElementById(id).classList.add("hidden"));
+  ["lockedView","emptyView","studyView","customView","debriefView","progressView","calcView"].forEach(id=>document.getElementById(id).classList.add("hidden"));
 }
 function renderSidebar(){
   if(!bank){
@@ -718,6 +732,12 @@ function showOverallProgress(){
     `<div class="check-item"><strong>${esc(r.name)}</strong><span class="muted small">${r.total} questions</span></div>`
   ).join(""):'<div class="muted small">Every group has at least one result.</div>';
 }
+let calcApp=null;
+function showCalc(){
+  hideViews();
+  document.getElementById("calcView").classList.remove("hidden");
+  if(!calcApp) calcApp=Mod1Calc.mount(document.getElementById("calcHost"),{mode:"gen"});
+}
 function selectedCustomGroups(){
   return [...document.querySelectorAll("[data-custom-group]:checked")].map(x=>x.dataset.customGroup);
 }
@@ -730,6 +750,8 @@ document.getElementById("progressBtn").onclick=showOverallProgress;
 document.getElementById("closeCustomBtn").onclick=openDueReviews;
 document.getElementById("closeProgressBtn").onclick=openDueReviews;
 document.getElementById("skipBtn").onclick=skipCurrent;
+document.getElementById("calcBtn").onclick=showCalc;
+document.getElementById("closeCalcBtn").onclick=openDueReviews;
 document.getElementById("customAllBtn").onclick=()=>document.querySelectorAll("[data-custom-group]").forEach(x=>x.checked=true);
 document.getElementById("customNoneBtn").onclick=()=>document.querySelectorAll("[data-custom-group]").forEach(x=>x.checked=false);
 document.getElementById("startCustomBtn").onclick=()=>{

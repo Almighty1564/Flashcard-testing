@@ -6,6 +6,9 @@
      <script src="mod1-calc.js"></script>
      <script> Mod1Calc.mount(document.getElementById('calcHost')); </script>
 
+   When embedded, it inherits --line, --muted, --accent, --good and --bad
+   from the host page. Set --m1-go-fg to control the primary button text.
+
    Injects its own scoped styles (.m1c- prefix). No dependencies,
    no localStorage, no network. Safe inside mod1.html.
    ============================================================ */
@@ -461,7 +464,8 @@
      ============================================================ */
 
   var CSS = ""
-  + ".m1c{--m1-line:#2a333c;--m1-mut:#8d9aa7;--m1-acc:#f0a202;--m1-ok:#54a86e;--m1-bad:#d4564f;"
+  + ".m1c{--m1-line:var(--line,#2a333c);--m1-mut:var(--muted,#8d9aa7);--m1-acc:var(--accent,#f0a202);"
+  + "--m1-ok:var(--good,#54a86e);--m1-bad:var(--bad,#d4564f);"
   + "--m1-mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:inherit;max-width:680px;margin:0 auto}"
   + ".m1c *{box-sizing:border-box}"
   + ".m1c-tabs{display:flex;gap:8px;margin-bottom:14px}"
@@ -485,7 +489,7 @@
   + ".m1c-btns{display:flex;gap:10px;margin-top:16px}"
   + ".m1c-btns button{flex:1;border-radius:8px;padding:12px;font-size:.88rem;font-weight:600;cursor:pointer;"
   + "border:1px solid var(--m1-line);background:rgba(255,255,255,.05);color:inherit}"
-  + ".m1c-btns button.m1c-go{background:var(--m1-acc);color:#1a1200;border-color:var(--m1-acc)}"
+  + ".m1c-btns button.m1c-go{background:var(--m1-acc);color:var(--m1-go-fg,#1a1200);border-color:var(--m1-acc)}"
   + ".m1c-verdict{margin-top:14px;font-size:.88rem;font-weight:600}"
   + ".m1c-verdict.ok{color:var(--m1-ok)}.m1c-verdict.bad{color:var(--m1-bad)}"
   + ".m1c-steps{margin-top:12px;border-top:1px solid var(--m1-line);padding-top:12px}"
