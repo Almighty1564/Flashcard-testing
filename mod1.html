@@ -124,7 +124,7 @@ input[type=text],input[type=password],select{width:100%;background:#0d1117;color
 .back-modules:hover{border-color:#6e7681}
 
 </style>
-<link rel="stylesheet" href="./theme.css?v=3">
+<link rel="stylesheet" href="./theme.css?v=4">
 </head>
 <body>
 <div class="shell">
@@ -140,7 +140,8 @@ input[type=text],input[type=password],select{width:100%;background:#0d1117;color
   </div>
 
   <div class="ring-card">
-    <div class="ring-wrap">
+    <button type="button" id="ringBtn" class="ring-wrap" disabled
+            title="Open the full group-by-group breakdown">
       <svg class="ring" viewBox="0 0 120 120" aria-hidden="true">
         <circle class="ring-track" cx="60" cy="60" r="52"></circle>
         <circle class="ring-seg" id="segConfident" cx="60" cy="60" r="52"></circle>
@@ -149,11 +150,11 @@ input[type=text],input[type=password],select{width:100%;background:#0d1117;color
         <circle class="ring-seg" id="segWrong"     cx="60" cy="60" r="52"></circle>
         <circle class="ring-seg" id="segSkipped"   cx="60" cy="60" r="52"></circle>
       </svg>
-      <div class="ring-center">
+      <span class="ring-center">
         <strong id="ringPct">0<i>%</i></strong>
         <span>memorized</span>
-      </div>
-    </div>
+      </span>
+    </button>
     <div class="ring-legend">
       <span><i class="k-confident"></i>Confident<b id="lgConfident">0</b></span>
       <span><i class="k-correct"></i>Correct<b id="lgCorrect">0</b></span>
@@ -162,25 +163,52 @@ input[type=text],input[type=password],select{width:100%;background:#0d1117;color
       <span><i class="k-skipped"></i>Skipped<b id="lgSkipped">0</b></span>
     </div>
     <div class="ring-sub" id="ringSub">no cards loaded</div>
+    <div class="ring-hint">Tap the ring for the full breakdown</div>
   </div>
 
   <button id="unlockBtn" class="btn primary full">Refresh From Cloud</button>
 
-  <button id="customBtn" class="icon-btn" disabled>
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <path d="M4 4a2 2 0 0 1 2-2h7l5 5v4"/><path d="M13 2v5h5"/>
-      <path d="M4 4v16a2 2 0 0 0 2 2h5"/>
-      <path d="m16.5 15.5 3.4 3.4-3.2 1.3.9-3.3Z"/><path d="m18.6 13.4 2.1 2.1"/>
-    </svg>
-    <span>Build Custom Test</span>
-  </button>
-
-  <button id="progressBtn" class="icon-btn" disabled>
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-      <path d="M12 3a9 9 0 1 0 9 9h-9V3Z"/><path d="M15.5 3.6A9 9 0 0 1 20.4 8.5L15.5 10V3.6Z"/>
-    </svg>
-    <span>Overall Progress</span>
-  </button>
+  <details class="disclosure" id="customDisclosure">
+    <summary>
+      <svg class="lead" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+        <path d="M4 4a2 2 0 0 1 2-2h7l5 5v4"/><path d="M13 2v5h5"/>
+        <path d="M4 4v16a2 2 0 0 0 2 2h5"/>
+        <path d="m16.5 15.5 3.4 3.4-3.2 1.3.9-3.3Z"/><path d="m18.6 13.4 2.1 2.1"/>
+      </svg>
+      <span>Build Custom Test</span>
+      <svg class="chev" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 5 7 7-7 7"/></svg>
+    </summary>
+    <div class="body">
+      <button id="customPickBtn" class="icon-btn sub" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 6h16M4 12h16M4 18h16"/><path d="M9 6v12"/>
+        </svg>
+        <span>Choose groups…</span>
+      </button>
+      <button id="customWeakBtn" class="icon-btn sub" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M12 9v4"/><path d="M12 17h.01"/>
+          <path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/>
+        </svg>
+        <span>Wrong &amp; guessed only</span>
+      </button>
+      <button id="customUntestedBtn" class="icon-btn sub" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <circle cx="12" cy="12" r="9"/><path d="M12 8v4"/><path d="M12 16h.01"/>
+        </svg>
+        <span>Never seen only</span>
+      </button>
+      <button id="customAllCardsBtn" class="icon-btn sub" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="m20 6-11 11-5-5"/>
+        </svg>
+        <span>Every question</span>
+      </button>
+      <div class="small muted" id="customHint" style="margin-top:10px;line-height:1.5">
+        Presets start straight away. SRS due dates are ignored for custom tests.
+      </div>
+    </div>
+  </details>
 
   <button id="calcBtn" class="icon-btn">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -285,6 +313,7 @@ input[type=text],input[type=password],select{width:100%;background:#0d1117;color
         <div id="reportStatus" class="small muted" style="margin-top:8px"></div>
       </div>
       <div class="rating-row">
+        <button id="exitSessionBtn" class="btn">← Exit test</button>
         <button id="skipBtn" class="btn">Skip</button>
         <button id="reportBtn" class="btn report-btn" title="Flag a problem with this question">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -302,7 +331,7 @@ input[type=text],input[type=password],select{width:100%;background:#0d1117;color
         <h3 style="margin:0">Custom Test</h3>
         <div class="muted small">Choose any combination of groups. SRS due dates are ignored for this test.</div>
       </div>
-      <button id="closeCustomBtn" class="btn">Cancel</button>
+      <button id="closeCustomBtn" class="btn">← Back</button>
     </div>
     <div class="rating-row">
       <button id="customAllBtn" class="btn">Select All</button>
@@ -322,6 +351,7 @@ input[type=text],input[type=password],select{width:100%;background:#0d1117;color
       <button id="retestWrongBtn" class="btn">Retest Wrong / Guessed</button>
       <button id="retestAllBtn" class="btn primary">Retest All</button>
       <button id="returnDueBtn" class="btn">Return to Due Reviews</button>
+      <button id="debriefProgressBtn" class="btn">View full breakdown</button>
     </div>
     <div style="margin-top:20px">
       <h4>Priority Retest</h4>
@@ -335,7 +365,7 @@ input[type=text],input[type=password],select{width:100%;background:#0d1117;color
         <h3 style="margin:0">Overall Progress</h3>
         <div class="muted small">Recalculated from each card's latest stored result every time this page opens.</div>
       </div>
-      <button id="closeProgressBtn" class="btn">Back</button>
+      <button id="closeProgressBtn" class="btn">← Back</button>
     </div>
     <div id="overallSummary" class="summary-grid"></div>
     <h4>Best → Worst Tested Groups</h4>
@@ -350,7 +380,7 @@ input[type=text],input[type=password],select{width:100%;background:#0d1117;color
         <h3 style="margin:0">Practice Calculations</h3>
         <div class="muted small">Generated fresh every time. Not scored against your SRS progress.</div>
       </div>
-      <button id="closeCalcBtn" class="btn">Back</button>
+      <button id="closeCalcBtn" class="btn">← Back</button>
     </div>
     <div id="calcHost"></div>
   </section>
@@ -571,8 +601,8 @@ async function loadFromCloud(){
     currentCard=null;
 
     document.getElementById("backendLabel").textContent="Supabase • "+bank.module.slug;
-    document.getElementById("customBtn").disabled=false;
-    document.getElementById("progressBtn").disabled=false;
+    ["ringBtn","customPickBtn","customWeakBtn","customUntestedBtn","customAllCardsBtn"]
+      .forEach(id=>{const e=document.getElementById(id); if(e) e.disabled=false;});
     document.getElementById("pageTitle").textContent=bank.module?.name||"Question Bank";
     document.getElementById("pageSub").textContent=
       `${groups().length} groups • ${cards().length} questions • progress synced to your account`;
@@ -842,6 +872,7 @@ function skipCurrent(){
   markUnanswered(currentCard.id);
   session.results[currentCard.id]="unanswered";
   session.cursor++;
+  renderSidebar();
   loadCurrent();
 }
 function finishSession(){
@@ -905,17 +936,44 @@ function openDueReviews(){
   if(due.length){
     startSession(due,"due",selectedGroupId?[selectedGroupId]:groups().map(g=>g.id));
   }else{
-    hideViews();
-    document.getElementById("emptyView").classList.remove("hidden");
-    document.getElementById("emptyTitle").textContent="No cards due";
-    document.getElementById("emptyText").textContent=
-      selectedGroupId?`${groupName(selectedGroupId)} has no SRS cards due right now.`:"No SRS cards are due right now.";
+    showMenu("No cards due",
+      selectedGroupId?`${groupName(selectedGroupId)} has no SRS cards due right now.`:"No SRS cards are due right now.");
+  }
+  renderSidebar();
+}
 
-    const scope=selectedGroupId?cardsForGroup(selectedGroupId):cards();
-    const wg=scope.filter(c=>["wrong","guessed"].includes(state.mastery[c.id]?.lastResult));
-    document.getElementById("emptyRetestWrong").disabled=!wg.length;
-    document.getElementById("emptyRetestWrong").onclick=()=>startSession(wg,"wrong",selectedGroupId?[selectedGroupId]:groups().map(g=>g.id));
-    document.getElementById("emptyRetestAll").onclick=()=>startSession(scope,"all",selectedGroupId?[selectedGroupId]:groups().map(g=>g.id));
+/* Neutral landing screen. Nothing auto-starts from here — every route out
+   is a deliberate button press. Used by Back and Exit so leaving a test
+   never drops you straight into the next one. */
+function showMenu(title,text){
+  if(!bank)return;
+  session=null;
+  currentCard=null;
+  hideViews();
+  document.getElementById("emptyView").classList.remove("hidden");
+
+  const scope=selectedGroupId?cardsForGroup(selectedGroupId):cards();
+  const scopeIds=selectedGroupId?[selectedGroupId]:groups().map(g=>g.id);
+  const wg=scope.filter(c=>["wrong","guessed"].includes(state?.mastery?.[c.id]?.lastResult));
+  const due=dueCards(selectedGroupId);
+
+  document.getElementById("emptyTitle").textContent=title||"Where to next?";
+  document.getElementById("emptyText").textContent=text||
+    (`Progress is saved. ${due.length} card${due.length===1?"":"s"} due, `+
+     `${wg.length} to fix.`);
+
+  const rw=document.getElementById("emptyRetestWrong");
+  rw.textContent="Retest Wrong / Guessed";
+  rw.disabled=!wg.length;
+  rw.onclick=()=>startSession(wg,"wrong",scopeIds);
+
+  const ra=document.getElementById("emptyRetestAll");
+  if(due.length){
+    ra.textContent=`Start Due Reviews (${due.length})`;
+    ra.onclick=()=>startSession(due,"due",scopeIds);
+  }else{
+    ra.textContent="Retest All Now";
+    ra.onclick=()=>startSession(scope,"all",scopeIds);
   }
   renderSidebar();
 }
@@ -1034,16 +1092,50 @@ function selectedCustomGroups(){
 document.getElementById("unlockBtn").onclick=async()=>{
   try{await loadFromCloud()}catch(e){alert(e.message||String(e))}
 };
-document.getElementById("customBtn").onclick=showCustom;
-document.getElementById("progressBtn").onclick=showOverallProgress;
-document.getElementById("closeCustomBtn").onclick=openDueReviews;
-document.getElementById("closeProgressBtn").onclick=openDueReviews;
+/* The ring is the entry point to the detailed breakdown now that the
+   sidebar "Overall Progress" button is gone. */
+document.getElementById("ringBtn").onclick=()=>{ if(bank) showOverallProgress(); };
+document.getElementById("debriefProgressBtn").onclick=showOverallProgress;
+
+/* Custom test: the disclosure holds the entry points, the full page still
+   owns per-group selection so there is only one place groups get picked. */
+document.getElementById("customPickBtn").onclick=()=>{
+  document.getElementById("customDisclosure").open=false;
+  showCustom();
+};
+function startPreset(list,mode,label){
+  document.getElementById("customDisclosure").open=false;
+  if(!list.length){
+    showMenu("Nothing to test","No questions match \u201c"+label+"\u201d right now.");
+    return;
+  }
+  startSession(list,mode,[...new Set(list.map(c=>c.groupId))]);
+}
+document.getElementById("customWeakBtn").onclick=()=>startPreset(
+  cards().filter(c=>["wrong","guessed"].includes(state?.mastery?.[c.id]?.lastResult)),
+  "wrong","Wrong & guessed only");
+document.getElementById("customUntestedBtn").onclick=()=>startPreset(
+  cards().filter(c=>!state?.mastery?.[c.id]?.lastResult),
+  "all","Never seen only");
+document.getElementById("customAllCardsBtn").onclick=()=>startPreset(
+  cards(),"all","Every question");
+
+/* Leaving a session mid-way. Every answer was already written to Supabase
+   as it happened, so this discards nothing except the unanswered remainder. */
+document.getElementById("exitSessionBtn").onclick=()=>{
+  const done=session?session.cursor:0;
+  const total=session?session.queue.length:0;
+  showMenu("Test exited",
+    `${done} of ${total} answered and saved. The rest were left untouched.`);
+};
+document.getElementById("closeCustomBtn").onclick=()=>showMenu("Custom test cancelled","Nothing was started. Your progress is unchanged.");
+document.getElementById("closeProgressBtn").onclick=()=>showMenu();
 document.getElementById("skipBtn").onclick=skipCurrent;
 document.getElementById("calcBtn").onclick=showCalc;
 document.getElementById("reportBtn").onclick=toggleReportBox;
 document.getElementById("reportCancelBtn").onclick=hideReportBox;
 document.getElementById("reportSendBtn").onclick=sendReport;
-document.getElementById("closeCalcBtn").onclick=openDueReviews;
+document.getElementById("closeCalcBtn").onclick=()=>showMenu();
 document.getElementById("customAllBtn").onclick=()=>document.querySelectorAll("[data-custom-group]").forEach(x=>x.checked=true);
 document.getElementById("customNoneBtn").onclick=()=>document.querySelectorAll("[data-custom-group]").forEach(x=>x.checked=false);
 document.getElementById("startCustomBtn").onclick=()=>{
