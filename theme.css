@@ -486,3 +486,266 @@ main h1{margin-bottom:32px;font-weight:650}
     backdrop-filter:none;
   }
 }
+
+/* ==========================================================================
+   11. Mastery ring (mod1.html sidebar)
+   Replaces the rank card and the Due/Learned/Reviews tiles. One reading:
+   how much of the bank is memorized, with the breakdown as arc segments.
+   Recomputed live from local state — see updateRing() in mod1.html.
+   ========================================================================== */
+.ring-card{
+  background:var(--glass-2);
+  -webkit-backdrop-filter:var(--blur-md);
+  backdrop-filter:var(--blur-md);
+  border:1px solid var(--rim);
+  border-radius:var(--r-xl);
+  box-shadow:var(--specular),var(--drop);
+  padding:20px 16px 16px;
+  margin:14px 0;
+}
+
+.ring-wrap{
+  position:relative;
+  width:100%;
+  max-width:188px;
+  margin:0 auto;
+  aspect-ratio:1;
+}
+
+.ring{
+  width:100%;
+  height:100%;
+  display:block;
+  transform:rotate(-90deg);
+  overflow:visible;
+}
+
+.ring-track{
+  fill:none;
+  stroke:rgba(255,255,255,.075);
+  stroke-width:9;
+}
+
+.ring-seg{
+  fill:none;
+  stroke-width:9;
+  stroke-linecap:butt;
+  stroke-dasharray:0 999;
+  stroke-dashoffset:0;
+  transition:stroke-dasharray .55s cubic-bezier(.32,.72,0,1),
+             stroke-dashoffset .55s cubic-bezier(.32,.72,0,1);
+}
+#segConfident{stroke:var(--sand);  filter:drop-shadow(0 0 5px rgba(255,212,138,.45))}
+#segCorrect  {stroke:var(--tint);  filter:drop-shadow(0 0 5px rgba(90,200,250,.4))}
+#segGuessed  {stroke:var(--warn)}
+#segWrong    {stroke:var(--bad)}
+#segSkipped  {stroke:rgba(255,255,255,.26)}
+
+.ring-center{
+  position:absolute;
+  inset:0;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:1px;
+  pointer-events:none;
+}
+.ring-center strong{
+  font-family:var(--font-num);
+  font-size:40px;
+  font-weight:600;
+  line-height:1;
+  letter-spacing:-.045em;
+  color:var(--paper);
+  font-variant-numeric:tabular-nums;
+}
+.ring-center strong i{
+  font-style:normal;
+  font-size:17px;
+  font-weight:500;
+  color:var(--faint);
+  margin-left:1px;
+}
+.ring-center span{
+  font-size:10.5px;
+  font-weight:530;
+  letter-spacing:.03em;
+  color:var(--faint);
+}
+
+.ring-legend{
+  display:flex;
+  flex-direction:column;
+  gap:1px;
+  margin-top:16px;
+}
+.ring-legend span{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  font-size:12px;
+  font-weight:500;
+  color:var(--dim);
+  padding:4px 2px;
+  border-top:1px solid rgba(255,255,255,.055);
+}
+.ring-legend span:first-child{border-top:0}
+.ring-legend i{
+  width:8px;height:8px;
+  border-radius:2px;
+  flex:none;
+}
+.ring-legend b{
+  margin-left:auto;
+  font-family:var(--font-num);
+  font-weight:600;
+  font-size:12.5px;
+  color:var(--paper);
+  font-variant-numeric:tabular-nums;
+}
+.k-confident{background:var(--sand)}
+.k-correct{background:var(--tint)}
+.k-guessed{background:var(--warn)}
+.k-wrong{background:var(--bad)}
+.k-skipped{background:rgba(255,255,255,.3)}
+
+.ring-sub{
+  margin-top:12px;
+  padding-top:11px;
+  border-top:1px solid rgba(255,255,255,.09);
+  font-size:11px;
+  color:var(--faint);
+  text-align:center;
+  letter-spacing:.01em;
+}
+
+@media (max-width:850px){
+  .ring-wrap{max-width:156px}
+  .ring-center strong{font-size:34px}
+}
+
+/* ==========================================================================
+   12. Native select — the popup list is drawn by the OS, so it needs opaque
+   colors. A translucent background composites over white and the options
+   disappear. Opaque background + explicit option colors + dark color-scheme.
+   ========================================================================== */
+select{
+  color-scheme:dark;
+  background-color:#141C28;
+  background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16' fill='none' stroke='%23A9B6C8' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 6.5 8 10.5 12 6.5'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;
+  background-position:right 13px center;
+  background-size:15px;
+  -webkit-appearance:none;
+  appearance:none;
+  padding-right:40px;
+  -webkit-backdrop-filter:none;
+  backdrop-filter:none;
+}
+select option,
+select optgroup{
+  background-color:#141C28;
+  color:#F2F5FA;
+}
+select:focus{background-color:#182130}
+
+/* ==========================================================================
+   13. Report panel — was a flat brown slab. Same glass as everything else,
+   with a warm rim so it still reads as a caution surface.
+   ========================================================================== */
+.report-box{
+  background:linear-gradient(170deg,rgba(255,179,64,.10),rgba(255,179,64,.03));
+  -webkit-backdrop-filter:var(--blur-md);
+  backdrop-filter:var(--blur-md);
+  border:1px solid rgba(255,179,64,.34);
+  border-radius:var(--r-lg);
+  box-shadow:var(--specular),var(--drop);
+  padding:16px;
+}
+.report-box h4{font-size:14.5px;font-weight:620;letter-spacing:-.015em;color:var(--paper)}
+.report-box .small{color:var(--dim)}
+.report-box textarea{
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.14);
+  border-radius:var(--r-md);
+  color:var(--paper);
+}
+.report-box textarea:focus{
+  border-color:rgba(255,179,64,.6);
+  box-shadow:0 0 0 4px rgba(255,179,64,.15);
+}
+.report-box select{
+  width:100%;
+  border:1px solid rgba(255,255,255,.16);
+  border-radius:var(--r-md);
+}
+.report-box select:focus{
+  border-color:rgba(255,179,64,.6);
+  box-shadow:0 0 0 4px rgba(255,179,64,.15);
+}
+
+/* ==========================================================================
+   14. Group picker rows (Choose groups)
+   Carries the same segmented mastery bar as the progress view, so a group
+   reads identically wherever you meet it.
+   ========================================================================== */
+.check-item{
+  align-items:flex-start;
+  gap:11px;
+  padding:13px 14px;
+  border-radius:var(--r-md);
+  cursor:pointer;
+  transition:background .18s ease,border-color .18s ease;
+}
+.check-item:hover{background:rgba(255,255,255,.09);border-color:var(--rim-bright)}
+.check-item:has(input:checked){
+  border-color:rgba(90,200,250,.55);
+  background:rgba(90,200,250,.11);
+}
+.check-item input[type=checkbox]{
+  accent-color:var(--tint);
+  width:17px;height:17px;
+  margin-top:2px;
+  flex:none;
+}
+
+.check-body{display:flex;flex-direction:column;gap:7px;min-width:0;flex:1}
+.check-head{display:flex;align-items:baseline;gap:10px}
+.check-head strong{
+  font-size:14.5px;
+  font-weight:620;
+  letter-spacing:-.015em;
+  color:var(--paper);
+}
+.check-score{
+  margin-left:auto;
+  font-family:var(--font-num);
+  font-weight:600;
+  font-size:13px;
+  color:var(--dim);
+  font-variant-numeric:tabular-nums;
+  flex:none;
+}
+
+.mini-bar{
+  display:flex;
+  height:7px;
+  width:100%;
+  border-radius:999px;
+  overflow:hidden;
+  background:rgba(255,255,255,.05);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.28);
+}
+.mini-bar .seg{display:block;height:100%;transition:width .4s cubic-bezier(.32,.72,0,1)}
+
+/* The progress-view bar is tall enough for gradients; this one is 7px,
+   so flat fills stay legible at that size. */
+.mini-bar .seg.confident{background:var(--sand)}
+.mini-bar .seg.correct{background:var(--tint)}
+.mini-bar .seg.guessed{background:var(--warn)}
+.mini-bar .seg.wrong{background:var(--bad)}
+.mini-bar .seg.unanswered{background:rgba(255,255,255,.24)}
+.mini-bar .seg.untested{background:transparent}
+
+.check-item .small{font-size:11.5px;color:var(--faint)}

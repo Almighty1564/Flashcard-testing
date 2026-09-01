@@ -124,7 +124,7 @@ input[type=text],input[type=password],select{width:100%;background:#0d1117;color
 .back-modules:hover{border-color:#6e7681}
 
 </style>
-<link rel="stylesheet" href="./theme.css?v=2">
+<link rel="stylesheet" href="./theme.css?v=3">
 </head>
 <body>
 <div class="shell">
@@ -139,22 +139,32 @@ input[type=text],input[type=password],select{width:100%;background:#0d1117;color
     <div class="build"><span id="sideModule">MOD 1</span> • TESTER MODE</div>
   </div>
 
-  <div class="rank-card">
-    <div class="rank-line">
-      <span class="rank-pos" id="rankPos">—</span>
-      <span class="rank-of" id="rankOf">of —</span>
+  <div class="ring-card">
+    <div class="ring-wrap">
+      <svg class="ring" viewBox="0 0 120 120" aria-hidden="true">
+        <circle class="ring-track" cx="60" cy="60" r="52"></circle>
+        <circle class="ring-seg" id="segConfident" cx="60" cy="60" r="52"></circle>
+        <circle class="ring-seg" id="segCorrect"   cx="60" cy="60" r="52"></circle>
+        <circle class="ring-seg" id="segGuessed"   cx="60" cy="60" r="52"></circle>
+        <circle class="ring-seg" id="segWrong"     cx="60" cy="60" r="52"></circle>
+        <circle class="ring-seg" id="segSkipped"   cx="60" cy="60" r="52"></circle>
+      </svg>
+      <div class="ring-center">
+        <strong id="ringPct">0<i>%</i></strong>
+        <span>memorized</span>
+      </div>
     </div>
-    <div class="rank-sub">Material memorized</div>
-    <div class="rank-bar"><i id="rankBar" style="width:0%"></i></div>
+    <div class="ring-legend">
+      <span><i class="k-confident"></i>Confident<b id="lgConfident">0</b></span>
+      <span><i class="k-correct"></i>Correct<b id="lgCorrect">0</b></span>
+      <span><i class="k-guessed"></i>Guessed<b id="lgGuessed">0</b></span>
+      <span><i class="k-wrong"></i>Wrong<b id="lgWrong">0</b></span>
+      <span><i class="k-skipped"></i>Skipped<b id="lgSkipped">0</b></span>
+    </div>
+    <div class="ring-sub" id="ringSub">no cards loaded</div>
   </div>
 
   <button id="unlockBtn" class="btn primary full">Refresh From Cloud</button>
-
-  <div class="stats">
-    <div class="stat"><span>Due</span><strong id="statDue">0</strong></div>
-    <div class="stat"><span>Learned</span><strong id="statLearned">0</strong></div>
-    <div class="stat"><span>Reviews</span><strong id="statReviews">0</strong></div>
-  </div>
 
   <button id="customBtn" class="icon-btn" disabled>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -444,17 +454,13 @@ function renderSidebar(){
   if(!bank){
     document.getElementById("sideModule").textContent="Study Program";
     document.getElementById("groupList").innerHTML="";
-    document.getElementById("statDue").textContent="0";
-    document.getElementById("statLearned").textContent="0";
-    document.getElementById("statReviews").textContent=state?.totalReviews||0;
+    updateRing();
     return;
   }
 
   document.getElementById("sideModule").textContent=bank.module?.name||"Question Bank";
   document.getElementById("groupCount").textContent="("+groups().length+")";
-  document.getElementById("statDue").textContent=dueCards(null).length;
-  document.getElementById("statLearned").textContent=Object.keys(state.progress).filter(id=>(state.progress[id]?.reps||0)>0).length;
-  document.getElementById("statReviews").textContent=state.totalReviews||0;
+  updateRing();
 
   document.getElementById("groupList").innerHTML=groups().map((g,i)=>{
     const all=cardsForGroup(g.id);
@@ -474,21 +480,82 @@ function renderSidebar(){
 }
 
 /* ---- ranking ---------------------------------------------------- */
+let rankLabel="";
 async function refreshRank(){
-  const pos=document.getElementById("rankPos");
-  const of=document.getElementById("rankOf");
-  const bar=document.getElementById("rankBar");
   try{
     const r=await FC.memorizedRank(MODULE_SLUG);
-    if(!r){ pos.textContent="—"; of.textContent="unranked"; bar.style.width="0%"; return; }
-    pos.textContent="#"+r.myRank;
-    of.textContent="of "+r.totalUsers+" • "+r.myLearned+"/"+r.bankSize+" learned";
-    const pct=r.bankSize?Math.round(r.myLearned/r.bankSize*100):0;
-    bar.style.width=Math.max(pct,2)+"%";
-  }catch(_){
-    pos.textContent="—"; of.textContent="unavailable"; bar.style.width="0%";
+    rankLabel = r ? ("rank #"+r.myRank+" of "+r.totalUsers) : "";
+  }catch(_){ rankLabel=""; }
+  updateRing();
+}
+
+/* ---- live mastery ring ------------------------------------------
+   Recomputed from state.mastery on a short interval, so the ring
+   tracks answers as they happen rather than waiting for a reload. */
+const RING_C = 2 * Math.PI * 52;
+let ringLast = "";
+
+function ringTally(){
+  const counts={confident:0,correct:0,guessed:0,wrong:0,unanswered:0,untested:0};
+  let all=[];
+  try{ all = bank ? cards() : []; }catch(_){ all=[]; }
+  all.forEach(c=>{
+    const r = state?.mastery?.[c.id]?.lastResult;
+    if(r && counts[r]!==undefined) counts[r]++; else counts.untested++;
+  });
+  return {counts, total: all.length};
+}
+
+function updateRing(){
+  const pctEl=document.getElementById("ringPct");
+  if(!pctEl) return;
+
+  const {counts,total}=ringTally();
+  const memorized = counts.confident + counts.correct;
+  const pct = total ? Math.round(memorized/total*100) : 0;
+
+  // Skip the DOM write when nothing actually changed.
+  const sig=[pct,total,counts.confident,counts.correct,counts.guessed,
+             counts.wrong,counts.unanswered,rankLabel].join("|");
+  if(sig===ringLast) return;
+  ringLast=sig;
+
+  pctEl.innerHTML = pct + '<i>%</i>';
+
+  const order=[
+    ["segConfident", counts.confident],
+    ["segCorrect",   counts.correct],
+    ["segGuessed",   counts.guessed],
+    ["segWrong",     counts.wrong],
+    ["segSkipped",   counts.unanswered]
+  ];
+  let cursor=0;
+  order.forEach(([id,n])=>{
+    const el=document.getElementById(id);
+    if(!el) return;
+    const len = total ? (n/total)*RING_C : 0;
+    el.style.strokeDasharray = len.toFixed(2)+" "+(RING_C-len).toFixed(2);
+    el.style.strokeDashoffset = (-cursor).toFixed(2);
+    cursor += len;
+  });
+
+  const set=(id,v)=>{const e=document.getElementById(id); if(e) e.textContent=v;};
+  set("lgConfident",counts.confident);
+  set("lgCorrect",counts.correct);
+  set("lgGuessed",counts.guessed);
+  set("lgWrong",counts.wrong);
+  set("lgSkipped",counts.unanswered);
+
+  const sub=document.getElementById("ringSub");
+  if(sub){
+    const seen = total - counts.untested;
+    sub.textContent = total
+      ? (seen+" of "+total+" seen" + (rankLabel ? " • "+rankLabel : ""))
+      : "no cards loaded";
   }
 }
+
+setInterval(updateRing, 700);
 async function loadFromCloud(){
   const btn=document.getElementById("unlockBtn");
   btn.disabled=true;
@@ -852,14 +919,50 @@ function openDueReviews(){
   }
   renderSidebar();
 }
+/* Same mastery breakdown the progress view uses, so a group reads the
+   same way in both places. */
+function groupCounts(groupId){
+  const gcards=cardsForGroup(groupId);
+  const counts={confident:0,correct:0,guessed:0,wrong:0,unanswered:0,untested:0};
+  gcards.forEach(c=>{
+    const r=state?.mastery?.[c.id]?.lastResult;
+    if(r&&counts[r]!==undefined)counts[r]++;else counts.untested++;
+  });
+  return {counts,total:gcards.length};
+}
+function miniBar(groupId){
+  const {counts,total}=groupCounts(groupId);
+  const pct=n=>total?(n/total*100):0;
+  return `<span class="mini-bar">
+    <i class="seg confident" style="width:${pct(counts.confident)}%"></i>
+    <i class="seg correct" style="width:${pct(counts.correct)}%"></i>
+    <i class="seg guessed" style="width:${pct(counts.guessed)}%"></i>
+    <i class="seg wrong" style="width:${pct(counts.wrong)}%"></i>
+    <i class="seg unanswered" style="width:${pct(counts.unanswered)}%"></i>
+    <i class="seg untested" style="width:${pct(counts.untested)}%"></i>
+  </span>`;
+}
 function showCustom(){
   hideViews();
   document.getElementById("customView").classList.remove("hidden");
-  document.getElementById("customGroups").innerHTML=groups().map((g,i)=>`
+  document.getElementById("customGroups").innerHTML=groups().map((g,i)=>{
+    const {counts,total}=groupCounts(g.id);
+    const seen=total-counts.untested;
+    const strong=counts.confident+counts.correct;
+    const score=seen?Math.round(strong/seen*100):null;
+    return `
     <label class="check-item">
       <input type="checkbox" data-custom-group="${esc(g.id)}">
-      <span><strong>${i+1}. ${esc(g.name)}</strong><br><span class="muted small">${cardsForGroup(g.id).length} questions</span></span>
-    </label>`).join("");
+      <span class="check-body">
+        <span class="check-head">
+          <strong>${i+1}. ${esc(g.name)}</strong>
+          <b class="check-score">${score===null?"—":score+"%"}</b>
+        </span>
+        ${miniBar(g.id)}
+        <span class="muted small">${total} questions • ${seen}/${total} seen</span>
+      </span>
+    </label>`;
+  }).join("");
 }
 function showOverallProgress(){
   hideViews();
