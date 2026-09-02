@@ -12,7 +12,7 @@
 (function () {
   "use strict";
 
-  var FN_NAME = "generate-distractors";
+  var FN_NAME = "distractors";
 
   function fnUrl() {
     var base = (window.FC_CONFIG && window.FC_CONFIG.url) || "";
