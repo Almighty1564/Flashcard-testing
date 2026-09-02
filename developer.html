@@ -365,8 +365,13 @@ details.advanced>summary{cursor:pointer;font-weight:800;color:#c9d1d9}
             <div class="section-title" style="margin-bottom:2px">Answer Choices</div>
             <div id="choiceInstruction" class="small muted"></div>
           </div>
-          <button id="addChoiceBtn" class="btn" type="button">+ Add Answer</button>
+          <div class="row">
+            <button id="aiDistractorBtn" class="btn" type="button" title="Fill empty answer slots using AI">✨ Generate Wrong Answers</button>
+            <button id="aiDistractorReplaceBtn" class="btn" type="button" title="Clear all wrong answers and regenerate">↻ Replace</button>
+            <button id="addChoiceBtn" class="btn" type="button">+ Add Answer</button>
+          </div>
         </div>
+        <div id="aiDistractorNote" class="small muted" style="margin-top:8px"></div>
         <div id="choicesList" style="margin-top:12px"></div>
         <label class="row small muted" style="margin-top:8px">
           <input id="shuffleChoices" type="checkbox" checked>
@@ -2234,6 +2239,8 @@ window.__startBuilder=async function(profile){
   })();
 })();
 </script>
+
+<script src="./ai-distractors.js"></script>
 
 </body>
 </html>
