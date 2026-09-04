@@ -3,19 +3,38 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Flashcard Portal • V7</title>
+<title>Flashcard Portal • V8</title>
 <style>
-:root{--bg:#0d1117;--panel:#161b22;--line:#30363d;--text:#e6edf3;--blue:#2f81f7;--green:#238636}
+:root{--bg:#0d1117;--panel:#161b22;--line:#30363d;--text:#e6edf3;--muted:#8b949e;--blue:#2f81f7;--green:#238636}
 *{box-sizing:border-box}
 body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+[hidden]{display:none!important}
+
+/* --- sign in --- */
+.gate{max-width:430px;margin:90px auto;padding:24px;background:var(--panel);
+  border:1px solid var(--line);border-radius:14px}
+.gate h1{margin:0 0 8px;font-size:24px}
+.gate .build{color:var(--blue);font-size:11px;font-weight:800;margin-bottom:8px;letter-spacing:.06em}
+.gate p{color:var(--muted);margin:0 0 16px}
+.gate input{width:100%;padding:11px;background:var(--bg);color:var(--text);
+  border:1px solid var(--line);border-radius:9px;font:inherit;margin-bottom:10px}
+.gate button{width:100%;padding:11px;background:var(--blue);color:#fff;border:1px solid #388bfd;
+  border-radius:9px;font:inherit;font-weight:800;cursor:pointer}
+.gate button[disabled]{opacity:.6;cursor:default}
+.gate-error{color:#f85149;font-size:12px;margin-top:10px;min-height:17px}
+
+/* --- choose mode (developer only) --- */
 main{max-width:850px;margin:80px auto;padding:20px}
-h1{text-align:center;margin:0 0 28px;font-size:30px}
+.top{display:flex;align-items:center;justify-content:center;gap:12px;
+  flex-wrap:wrap;margin-bottom:28px}
+h2.title{text-align:center;margin:0;font-size:30px;flex:1 1 100%}
+.who{color:var(--muted);font-size:12px;font-weight:700}
+.signout{background:#21262d;border:1px solid var(--line);color:var(--text);
+  padding:8px 12px;border-radius:9px;font:inherit;font-weight:700;cursor:pointer}
 .choices{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-.choice{
-  min-height:260px;border-radius:18px;text-decoration:none;color:white;
+.choice{min-height:260px;border-radius:18px;text-decoration:none;color:#fff;
   display:flex;align-items:center;justify-content:center;flex-direction:column;
-  font-weight:900;font-size:34px;border:1px solid rgba(255,255,255,.15)
-}
+  font-weight:900;font-size:34px;border:1px solid rgba(255,255,255,.15)}
 .choice span{font-size:58px;margin-bottom:12px}
 .tester{background:var(--blue)}
 .developer{background:var(--green)}
@@ -25,12 +44,102 @@ h1{text-align:center;margin:0 0 28px;font-size:30px}
 <link rel="stylesheet" href="./theme.css?v=4">
 </head>
 <body>
-<main>
-  <h1>Choose Mode</h1>
+
+<!-- Everyone lands here first. -->
+<div id="gate" class="gate" hidden>
+  <h1>Sign In</h1>
+  <div class="build">CLOUD BUILD V8</div>
+  <p>Enter your username and password.</p>
+  <input id="userInput" type="text" autocomplete="username" placeholder="Username">
+  <input id="passInput" type="password" autocomplete="current-password" placeholder="Password">
+  <button id="signInBtn" type="button">Sign In</button>
+  <div id="gateError" class="gate-error"></div>
+</div>
+
+<!-- Developers only. Testers never see this. -->
+<main id="modePicker" hidden>
+  <div class="top">
+    <h2 class="title">Choose Mode</h2>
+    <span id="whoami" class="who"></span>
+    <button id="signOutBtn" type="button" class="signout">Sign out</button>
+  </div>
   <div class="choices">
-    <a class="choice tester" href="./tester.html?v=7"><span>🔒</span>TESTER</a>
-    <a class="choice developer" href="./developer.html?v=7"><span>🔒</span>DEVELOPER</a>
+    <a class="choice tester" href="./tester.html?v=8"><span>&#128272;</span>TESTER</a>
+    <a class="choice developer" href="./developer.html?v=8"><span>&#128272;</span>DEVELOPER</a>
   </div>
 </main>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="./supabase-config.js"></script>
+<script src="./cloud.js"></script>
+<script>
+(function () {
+  var gate     = document.getElementById("gate");
+  var picker   = document.getElementById("modePicker");
+  var user     = document.getElementById("userInput");
+  var pass     = document.getElementById("passInput");
+  var btn      = document.getElementById("signInBtn");
+  var errorEl  = document.getElementById("gateError");
+
+  function showGate(msg) {
+    picker.hidden = true;
+    gate.hidden = false;
+    errorEl.textContent = msg || "";
+    user.focus();
+  }
+
+  function showPicker(profile) {
+    gate.hidden = true;
+    picker.hidden = false;
+    document.getElementById("whoami").textContent =
+      profile && profile.username ? "Signed in as " + profile.username : "Signed in";
+  }
+
+  /* Testers go straight to their modules. Developers get the mode picker. */
+  function route(profile) {
+    if (!profile) { showGate(""); return; }
+    if (profile.role === "developer") { showPicker(profile); return; }
+    location.replace("./tester.html?v=8");
+  }
+
+  async function signIn() {
+    errorEl.textContent = "";
+    btn.disabled = true;
+    var original = btn.textContent;
+    btn.textContent = "Signing in…";
+
+    try {
+      await FC.signIn(user.value, pass.value);
+      var profile = await FC.getProfile();
+      pass.value = "";
+      route(profile);
+    } catch (e) {
+      await FC.signOut();
+      showGate(e.message || "Sign in failed.");
+      pass.select();
+    } finally {
+      btn.disabled = false;
+      btn.textContent = original;
+    }
+  }
+
+  btn.addEventListener("click", signIn);
+  [user, pass].forEach(function (el) {
+    el.addEventListener("keydown", function (e) { if (e.key === "Enter") signIn(); });
+  });
+
+  document.getElementById("signOutBtn").addEventListener("click", async function () {
+    await FC.signOut();
+    user.value = ""; pass.value = "";
+    showGate("");
+  });
+
+  (async function boot() {
+    var profile = null;
+    try { profile = await FC.requireUser(); } catch (_) { profile = null; }
+    route(profile);
+  })();
+})();
+</script>
 </body>
 </html>
