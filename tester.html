@@ -75,7 +75,7 @@ h1{margin:0}
     <div style="display:flex;gap:10px;align-items:center">
       <span id="whoami" class="mod-user"></span>
       <button id="signOutBtn" type="button" class="back" style="cursor:pointer">Sign out</button>
-      <a class="back" href="./index.html">← Back</a>
+      <a id="backToModes" class="back" href="./index.html" hidden>&#8592; Back</a>
     </div>
   </div>
 
@@ -137,6 +137,8 @@ h1{margin:0}
 
   async function enter(profile){
     document.getElementById("whoami").textContent=profile.username?("Signed in as "+profile.username):"Signed in";
+    /* Only developers get a route back to the mode picker. */
+    document.getElementById("backToModes").hidden = (profile.role !== "developer");
     showApp();
     await renderModules();
   }
