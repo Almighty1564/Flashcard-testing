@@ -376,6 +376,7 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
               <option value="multiple-choice">Multiple Choice</option>
               <option value="multiple-select">Pick Multiple</option>
               <option value="matching">Matching / Drag & Drop</option>
+              <option value="numeric">Type-In Answer</option>
             </select>
           </div>
         </div>
@@ -408,6 +409,32 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
             <input id="flashAnswerImageInput" class="file-input" type="file" accept="image/*">
           </div>
           <img id="flashAnswerImagePreview" class="hidden" alt="Answer image preview">
+        </div>
+      </div>
+
+      <div id="numericEditor" class="panel hidden">
+        <div class="section-title">Type-In Answer</div>
+        <div class="field">
+          <label>CORRECT VALUE</label>
+          <input id="numericValue" type="text" placeholder="Example: 50 or 3.14 or coaxial">
+        </div>
+        <div class="grid2">
+          <div class="field">
+            <label>TOLERANCE &plusmn; (OPTIONAL)</label>
+            <input id="numericTolerance" type="text" inputmode="decimal" placeholder="Example: 0.5">
+          </div>
+          <div class="field">
+            <label>UNIT (OPTIONAL, DISPLAY ONLY)</label>
+            <input id="numericUnit" type="text" placeholder="Example: ohms">
+          </div>
+        </div>
+        <div class="field">
+          <label>ALSO ACCEPT (OPTIONAL, COMMA SEPARATED)</label>
+          <input id="numericAccept" type="text" placeholder="Example: 50 ohm, fifty">
+        </div>
+        <div class="small muted">
+          Numbers are compared numerically, so 50.0 and 50 both pass. Tolerance widens that
+          window either way. Text answers are matched ignoring case and surrounding spaces.
         </div>
       </div>
 
@@ -454,6 +481,7 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
             <option value="multiple-choice">Multiple Choice</option>
             <option value="multiple-select">Pick Multiple</option>
             <option value="matching">Matching</option>
+            <option value="numeric">Type-In Answer</option>
           </select>
         </div>
         <div id="questionList" class="question-list"></div>
@@ -734,6 +762,10 @@ function emptyDraft(){
     questionImage:null,
     answerText:"",
     answerImage:null,
+    numericValue:"",
+    numericTolerance:"",
+    numericUnit:"",
+    numericAccept:"",
     choices:[
       {id:uid("choice"),text:"",image:null,correct:true},
       {id:uid("choice"),text:"",image:null,correct:false},
@@ -819,6 +851,14 @@ function answerDataFor(q){
     return {
       choices:(q.choices||[]).map(c=>({id:c.id,text:c.text||"",image_path:c.imagePath||null,correct:!!c.correct})),
       shuffle:q.shuffleChoices!==false
+    };
+  }
+  if(q.type==="numeric"){
+    return {
+      value:q.numericValue||"",
+      tolerance:String(q.numericTolerance||"").trim()===""?null:Number(q.numericTolerance),
+      unit:q.numericUnit||"",
+      accept:String(q.numericAccept||"").split(",").map(x=>x.trim()).filter(Boolean)
     };
   }
   if(q.type==="matching"){
@@ -970,6 +1010,12 @@ async function loadModuleIntoBuilder(slug){
       }));
       q.shuffleChoices=ad.shuffle!==false;
     }
+    if(row.question_type==="numeric"){
+      q.numericValue=ad.value||"";
+      q.numericTolerance=(ad.tolerance===null||ad.tolerance===undefined)?"":String(ad.tolerance);
+      q.numericUnit=ad.unit||"";
+      q.numericAccept=(ad.accept||[]).join(", ");
+    }
     if(row.question_type==="matching"){
       q.pairs=(ad.pairs||[]).map(p=>({
         id:p.id||uid("pair"),
@@ -1014,7 +1060,8 @@ function typeLabel(type){
     "flashcard":"Flash Card",
     "multiple-choice":"Multiple Choice",
     "multiple-select":"Pick Multiple",
-    "matching":"Matching / Drag & Drop"
+    "matching":"Matching / Drag & Drop",
+    "numeric":"Type-In Answer"
   })[type] || type;
 }
 function download(name,text,type="application/json"){
@@ -1038,6 +1085,10 @@ function syncDraftFromForm(){
   draft.questionText=document.getElementById("questionText").value;
   draft.answerText=document.getElementById("flashAnswerText").value;
   draft.shuffleChoices=document.getElementById("shuffleChoices").checked;
+  draft.numericValue=document.getElementById("numericValue").value;
+  draft.numericTolerance=document.getElementById("numericTolerance").value;
+  draft.numericUnit=document.getElementById("numericUnit").value;
+  draft.numericAccept=document.getElementById("numericAccept").value;
 
   document.querySelectorAll("[data-choice-id]").forEach(row=>{
     const id=row.dataset.choiceId;
@@ -1063,6 +1114,10 @@ function fillFormFromDraft(){
   document.getElementById("questionText").value=draft.questionText;
   document.getElementById("flashAnswerText").value=draft.answerText;
   document.getElementById("shuffleChoices").checked=draft.shuffleChoices!==false;
+  document.getElementById("numericValue").value=draft.numericValue||"";
+  document.getElementById("numericTolerance").value=draft.numericTolerance||"";
+  document.getElementById("numericUnit").value=draft.numericUnit||"";
+  document.getElementById("numericAccept").value=draft.numericAccept||"";
   renderImagePreview("question",draft.questionImage);
   renderImagePreview("flashAnswer",draft.answerImage);
   renderChoiceEditor();
@@ -1219,6 +1274,7 @@ function updateEditorType(){
   document.getElementById("flashcardEditor").classList.toggle("hidden",t!=="flashcard");
   document.getElementById("choicesEditor").classList.toggle("hidden",!["multiple-choice","multiple-select"].includes(t));
   document.getElementById("matchingEditor").classList.toggle("hidden",t!=="matching");
+  document.getElementById("numericEditor").classList.toggle("hidden",t!=="numeric");
   document.getElementById("choiceInstruction").textContent=
     t==="multiple-choice"?"Choose exactly one correct answer.":"Choose every answer that should count as correct.";
   renderChoiceEditor();
@@ -1237,6 +1293,10 @@ function questionIssues(q){
       if(q.type==="multiple-choice" && correct!==1) issues.push("Multiple choice needs exactly one correct answer.");
       if(q.type==="multiple-select" && correct<1) issues.push("Pick Multiple needs at least one correct answer.");
     }
+  }else if(q.type==="numeric"){
+    if(!String(q.numericValue||"").trim()) issues.push("Type-In question needs a correct value.");
+    if(String(q.numericTolerance||"").trim() && !Number.isFinite(Number(q.numericTolerance))) issues.push("Tolerance must be a number.");
+    if(String(q.numericTolerance||"").trim() && !Number.isFinite(Number(q.numericValue))) issues.push("Tolerance only works with a numeric answer.");
   }else if(q.type==="matching"){
     if(!Array.isArray(q.pairs)||q.pairs.length<2) issues.push("Matching needs at least two pairs.");
     else q.pairs.forEach((p,i)=>{
@@ -1273,6 +1333,10 @@ function saveCurrentQuestion(){
       ? draft.choices.map(c=>({id:c.id,text:c.text.trim(),image:c.image,imagePath:c.imagePath||null,correct:!!c.correct}))
       : null,
     shuffleChoices:["multiple-choice","multiple-select"].includes(draft.type)?!!draft.shuffleChoices:null,
+    numericValue:draft.type==="numeric"?String(draft.numericValue||"").trim():null,
+    numericTolerance:draft.type==="numeric"?String(draft.numericTolerance||"").trim():null,
+    numericUnit:draft.type==="numeric"?String(draft.numericUnit||"").trim():null,
+    numericAccept:draft.type==="numeric"?String(draft.numericAccept||"").trim():null,
     pairs:draft.type==="matching"
       ? draft.pairs.map(p=>({id:p.id,leftText:p.leftText.trim(),leftImage:p.leftImage,leftImagePath:p.leftImagePath||null,rightText:p.rightText.trim(),rightImage:p.rightImage,rightImagePath:p.rightImagePath||null}))
       : null,
@@ -1586,6 +1650,14 @@ function normalizedBank(bankVersion=1){
         choices:q.choices.map(c=>({id:c.id,text:c.text,image:c.image,correct:!!c.correct})),
         shuffleChoices:q.shuffleChoices!==false
       }:{}),
+      ...(q.type==="numeric"?{
+        entry:{
+          value:q.numericValue||"",
+          tolerance:String(q.numericTolerance||"").trim()===""?null:Number(q.numericTolerance),
+          unit:q.numericUnit||"",
+          accept:String(q.numericAccept||"").split(",").map(x=>x.trim()).filter(Boolean)
+        }
+      }:{}),
       ...(q.type==="matching"?{
         pairs:q.pairs.map(p=>({id:p.id,left:{text:p.leftText,image:p.leftImage},right:{text:p.rightText,image:p.rightImage}}))
       }:{})
@@ -1891,6 +1963,12 @@ function previewQuestion(q=null){
     body+=`<div class="preview-answer"><strong>Answer</strong><div>${esc(q.answerText||"")}</div>${q.answerImage?`<img src="${q.answerImage}" alt="Answer image">`:""}</div>`;
   }else if(q.type==="multiple-choice"||q.type==="multiple-select"){
     body+=`<div class="preview-answer"><strong>Choices</strong>${(q.choices||[]).map(c=>`<div class="preview-choice ${c.correct?"correct":""}">${c.correct?"✓ ":""}${esc(c.text||"[Image answer]")}${c.image?`<br><img src="${c.image}" alt="Answer choice image">`:""}</div>`).join("")}</div>`;
+  }else if(q.type==="numeric"){
+    const tol=String(q.numericTolerance||"").trim();
+    const alt=String(q.numericAccept||"").trim();
+    body+=`<div class="preview-answer"><strong>Correct Value</strong><div>${esc(q.numericValue||"")}${q.numericUnit?" "+esc(q.numericUnit):""}</div>`+
+      (tol?`<div class="small muted">Accepts &plusmn;${esc(tol)}</div>`:"")+
+      (alt?`<div class="small muted">Also accepts: ${esc(alt)}</div>`:"")+`</div>`;
   }else if(q.type==="matching"){
     body+=`<div class="preview-answer"><strong>Correct Matching Pairs</strong>${(q.pairs||[]).map(p=>`<div class="preview-choice">${esc(p.leftText||"[Image]")} → ${esc(p.rightText||"[Image]")}</div>`).join("")}</div>`;
   }

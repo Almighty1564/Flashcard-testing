@@ -66,6 +66,11 @@ input[type=text],input[type=password],select{width:100%;background:#0d1117;color
 .bar{height:14px;background:#202731;border-radius:999px;overflow:hidden;display:flex}.seg{height:100%}.confident{background:var(--accent)}.correct{background:var(--good)}.guessed{background:var(--warn)}.wrong{background:var(--bad)}.unanswered{background:var(--gray)}.untested{background:#242b35}
 .score{text-align:right}.score strong{display:block;font-size:20px}.score span{font-size:10px;color:var(--muted)}
 .priority-list{display:grid;gap:7px;margin-top:10px}.priority{border:1px solid var(--line);background:var(--panel2);padding:9px;border-radius:8px}
+.entry-wrap{display:flex;align-items:center;gap:10px;margin-top:18px;flex-wrap:wrap}
+.entry-input{flex:1 1 260px;max-width:420px;background:var(--panel2);color:var(--text);
+  border:1px solid var(--line);border-radius:10px;padding:13px;font-size:18px}
+.entry-input:focus{outline:none;border-color:var(--accent)}
+.entry-input:disabled{opacity:.75}
 .file-input{display:none}
 @media(max-width:850px){
  .shell{grid-template-columns:1fr}.sidebar{position:relative;height:auto;border-right:0;border-bottom:1px solid var(--line)}
@@ -476,7 +481,7 @@ function cards(){return (bank?.cards||[]).filter(c=>c.status!=="incomplete")}
 function cardsForGroup(id){return cards().filter(c=>c.groupId===id)}
 function groupName(id){return groups().find(g=>g.id===id)?.name||"Unknown Group"}
 function typeLabel(t){
-  return {"flashcard":"Flash Card","multiple-choice":"Multiple Choice","multiple-select":"Pick Multiple","matching":"Matching"}[t]||t;
+  return {"flashcard":"Flash Card","multiple-choice":"Multiple Choice","multiple-select":"Pick Multiple","matching":"Matching","numeric":"Type-In Answer"}[t]||t;
 }
 function pstate(id){
   if(!state.progress[id]){
@@ -707,6 +712,7 @@ function renderInteraction(){
   else if(currentCard.type==="multiple-choice")renderChoices(el,false);
   else if(currentCard.type==="multiple-select")renderChoices(el,true);
   else if(currentCard.type==="matching")renderMatching(el);
+  else if(currentCard.type==="numeric")renderEntry(el);
   else el.innerHTML='<div class="feedback bad">Unsupported question type.</div>';
 }
 function imageHtml(src,cls="answer-image",alt="Image"){
@@ -726,6 +732,74 @@ function wireRatings(root,allowed=null){
     if(allowed && !allowed.includes(r))return;
     recordAndNext(r);
   });
+}
+/* Type-In Answer. The student types a value and presses Enter.
+   Numbers compare numerically (with optional tolerance); anything else
+   compares as trimmed, case-insensitive text. */
+function normalizeAnswer(v){
+  return String(v==null?"":v).trim().toLowerCase().replace(/\s+/g," ");
+}
+function gradeEntry(input,entry){
+  const given=normalizeAnswer(input);
+  if(!given) return false;
+
+  const target=String(entry.value==="undefined"||entry.value==null?"":entry.value);
+  const accepted=[target].concat(Array.isArray(entry.accept)?entry.accept:[]);
+
+  /* Numeric comparison first, so 50.0 matches 50. */
+  const givenNum=Number(given.replace(/,/g,""));
+  if(Number.isFinite(givenNum)){
+    for(const candidate of accepted){
+      const candNum=Number(String(candidate).trim().replace(/,/g,""));
+      if(!Number.isFinite(candNum)) continue;
+      const tol=Number.isFinite(Number(entry.tolerance))?Math.abs(Number(entry.tolerance)):0;
+      if(Math.abs(givenNum-candNum)<=tol) return true;
+    }
+  }
+
+  return accepted.some(c=>normalizeAnswer(c)===given);
+}
+function renderEntry(el){
+  const entry=currentCard.entry||{};
+  const unit=entry.unit?` <span class="muted">${esc(entry.unit)}</span>`:"";
+
+  el.innerHTML=`<div class="entry-wrap">
+    <input id="entryInput" class="entry-input" type="text" autocomplete="off"
+           autocapitalize="off" spellcheck="false" placeholder="Type your answer, then press Enter">${unit}
+  </div>
+  <div class="rating-row"><button type="button" id="submitEntryBtn" class="btn primary">Check Answer</button></div>`;
+
+  const input=document.getElementById("entryInput");
+  const submitBtn=document.getElementById("submitEntryBtn");
+
+  function submit(){
+    const raw=input.value;
+    if(!String(raw).trim()){ input.focus(); return; }
+
+    const correct=gradeEntry(raw,entry);
+    input.disabled=true;
+    submitBtn.remove();
+
+    const shown=esc(entry.value||"")+(entry.unit?" "+esc(entry.unit):"");
+    const fb=document.createElement("div");
+
+    if(correct){
+      fb.innerHTML=`<div class="feedback good"><strong>Correct.</strong> Answer: ${shown}</div>${ratingButtons(false)}`;
+      el.appendChild(fb);
+      wireRatings(fb,["guessed","correct","confident"]);
+    }else{
+      fb.innerHTML=`<div class="feedback bad"><strong>Incorrect.</strong> You typed <em>${esc(raw)}</em>. Correct answer: ${shown}</div>
+      <div class="rating-row"><button type="button" id="continueEntryWrong" class="btn bad">Continue &mdash; Wrong</button></div>`;
+      el.appendChild(fb);
+      fb.querySelector("#continueEntryWrong").onclick=()=>recordAndNext("wrong");
+    }
+  }
+
+  input.addEventListener("keydown",e=>{
+    if(e.key==="Enter"){ e.preventDefault(); submit(); }
+  });
+  submitBtn.onclick=submit;
+  setTimeout(()=>input.focus(),40);
 }
 function renderFlashcard(el){
   el.innerHTML=`<div class="rating-row"><button id="showAnswerBtn" class="btn primary">Show Answer</button></div>`;

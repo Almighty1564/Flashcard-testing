@@ -212,6 +212,15 @@
       card.shuffleChoices = ad.shuffle !== false;
     }
 
+    if (row.question_type === "numeric") {
+      card.entry = {
+        value: ad.value || "",
+        tolerance: (ad.tolerance === null || ad.tolerance === undefined) ? null : Number(ad.tolerance),
+        unit: ad.unit || "",
+        accept: Array.isArray(ad.accept) ? ad.accept : []
+      };
+    }
+
     if (row.question_type === "matching") {
       card.pairs = (ad.pairs || []).map(function (p, i) {
         var left = p.left || {};
