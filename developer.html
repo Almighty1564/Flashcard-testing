@@ -1055,6 +1055,20 @@ function esc(s){
 function groupName(id){
   return project.groups.find(g=>g.id===id)?.name || "No Group";
 }
+/* Pulls the number out of an answer like "480 ms" or "1,500 Hz" so the unit can
+   live in the value without breaking numeric comparison. A trailing word is only
+   treated as a unit when it is short and has no internal spaces, so a text answer
+   such as "3 dB point" stays text and is never matched by typing just "3". */
+function parseAnswerNumber(v){
+  const raw=String(v==null?"":v).trim().replace(/,/g,"");
+  if(!raw) return NaN;
+  const m=raw.match(/^[-+]?\d*\.?\d+/);
+  if(!m) return NaN;
+  const rest=raw.slice(m[0].length).trim();
+  if(rest && !/^[A-Za-z%\u00B0\u00B5\u03A9\u2126/^*\d.\-]{1,8}$/.test(rest)) return NaN;
+  const n=Number(m[0]);
+  return Number.isFinite(n)?n:NaN;
+}
 function typeLabel(type){
   return ({
     "flashcard":"Flash Card",
@@ -1295,8 +1309,13 @@ function questionIssues(q){
     }
   }else if(q.type==="numeric"){
     if(!String(q.numericValue||"").trim()) issues.push("Type-In question needs a correct value.");
-    if(String(q.numericTolerance||"").trim() && !Number.isFinite(Number(q.numericTolerance))) issues.push("Tolerance must be a number.");
-    if(String(q.numericTolerance||"").trim() && !Number.isFinite(Number(q.numericValue))) issues.push("Tolerance only works with a numeric answer.");
+    const tolRaw=String(q.numericTolerance||"").trim();
+    if(tolRaw){
+      const tolNum=Number(tolRaw);
+      if(!Number.isFinite(tolNum)) issues.push("Tolerance must be a number.");
+      else if(tolNum>0 && !Number.isFinite(parseAnswerNumber(q.numericValue)))
+        issues.push("Tolerance only works with a numeric answer.");
+    }
   }else if(q.type==="matching"){
     if(!Array.isArray(q.pairs)||q.pairs.length<2) issues.push("Matching needs at least two pairs.");
     else q.pairs.forEach((p,i)=>{

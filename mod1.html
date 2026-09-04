@@ -739,6 +739,19 @@ function wireRatings(root,allowed=null){
 function normalizeAnswer(v){
   return String(v==null?"":v).trim().toLowerCase().replace(/\s+/g," ");
 }
+/* Pulls the number out of "480 ms" or "1,500 Hz" so a student can type just the
+   number. A trailing word counts as a unit only when it is short and has no
+   internal spaces, so "3 dB point" stays text and "3" alone will not match it. */
+function parseAnswerNumber(v){
+  const raw=String(v==null?"":v).trim().replace(/,/g,"");
+  if(!raw) return NaN;
+  const m=raw.match(/^[-+]?\d*\.?\d+/);
+  if(!m) return NaN;
+  const rest=raw.slice(m[0].length).trim();
+  if(rest && !/^[A-Za-z%\u00B0\u00B5\u03A9\u2126/^*\d.\-]{1,8}$/.test(rest)) return NaN;
+  const n=Number(m[0]);
+  return Number.isFinite(n)?n:NaN;
+}
 function gradeEntry(input,entry){
   const given=normalizeAnswer(input);
   if(!given) return false;
@@ -746,11 +759,11 @@ function gradeEntry(input,entry){
   const target=String(entry.value==="undefined"||entry.value==null?"":entry.value);
   const accepted=[target].concat(Array.isArray(entry.accept)?entry.accept:[]);
 
-  /* Numeric comparison first, so 50.0 matches 50. */
-  const givenNum=Number(given.replace(/,/g,""));
+  /* Numeric comparison first, so 50.0 matches 50 and 480 matches "480 ms". */
+  const givenNum=parseAnswerNumber(input);
   if(Number.isFinite(givenNum)){
     for(const candidate of accepted){
-      const candNum=Number(String(candidate).trim().replace(/,/g,""));
+      const candNum=parseAnswerNumber(candidate);
       if(!Number.isFinite(candNum)) continue;
       const tol=Number.isFinite(Number(entry.tolerance))?Math.abs(Number(entry.tolerance)):0;
       if(Math.abs(givenNum-candNum)<=tol) return true;
