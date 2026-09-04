@@ -170,6 +170,18 @@ h1{margin:0}
     try{ profile=await FC.requireUser(); }catch(_){ profile=null; }
     if(profile) await enter(profile); else showLock("");
   })();
+
+  /* Safari restores this page from the back/forward cache without re-running
+     boot(). Re-check the role so the Back link cannot linger for a tester. */
+  window.addEventListener("pageshow", async function(e){
+    if(!e.persisted) return;
+    try{
+      const p = await FC.requireUser();
+      document.getElementById("backToModes").hidden = !p || p.role !== "developer";
+    }catch(_){
+      document.getElementById("backToModes").hidden = true;
+    }
+  });
 })();
 </script>
 
