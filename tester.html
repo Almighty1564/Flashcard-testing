@@ -12,12 +12,20 @@ main{max-width:1000px;margin:55px auto;padding:20px}
 .top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:22px}
 h1{margin:0}
 .back{color:var(--text);text-decoration:none;background:#21262d;border:1px solid var(--line);padding:9px 12px;border-radius:9px;font-weight:800}
-.mods{display:grid;grid-template-columns:repeat(auto-fill,minmax(210px,1fr));gap:16px}
+.mods{display:flex;flex-wrap:wrap;justify-content:center;align-content:flex-start;gap:16px}
 .mod{
-  min-height:150px;background:var(--panel);border:2px solid var(--line);border-radius:14px;
+  flex:1 1 210px;max-width:300px;min-width:190px;
+  min-height:150px;padding:16px;background:var(--panel);border:2px solid var(--line);border-radius:14px;
   text-decoration:none;color:var(--text);display:flex;align-items:center;justify-content:center;
-  flex-direction:column;font-size:26px;font-weight:900
+  flex-direction:column;font-size:24px;font-weight:900;
+  text-align:center;line-height:1.2;overflow-wrap:anywhere;hyphens:auto
 }
+.mods-empty{
+  flex:1 1 100%;max-width:520px;margin:0 auto;padding:34px 22px;text-align:center;
+  background:var(--panel);border:1px dashed var(--line);border-radius:14px
+}
+.mods-empty strong{display:block;font-size:18px;margin-bottom:6px}
+.mods-empty span{color:var(--muted);font-size:14px}
 .mod:hover{border-color:var(--blue);background:#142033}
 .mod small{font-size:12px;color:var(--muted);margin-top:7px;font-weight:600}
 
@@ -91,7 +99,6 @@ h1{margin:0}
   const pass=document.getElementById("testerPasswordInput");
   const error=document.getElementById("testerLockError");
   const list=document.getElementById("modList");
-  const MIN_TILES=5;
 
   function esc(v){
     return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
@@ -117,13 +124,15 @@ h1{margin:0}
       return;
     }
 
-    const tiles=modules.map(m=>
-      '<a class="mod" href="./mod1.html?module='+encodeURIComponent(m.slug)+'">'+esc(m.name)+'<small>Open Test</small></a>'
-    );
-    for(let i=tiles.length;i<MIN_TILES;i++){
-      tiles.push('<div class="mod disabled">MOD '+(i+1)+'<small>Not Added Yet</small></div>');
+    if(!modules.length){
+      list.innerHTML='<div class="mods-empty"><strong>No modules published yet</strong>'+
+        '<span>Publish a module in the developer builder and it will appear here.</span></div>';
+      return;
     }
-    list.innerHTML=tiles.join("");
+
+    list.innerHTML=modules.map(m=>
+      '<a class="mod" href="./mod1.html?module='+encodeURIComponent(m.slug)+'">'+esc(m.name)+'<small>Open Test</small></a>'
+    ).join("");
   }
 
   async function enter(profile){
