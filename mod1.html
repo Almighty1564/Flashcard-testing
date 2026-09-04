@@ -312,7 +312,7 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
 
 
 <main class="main">
-<a class="back-modules" href="./tester.html">← Back to Modules</a>
+<a class="back-modules" href="./tester.html?v=8">← Back to Modules</a>
   <div class="topbar">
     <div>
       <h2 id="pageTitle">Question Bank Study Program</h2>
@@ -1228,7 +1228,7 @@ document.getElementById("importInput").onchange=async e=>{
 
   let profile=null;
   try{ profile=await FC.requireUser(); }catch(_){ profile=null; }
-  if(!profile){ location.replace("./tester.html"); return; }
+  if(!profile){ location.replace("./tester.html?v=8"); return; }
 
   const stud=FC.studLabel(profile);
   document.getElementById("brandName").textContent = stud ? ("Stud"+stud) : "Study";
