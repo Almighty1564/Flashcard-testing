@@ -200,6 +200,42 @@ details.advanced>summary{cursor:pointer;font-weight:800;color:#c9d1d9}
   padding:9px 12px;border-radius:9px;font-weight:800
 }
 
+
+/* --- collapsible sidebar -------------------------------------------- */
+.shell{transition:grid-template-columns .25s ease}
+.sidebar{transition:opacity .18s ease,padding .25s ease,max-height .25s ease}
+
+.side-toggle{
+  position:fixed;top:0;left:290px;z-index:60;
+  width:22px;height:100vh;padding:0;
+  display:flex;align-items:center;justify-content:center;
+  background:#0b0f14;color:var(--muted);
+  border:0;border-left:1px solid var(--line);border-right:1px solid var(--line);
+  cursor:pointer;font-size:12px;line-height:1;
+  transition:left .25s ease,background .15s ease,color .15s ease;
+}
+.side-toggle:hover{background:#121821;color:#fff}
+.side-toggle .chev{transition:transform .25s ease;pointer-events:none}
+
+body.sb-collapsed .shell{grid-template-columns:0 minmax(0,1fr)}
+body.sb-collapsed .sidebar{opacity:0;pointer-events:none;overflow:hidden;
+  padding-left:0;padding-right:0;border-right:0}
+body.sb-collapsed .side-toggle{left:0}
+body.sb-collapsed .side-toggle .chev{transform:rotate(180deg)}
+
+@media(max-width:850px){
+  .side-toggle{
+    position:sticky;top:0;left:auto;
+    width:100%;height:26px;
+    border-left:0;border-right:0;
+    border-top:1px solid var(--line);border-bottom:1px solid var(--line);
+  }
+  .side-toggle .chev{transform:rotate(90deg)}
+  body.sb-collapsed .side-toggle{left:auto}
+  body.sb-collapsed .side-toggle .chev{transform:rotate(-90deg)}
+  body.sb-collapsed .shell{grid-template-columns:1fr}
+  body.sb-collapsed .sidebar{max-height:0;padding-top:0;padding-bottom:0;border-bottom:0}
+}
 </style>
 <link rel="stylesheet" href="./theme.css?v=4">
 </head>
@@ -217,7 +253,7 @@ details.advanced>summary{cursor:pointer;font-weight:800;color:#c9d1d9}
 <div id="developerApp" hidden>
 
 <div class="shell">
-  <aside class="sidebar">
+  <aside class="sidebar" id="fcSidebar">
     <div class="brand">
       <h1>Question Bank Builder</h1>
       <div class="version">BUILD v2.0 • CLOUD</div>
@@ -295,6 +331,11 @@ details.advanced>summary{cursor:pointer;font-weight:800;color:#c9d1d9}
       <button id="devSignOutBtn" class="btn full" type="button" style="margin-top:10px">Sign out</button>
     </div>
   </aside>
+<button id="sidebarToggle" class="side-toggle" type="button"
+        aria-controls="fcSidebar" aria-expanded="true" title="Hide panel">
+  <span class="chev">&#10094;</span>
+</button>
+
 
   <main class="main">
 <a class="portal-home-btn" href="./index.html">← Back to Home</a>
@@ -2242,5 +2283,33 @@ window.__startBuilder=async function(profile){
 
 <script src="./ai-distractors.js"></script>
 
+
+<script>
+/* Collapsible sidebar. Remembers its state between visits. */
+(function () {
+  var body = document.body;
+  var btn = document.getElementById("sidebarToggle");
+  if (!btn) return;
+  var KEY = "fc_sidebar_collapsed";
+
+  try { if (localStorage.getItem(KEY) === "1") body.classList.add("sb-collapsed"); } catch (_) {}
+
+  function sync() {
+    var collapsed = body.classList.contains("sb-collapsed");
+    btn.setAttribute("aria-expanded", String(!collapsed));
+    btn.title = collapsed ? "Show panel" : "Hide panel";
+  }
+
+  btn.addEventListener("click", function () {
+    body.classList.toggle("sb-collapsed");
+    try {
+      localStorage.setItem(KEY, body.classList.contains("sb-collapsed") ? "1" : "0");
+    } catch (_) {}
+    sync();
+  });
+
+  sync();
+})();
+</script>
 </body>
 </html>
