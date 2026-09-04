@@ -899,7 +899,16 @@ async function runSync(){
     if(syncQueued){syncQueued=false;queueSync();}
   }
 }
+const LAST_MODULE_KEY="fc_last_module_slug";
+function rememberModule(slug){
+  try{ if(slug) localStorage.setItem(LAST_MODULE_KEY,slug); }catch(_){}
+}
+function lastModule(){
+  try{ return localStorage.getItem(LAST_MODULE_KEY)||""; }catch(_){ return ""; }
+}
+
 async function loadModuleIntoBuilder(slug){
+  rememberModule(slug);
   cloudReady=false;
   setSyncStatus("Loading…","#8b949e");
   const sb=FC.client;
@@ -1277,8 +1286,11 @@ function saveCurrentQuestion(){
   if(idx>=0) project.questions[idx]={...project.questions[idx],...q};
   else project.questions.push({...q,createdAt:new Date().toISOString()});
   saveProject();
+  const total=project.questions.length;
   newQuestion();
-  showView("bank");
+  /* Stay in the editor so the next question can be typed straight away. */
+  showView("questions");
+  setSyncStatus("Saved \u2014 "+total+" question"+(total===1?"":"s")+" in this module","#3fb950");
 }
 /* An unchanged image keeps its Supabase Storage path so it is not re-uploaded. */
 function carryImagePaths(next,prev){
@@ -2223,7 +2235,13 @@ window.__startBuilder=async function(profile){
     "Signed in as "+(profile.username||"developer");
   const modules=await renderModuleSelect();
   if(modules.length){
-    await loadModuleIntoBuilder(document.getElementById("cloudModuleSelect").value||modules[0].slug);
+    /* Reopen whatever was last edited, as long as it still exists. */
+    const saved=lastModule();
+    const wanted=modules.some(m=>m.slug===saved)
+      ? saved
+      : (document.getElementById("cloudModuleSelect").value||modules[0].slug);
+    document.getElementById("cloudModuleSelect").value=wanted;
+    await loadModuleIntoBuilder(wanted);
   }else{
     setSyncStatus("No modules yet — use New Module","#8b949e");
   }
