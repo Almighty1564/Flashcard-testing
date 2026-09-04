@@ -146,6 +146,17 @@ body.sb-collapsed .sidebar{opacity:0;pointer-events:none;overflow:hidden;
 body.sb-collapsed .side-toggle{left:0}
 body.sb-collapsed .side-toggle .chev{transform:rotate(180deg)}
 
+
+/* Collapsed: keep content clear of the toggle strip, and stop it
+   stretching edge-to-edge on a wide landscape screen. */
+body.sb-collapsed .main{padding-left:46px;padding-right:30px}
+@media(min-width:1000px){
+  body.sb-collapsed .main{max-width:1180px;margin:0 auto}
+}
+@media(max-width:850px){
+  body.sb-collapsed .main{padding-left:22px;padding-right:22px;max-width:none;margin:0}
+}
+
 @media(max-width:850px){
   .side-toggle{
     position:sticky;top:0;left:auto;
