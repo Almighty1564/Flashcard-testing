@@ -81,6 +81,13 @@
   .segmented button:focus-visible{outline:2px solid var(--side);outline-offset:2px}
 
   .hint{margin:8px 0 0;font-size:12.5px;color:var(--dim);line-height:1.5}
+  .taper-viz{display:block;width:100%;height:auto;margin-top:12px;
+    border:1px solid var(--edge);border-radius:3px;background:#080d13}
+  .glossary{margin:26px 0 0;padding-top:18px;border-top:1px solid var(--edge);
+    display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+  .glossary dt{font-size:14px;font-weight:650;margin-bottom:3px}
+  .glossary dd{margin:0;font-size:13.5px;color:var(--dim);line-height:1.55}
+  .glossary em{color:var(--text);font-style:normal}
   .note{margin-top:26px;padding-top:18px;border-top:1px solid var(--edge);
     color:var(--dim);font-size:14px;line-height:1.6;max-width:70ch}
   .note strong{color:var(--text);font-weight:600}
@@ -119,10 +126,10 @@
   <div>
     <label class="field" for="dia">
       <span class="field-head">
-        <span>Dish diameter, in wavelengths</span>
-        <span id="diaOut">30 &lambda;</span>
+        <span>Dish diameter</span>
+        <span id="diaOut">1.20 m</span>
       </span>
-      <input id="dia" type="range" min="4" max="120" value="30" step="1">
+      <input id="dia" type="range" min="0.2" max="5.6" value="1.2" step="0.05">
     </label>
     <p class="hint" id="physical"></p>
   </div>
@@ -133,8 +140,9 @@
       <button type="button" data-taper="cosine" aria-pressed="false">Tapered</button>
       <button type="button" data-taper="cosine2" aria-pressed="false">Heavily tapered</button>
     </div>
-    <p class="hint">How hard the feed horn lights the outer edge of the dish. Lighting the
-      edge less buries the sidelobes, and widens the main beam in exchange.</p>
+    <canvas id="taperViz" class="taper-viz" width="640" height="150"
+            aria-label="Cross-section of the dish showing how brightly the feed lights it"></canvas>
+    <p class="hint" id="taperNote"></p>
   </div>
 </div>
 
@@ -148,6 +156,39 @@
     </div>
   </div>
 </div>
+
+<dl class="glossary">
+  <div>
+    <dt>Boresight</dt>
+    <dd>The axis the dish is aimed along, straight out of the centre of the reflector.
+      It is where gain peaks, and it is the zero that every other angle is measured from.
+      Pointing a terminal <em>is</em> putting the satellite on boresight.</dd>
+  </div>
+  <div>
+    <dt>Main beam</dt>
+    <dd>The single large lobe around boresight, ending at the first null. Nearly all the
+      useful power lives here.</dd>
+  </div>
+  <div>
+    <dt>Sidelobe</dt>
+    <dd>Any smaller lobe outside the main beam. Power you did not aim anywhere useful, and
+      the path by which you interfere with, or get interfered with by, an adjacent satellite.</dd>
+  </div>
+  <div>
+    <dt>Null</dt>
+    <dd>An angle where the lobes meet and gain collapses. Point a null at an interferer and
+      you stop hearing it.</dd>
+  </div>
+  <div>
+    <dt>Half-power beamwidth</dt>
+    <dd>How wide the main beam is, measured where gain has fallen by 3 dB &mdash; half the
+      power. It is the practical answer to how tightly you must hold your pointing.</dd>
+  </div>
+  <div>
+    <dt>dBi</dt>
+    <dd>Gain compared against an isotropic radiator, the dashed circle in the polar view.</dd>
+  </div>
+</dl>
 
 <p class="note">
   The dashed circle in the polar view is an <strong>isotropic radiator</strong> &mdash; the same
@@ -166,9 +207,17 @@
 
   var FLOOR = -40, EFF = 0.55;
   var state = {
-    dOverL: 30, taper: "uniform", ghz: 8, view: "solid",
-    cursor: null, yaw: -0.62, pitch: 0.42
+    dMetres: 1.2, taper: "uniform", ghz: 8, view: "solid",
+    cursor: null, yaw: -0.62, pitch: 0.42, dragging: false
   };
+
+  /* Physics only cares about the dish in wavelengths, so derive it. */
+  function lambdaM() { return 0.299792458 / state.ghz; }
+  function dOverL()  { return state.dMetres / lambdaM(); }
+
+  /* Keep the slider inside a range that stays honest to draw: past roughly
+     150 wavelengths the far sidelobes are finer than the screen can resolve. */
+  function maxMetres() { return Math.min(6, Math.round(150 * lambdaM() * 20) / 20); }
 
   /* ---- pattern maths ------------------------------------------------ */
 
@@ -183,13 +232,13 @@
     return sinc(u);
   }
   function patternDb(theta) {
-    var u = state.dOverL * Math.sin(theta);
+    var u = dOverL() * Math.sin(theta);
     var f = fieldAt(u, state.taper) / fieldAt(0, state.taper);
     var p = f * f;
     return p < 1e-12 ? -200 : 10 * Math.log10(p);
   }
   function peakGainDbi() {
-    return 10 * Math.log10(EFF * Math.pow(Math.PI * state.dOverL, 2));
+    return 10 * Math.log10(EFF * Math.pow(Math.PI * dOverL(), 2));
   }
   function analyse() {
     var STEP = 0.002 * Math.PI / 180;
@@ -213,6 +262,24 @@
       sllDb: sll, sllAt: sllAt
     };
   }
+
+  /* Illumination amplitude across the aperture, r from 0 at centre to 1 at the rim.
+     This is the physical thing the taper buttons choose. */
+  function illumination(r, taper) {
+    var x = Math.min(1, Math.abs(r));
+    if (taper === "cosine")  return Math.cos(Math.PI * x / 2);
+    if (taper === "cosine2") return Math.pow(Math.cos(Math.PI * x / 2), 2);
+    return 1;
+  }
+
+  var TAPER_NOTE = {
+    uniform:  "The feed lights the reflector evenly right out to the rim. Sharpest possible " +
+              "beam for the size, but the abrupt edge throws the most sidelobe energy.",
+    cosine:   "The feed rolls off toward the rim, so the edge contributes little. Sidelobes " +
+              "drop by roughly 10 dB and the main beam widens to pay for it.",
+    cosine2:  "The rim is barely lit at all. Sidelobes fall furthest, and the beam is widest " +
+              "\u2014 the choice when a neighbouring satellite matters more than raw gain."
+  };
 
   /* Gain mapped to a 0..1 radius, floored at FLOOR dB. */
   function radial(db) {
@@ -263,7 +330,10 @@
     var cx = W * 0.47, cy = H * 0.52;
     var scale = Math.min(W, H) * 0.40;
 
-    var NT = 130, NP = 54;
+    /* More samples for bigger dishes, fewer while the pointer is moving. */
+    var NT = Math.round(Math.max(150, Math.min(560, 160 + dOverL() * 2.6)));
+    var NP = 52;
+    if (state.dragging) { NT = Math.round(NT * 0.55); NP = 36; }
     var cosY = Math.cos(state.yaw),   sinY = Math.sin(state.yaw);
     var cosP = Math.cos(state.pitch), sinP = Math.sin(state.pitch);
 
@@ -328,6 +398,8 @@
       ctx.stroke();
     });
 
+    drawDish(project);
+
     var o = project(0, 0, 0), tip = project(1.18, 0, 0);
     ctx.save();
     ctx.setLineDash([4, 5]);
@@ -342,6 +414,128 @@
     ctx.font = "12px ui-sans-serif,system-ui,sans-serif";
     ctx.textAlign = "left";
     ctx.fillText("boresight", tip.x + 6, tip.y + 4);
+  }
+
+  /* The reflector itself, scaled by the diameter slider so the dish visibly grows
+     as the beam it produces narrows. The feed sits at the focus, which is the
+     origin the pattern radiates from. */
+  function dishRadiusUnits() {
+    return 0.10 + (state.dMetres / 6) * 0.52;
+  }
+
+  function drawDish(project) {
+    var R = dishRadiusUnits();
+    var F = 0.8 * R;                       // f/D of 0.4, typical prime focus
+    var vertex = -F;                       // places the focus at the origin
+    var NR = 9, NP = 40, i, p;
+
+    function surface(u, phi) {
+      return project(vertex + (u * u) / (4 * F), u * Math.cos(phi), u * Math.sin(phi));
+    }
+
+    ctx.lineWidth = 1;
+
+    for (i = 1; i <= NR; i++) {
+      var u = (i / NR) * R;
+      var lit = illumination(i / NR, state.taper);
+      ctx.beginPath();
+      for (p = 0; p <= NP; p++) {
+        var q = surface(u, (p / NP) * Math.PI * 2);
+        if (p === 0) ctx.moveTo(q.x, q.y); else ctx.lineTo(q.x, q.y);
+      }
+      var v = Math.round(70 + 150 * lit);   // brightness tracks the illumination
+      ctx.strokeStyle = "rgba(" + v + "," + Math.round(v * 1.05) + "," +
+                        Math.round(v * 1.12) + ",.9)";
+      ctx.stroke();
+    }
+
+    for (p = 0; p < 12; p++) {
+      var phi = (p / 12) * Math.PI * 2;
+      ctx.beginPath();
+      for (i = 0; i <= NR; i++) {
+        var q2 = surface((i / NR) * R, phi);
+        if (i === 0) ctx.moveTo(q2.x, q2.y); else ctx.lineTo(q2.x, q2.y);
+      }
+      ctx.strokeStyle = "rgba(120,140,150,.5)";
+      ctx.stroke();
+    }
+
+    var feed = project(0, 0, 0);
+    for (p = 0; p < 3; p++) {
+      var rim = surface(R, (p / 3) * Math.PI * 2 + 0.4);
+      ctx.beginPath();
+      ctx.moveTo(feed.x, feed.y);
+      ctx.lineTo(rim.x, rim.y);
+      ctx.strokeStyle = "rgba(120,140,150,.42)";
+      ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.arc(feed.x, feed.y, 4, 0, Math.PI * 2);
+    ctx.fillStyle = "#c8d4da";
+    ctx.fill();
+    ctx.fillStyle = cssVar("--dim");
+    ctx.font = "11px ui-sans-serif,system-ui,sans-serif";
+    ctx.textAlign = "right";
+    ctx.fillText("feed", feed.x - 8, feed.y + 4);
+  }
+
+  /* ---- aperture illumination preview --------------------------------- */
+
+  function drawTaper() {
+    var c = document.getElementById("taperViz");
+    if (!c) return;
+    var g = c.getContext("2d");
+    var dpr = window.devicePixelRatio || 1;
+    var w = c.clientWidth || 640, h = 150;
+    c.width = Math.round(w * dpr);
+    c.height = Math.round(h * dpr);
+    c.style.height = h + "px";
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, w, h);
+
+    var padX = 26, span = w - padX * 2, half = span / 2, cx = padX + half;
+    var barTop = 26, barH = 30, baseY = 118;
+
+    for (var px = 0; px <= span; px++) {
+      var r = (px - half) / half;
+      var a = illumination(r, state.taper);
+      var v = Math.round(18 + 217 * a);
+      g.fillStyle = "rgb(" + v + "," + Math.round(v * 0.70) + "," + Math.round(v * 0.24) + ")";
+      g.fillRect(padX + px, barTop, 1.5, barH);
+    }
+    g.strokeStyle = "rgba(255,255,255,.18)";
+    g.lineWidth = 1;
+    g.strokeRect(padX, barTop, span, barH);
+
+    g.beginPath();
+    for (var k = 0; k <= span; k++) {
+      var rr = (k - half) / half;
+      var y = baseY - illumination(rr, state.taper) * 44;
+      if (k === 0) g.moveTo(padX + k, y); else g.lineTo(padX + k, y);
+    }
+    g.strokeStyle = cssVar("--beam");
+    g.lineWidth = 2;
+    g.stroke();
+
+    g.strokeStyle = "rgba(255,255,255,.10)";
+    g.lineWidth = 1;
+    g.beginPath();
+    g.moveTo(padX, baseY);
+    g.lineTo(padX + span, baseY);
+    g.stroke();
+
+    g.fillStyle = cssVar("--dim");
+    g.font = "11px ui-sans-serif,system-ui,sans-serif";
+    g.textAlign = "center";
+    g.fillText("rim", padX + 10, 16);
+    g.fillText("centre of dish", cx, 16);
+    g.fillText("rim", padX + span - 10, 16);
+    g.textAlign = "left";
+    g.fillText(illumination(1, state.taper) < 0.01
+      ? "Edge of dish: dark" : "Edge of dish: fully lit", padX, h - 6);
+
+    var note = document.getElementById("taperNote");
+    if (note) note.textContent = TAPER_NOTE[state.taper];
   }
 
   /* ---- 2D polar scope ------------------------------------------------ */
@@ -495,19 +689,28 @@
       cEl.innerHTML = (g0 + patternDb(state.cursor)).toFixed(1) + "<small>dBi</small>";
     }
 
-    var lambda = 299.792458 / state.ghz;
-    var m = state.dOverL * lambda / 1000;
+    drawTaper();
+
     document.getElementById("physical").textContent =
-      "At " + state.ghz + " GHz that is a dish about " +
-      (m < 1 ? (m * 100).toFixed(0) + " cm" : m.toFixed(2) + " m") + " across.";
+      "At " + state.ghz + " GHz that is " + dOverL().toFixed(1) +
+      " wavelengths across. Gain and beamwidth follow the dish measured in wavelengths, " +
+      "so the same dish sharpens as you move up in frequency.";
   }
 
   /* ---- input --------------------------------------------------------- */
 
   var dia = document.getElementById("dia");
+  function syncDia() {
+    dia.max = maxMetres();
+    if (state.dMetres > Number(dia.max)) state.dMetres = Number(dia.max);
+    dia.value = state.dMetres;
+    document.getElementById("diaOut").textContent =
+      state.dMetres < 1 ? Math.round(state.dMetres * 100) + " cm"
+                        : state.dMetres.toFixed(2) + " m";
+  }
   dia.addEventListener("input", function () {
-    state.dOverL = Number(dia.value);
-    document.getElementById("diaOut").textContent = dia.value + " \u03BB";
+    state.dMetres = Number(dia.value);
+    syncDia();
     draw();
   });
 
@@ -518,6 +721,7 @@
           o.setAttribute("aria-pressed", String(o === b));
         });
         state[key] = cast(b.dataset[attr]);
+        if (key === "ghz") syncDia();
         if (key === "view") {
           cv.classList.toggle("flat", state.view === "flat");
           legend();
@@ -542,6 +746,7 @@
     cv.setPointerCapture(e.pointerId);
     if (state.view === "solid") {
       drag = { x: e.clientX, y: e.clientY, yaw: state.yaw, pitch: state.pitch };
+      state.dragging = true;
     } else {
       readCursor(e);
     }
@@ -556,10 +761,14 @@
       readCursor(e);
     }
   });
-  cv.addEventListener("pointerup", function () { drag = null; });
+  cv.addEventListener("pointerup", function () {
+    drag = null;
+    if (state.dragging) { state.dragging = false; draw(); }
+  });
 
   window.addEventListener("resize", draw);
   legend();
+  syncDia();
   draw();
 })();
 </script>

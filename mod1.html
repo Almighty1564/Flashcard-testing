@@ -73,6 +73,7 @@ input[type=text],input[type=password],select{width:100%;background:#0d1117;color
 .visual-frame{margin-top:12px;border:1px solid var(--line);border-radius:12px;
   overflow:hidden;background:#06090f}
 .visual-frame iframe{display:block;width:100%;height:620px;border:0}
+#toolHost iframe{height:calc(100vh - 210px);min-height:520px}
 @media(max-width:850px){.visual-frame iframe{height:560px}}
 .entry-wrap{display:flex;align-items:center;gap:10px;margin-top:18px;flex-wrap:wrap}
 .entry-input{flex:1 1 260px;max-width:420px;background:var(--panel2);color:var(--text);
@@ -270,12 +271,12 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
     </div>
   </details>
 
-  <button id="calcBtn" class="icon-btn">
+  <button id="calcBtn" type="button" class="icon-btn" hidden>
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
       <rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8"/>
       <path d="M8 11h.01M12 11h.01M16 11h.01M8 15h.01M12 15h.01M16 15h.01M8 19h.01M12 19h4"/>
     </svg>
-    <span>Practice Calculations</span>
+    <span id="calcBtnLabel">Practice Calculations</span>
   </button>
 
   <details class="disclosure" id="groupsDisclosure">
@@ -440,6 +441,17 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
     <div id="untestedGroups" class="check-grid"></div>
   </section>
 
+  <section id="toolView" class="hidden">
+    <div class="builder-toolbar" style="margin-bottom:16px">
+      <div>
+        <h3 style="margin:0" id="toolTitle">Visual</h3>
+        <div class="muted small">Explore freely. Nothing here is scored.</div>
+      </div>
+      <button id="closeToolBtn" type="button" class="btn">&#8592; Back</button>
+    </div>
+    <div id="toolHost" class="visual-frame" style="margin-top:0"></div>
+  </section>
+
   <section id="calcView" class="hidden">
     <div class="builder-toolbar" style="margin-bottom:16px">
       <div>
@@ -459,6 +471,18 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
 <script src="./mod1-calc.js?v=8"></script>
 <script>
 const MODULE_SLUG=new URLSearchParams(location.search).get("module")||"mod1";
+
+/* Which extra tool the left rail offers, per module. Add an entry to give a
+   module its own tool; modules with no entry simply do not show the button. */
+const MODULE_TOOLS={
+  mod1:{label:"Practice Calculations", kind:"calc"},
+  mod2:{label:"Antenna Pattern", kind:"embed",
+        src:"./antenna-pattern.html", title:"Antenna Pattern"}
+};
+function moduleTool(){
+  const key=String(MODULE_SLUG||"").toLowerCase().replace(/[^a-z0-9]/g,"");
+  return MODULE_TOOLS[key]||null;
+}
 
 let bank=null;
 let state=null;
@@ -544,7 +568,7 @@ function markUnanswered(cardId){
   pushCard(cardId);
 }
 function hideViews(){
-  ["lockedView","emptyView","studyView","customView","debriefView","progressView","calcView"].forEach(id=>document.getElementById(id).classList.add("hidden"));
+  ["lockedView","emptyView","studyView","customView","debriefView","progressView","calcView","toolView"].forEach(id=>document.getElementById(id).classList.add("hidden"));
 }
 function renderSidebar(){
   if(!bank){
@@ -1250,6 +1274,15 @@ function showOverallProgress(){
   ).join(""):'<div class="muted small">Every group has at least one result.</div>';
 }
 let calcApp=null;
+function showTool(tool){
+  hideViews();
+  document.getElementById("toolTitle").textContent=tool.title||tool.label;
+  document.getElementById("toolView").classList.remove("hidden");
+  const host=document.getElementById("toolHost");
+  if(!host.firstChild){
+    host.innerHTML=`<iframe src="${esc(tool.src)}" loading="lazy" title="${esc(tool.title||tool.label)}"></iframe>`;
+  }
+}
 function showCalc(){
   hideViews();
   document.getElementById("calcView").classList.remove("hidden");
@@ -1301,7 +1334,18 @@ document.getElementById("exitSessionBtn").onclick=()=>{
 document.getElementById("closeCustomBtn").onclick=()=>showMenu("Custom test cancelled","Nothing was started. Your progress is unchanged.");
 document.getElementById("closeProgressBtn").onclick=()=>showMenu();
 document.getElementById("skipBtn").onclick=skipCurrent;
-document.getElementById("calcBtn").onclick=showCalc;
+(function(){
+  const tool=moduleTool();
+  const btn=document.getElementById("calcBtn");
+  if(!tool){ btn.hidden=true; return; }
+  document.getElementById("calcBtnLabel").textContent=tool.label;
+  btn.hidden=false;
+  btn.onclick=()=>{ if(tool.kind==="calc") showCalc(); else showTool(tool); };
+})();
+document.getElementById("closeToolBtn").onclick=()=>{
+  document.getElementById("toolHost").innerHTML="";
+  showStudy();
+};
 document.getElementById("reportBtn").onclick=toggleReportBox;
 document.getElementById("reportCancelBtn").onclick=hideReportBox;
 document.getElementById("reportSendBtn").onclick=sendReport;
