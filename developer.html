@@ -385,6 +385,15 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
           <label>QUESTION</label>
           <textarea id="questionText" placeholder="Type the question..."></textarea>
         </div>
+        <div class="field">
+          <label>INTERACTIVE VISUAL (OPTIONAL)</label>
+          <input id="questionVisual" type="text"
+                 placeholder="Example: antenna-pattern.html">
+          <div class="small muted" style="margin-top:6px">
+            A page in this site, or a full https link. Testers get a button that opens it
+            beside the question.
+          </div>
+        </div>
 
         <div class="image-box">
           <div class="image-actions">
@@ -762,6 +771,7 @@ function emptyDraft(){
     questionImage:null,
     answerText:"",
     answerImage:null,
+    visual:"",
     numericValue:"",
     numericTolerance:"",
     numericUnit:"",
@@ -844,6 +854,10 @@ async function uploadPendingImages(){
   }
 }
 function answerDataFor(q){
+  const base=q.visual?{visual:q.visual}:{};
+  return Object.assign(base,answerBodyFor(q));
+}
+function answerBodyFor(q){
   if(q.type==="flashcard"){
     return {text:q.answerText||"",image_path:q.answerImagePath||null};
   }
@@ -1010,6 +1024,7 @@ async function loadModuleIntoBuilder(slug){
       }));
       q.shuffleChoices=ad.shuffle!==false;
     }
+    q.visual=ad.visual||"";
     if(row.question_type==="numeric"){
       q.numericValue=ad.value||"";
       q.numericTolerance=(ad.tolerance===null||ad.tolerance===undefined)?"":String(ad.tolerance);
@@ -1097,6 +1112,7 @@ function syncDraftFromForm(){
   draft.groupId=document.getElementById("questionGroup").value;
   draft.type=document.getElementById("questionType").value;
   draft.questionText=document.getElementById("questionText").value;
+  draft.visual=document.getElementById("questionVisual").value;
   draft.answerText=document.getElementById("flashAnswerText").value;
   draft.shuffleChoices=document.getElementById("shuffleChoices").checked;
   draft.numericValue=document.getElementById("numericValue").value;
@@ -1126,6 +1142,7 @@ function fillFormFromDraft(){
   draft.groupId=document.getElementById("questionGroup").value;
   document.getElementById("questionType").value=draft.type;
   document.getElementById("questionText").value=draft.questionText;
+  document.getElementById("questionVisual").value=draft.visual||"";
   document.getElementById("flashAnswerText").value=draft.answerText;
   document.getElementById("shuffleChoices").checked=draft.shuffleChoices!==false;
   document.getElementById("numericValue").value=draft.numericValue||"";
@@ -1345,6 +1362,7 @@ function saveCurrentQuestion(){
     groupId:draft.groupId,
     type:draft.type,
     questionText:draft.questionText.trim(),
+    visual:String(draft.visual||"").trim()||null,
     questionImage:draft.questionImage,
     answerText:draft.type==="flashcard"?draft.answerText.trim():null,
     answerImage:draft.type==="flashcard"?draft.answerImage:null,
@@ -1664,6 +1682,7 @@ function normalizedBank(bankVersion=1){
     cards:project.questions.map((q,i)=>({
       id:q.id,groupId:q.groupId,type:q.type,order:i+1,status:questionIssues(q).length?"incomplete":"complete",
       question:{text:q.questionText||"",image:q.questionImage||null},
+      ...(q.visual?{visual:q.visual}:{}),
       ...(q.type==="flashcard"?{answer:{text:q.answerText||"",image:q.answerImage||null}}:{}),
       ...(q.type==="multiple-choice"||q.type==="multiple-select"?{
         choices:q.choices.map(c=>({id:c.id,text:c.text,image:c.image,correct:!!c.correct})),

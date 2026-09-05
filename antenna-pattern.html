@@ -1,0 +1,567 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Antenna pattern explorer</title>
+<style>
+  :root{
+    --void:#06090f; --panel:#0b1219; --grid:#14303a; --grid-key:#1e4a59;
+    --beam:#ffb03a; --side:#35c9d6; --iso:#5d7078;
+    --text:#dce6ea; --dim:#7d8f9a; --edge:#17242e;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;background:var(--void);color:var(--text);
+    font-family:ui-sans-serif,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
+  .wrap{max-width:1080px;margin:0 auto;padding:24px 18px 40px}
+
+  header{margin-bottom:18px}
+  h1{margin:0 0 6px;font-size:26px;font-weight:650;letter-spacing:-.015em}
+  .lede{margin:0;color:var(--dim);font-size:15px;line-height:1.5;max-width:64ch}
+
+  .stage{display:grid;grid-template-columns:minmax(0,1fr) 236px;gap:22px;align-items:start}
+  @media(max-width:840px){.stage{grid-template-columns:1fr}}
+
+  .scope{position:relative;background:var(--panel);border:1px solid var(--edge);
+    border-radius:4px;overflow:hidden}
+  canvas{display:block;width:100%;height:auto;touch-action:none;cursor:grab}
+  canvas.flat{cursor:crosshair}
+  canvas:active{cursor:grabbing}
+
+  .viewtabs{position:absolute;top:10px;left:10px;display:flex;gap:5px;z-index:2}
+  .viewtabs button{padding:6px 12px;font:inherit;font-size:13px;cursor:pointer;
+    background:rgba(6,9,15,.72);color:var(--dim);
+    border:1px solid var(--grid-key);border-radius:3px}
+  .viewtabs button[aria-pressed=true]{background:var(--beam);color:#0d0900;
+    border-color:var(--beam);font-weight:600}
+  .viewtabs button:focus-visible{outline:2px solid var(--side);outline-offset:2px}
+
+  .legend{display:flex;gap:16px;flex-wrap:wrap;padding:10px 13px;
+    border-top:1px solid var(--edge);font-size:12.5px;color:var(--dim)}
+  .key{display:flex;align-items:center;gap:7px}
+  .swatch{width:15px;height:3px;border-radius:2px}
+  .swatch.iso{height:0;border-top:1px dashed var(--iso)}
+  .ramp{width:64px;height:9px;border-radius:2px;
+    background:linear-gradient(90deg,#1d2b6b,#1a7fb5,#25b07a,#c9d132,#f06a2a,#c2181c)}
+
+  .readouts{display:grid;gap:1px;background:var(--edge);
+    border:1px solid var(--edge);border-radius:4px;overflow:hidden}
+  .cell{background:var(--panel);padding:11px 13px}
+  .cell dt{margin:0 0 3px;font-size:12px;color:var(--dim)}
+  .cell dd{margin:0;font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
+  .cell dd small{font-size:13px;font-weight:400;color:var(--dim);margin-left:3px}
+  .cell.live dd{color:var(--beam)}
+
+  .controls{margin-top:20px;display:grid;gap:18px;
+    grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)}
+  @media(max-width:840px){.controls{grid-template-columns:1fr}}
+
+  .field-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
+  .field-head span:first-child{font-size:14px}
+  .field-head span:last-child{font-size:15px;font-weight:600;
+    font-variant-numeric:tabular-nums;color:var(--beam)}
+
+  input[type=range]{width:100%;-webkit-appearance:none;appearance:none;
+    height:26px;background:transparent;cursor:pointer}
+  input[type=range]::-webkit-slider-runnable-track{height:2px;background:var(--grid-key)}
+  input[type=range]::-moz-range-track{height:2px;background:var(--grid-key)}
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;
+    border-radius:50%;background:var(--beam);margin-top:-7px;border:0}
+  input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;
+    background:var(--beam);border:0}
+  input[type=range]:focus-visible{outline:2px solid var(--side);outline-offset:4px}
+
+  .segmented{display:flex;gap:5px;flex-wrap:wrap}
+  .segmented button{flex:1 1 auto;padding:9px 10px;background:transparent;color:var(--dim);
+    border:1px solid var(--grid-key);border-radius:3px;font:inherit;font-size:13.5px;
+    cursor:pointer;white-space:nowrap}
+  .segmented button:hover{color:var(--text);border-color:var(--side)}
+  .segmented button[aria-pressed=true]{background:var(--beam);border-color:var(--beam);
+    color:#0d0900;font-weight:600}
+  .segmented button:focus-visible{outline:2px solid var(--side);outline-offset:2px}
+
+  .hint{margin:8px 0 0;font-size:12.5px;color:var(--dim);line-height:1.5}
+  .note{margin-top:26px;padding-top:18px;border-top:1px solid var(--edge);
+    color:var(--dim);font-size:14px;line-height:1.6;max-width:70ch}
+  .note strong{color:var(--text);font-weight:600}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1>Where the energy actually goes</h1>
+  <p class="lede">A dish does not send power in one clean spear. It sends a main beam plus a
+    ring of weaker sidelobes. Drag to spin the pattern, then widen the dish and watch the
+    beam sharpen while new lobes appear beside it.</p>
+</header>
+
+<div class="stage">
+  <div class="scope">
+    <div class="viewtabs" role="group" aria-label="View">
+      <button type="button" data-view="solid" aria-pressed="true">3D</button>
+      <button type="button" data-view="flat" aria-pressed="false">Polar</button>
+    </div>
+    <canvas id="scope" width="1100" height="700"
+            aria-label="Antenna radiation pattern. Drag to rotate."></canvas>
+    <div class="legend" id="legend"></div>
+  </div>
+
+  <dl class="readouts">
+    <div class="cell"><dt>Peak gain on boresight</dt><dd id="rGain">&mdash;</dd></div>
+    <div class="cell"><dt>Half-power beamwidth</dt><dd id="rBw">&mdash;</dd></div>
+    <div class="cell"><dt>Tallest sidelobe</dt><dd id="rSll">&mdash;</dd></div>
+    <div class="cell live"><dt id="rCursorLabel">Gain at cursor</dt><dd id="rCursor">&mdash;</dd></div>
+  </dl>
+</div>
+
+<div class="controls">
+  <div>
+    <label class="field" for="dia">
+      <span class="field-head">
+        <span>Dish diameter, in wavelengths</span>
+        <span id="diaOut">30 &lambda;</span>
+      </span>
+      <input id="dia" type="range" min="4" max="120" value="30" step="1">
+    </label>
+    <p class="hint" id="physical"></p>
+  </div>
+  <div>
+    <span class="field-head"><span>Feed illumination</span></span>
+    <div class="segmented" role="group" aria-label="Feed illumination taper">
+      <button type="button" data-taper="uniform" aria-pressed="true">Uniform</button>
+      <button type="button" data-taper="cosine" aria-pressed="false">Tapered</button>
+      <button type="button" data-taper="cosine2" aria-pressed="false">Heavily tapered</button>
+    </div>
+    <p class="hint">How hard the feed horn lights the outer edge of the dish. Lighting the
+      edge less buries the sidelobes, and widens the main beam in exchange.</p>
+  </div>
+</div>
+
+<div class="controls" style="margin-top:14px">
+  <div>
+    <span class="field-head"><span>Band, for the physical size readout</span></span>
+    <div class="segmented" role="group" aria-label="Frequency band">
+      <button type="button" data-ghz="8" aria-pressed="true">X &middot; 8 GHz</button>
+      <button type="button" data-ghz="14.25" aria-pressed="false">Ku &middot; 14.25 GHz</button>
+      <button type="button" data-ghz="30" aria-pressed="false">Ka &middot; 30 GHz</button>
+    </div>
+  </div>
+</div>
+
+<p class="note">
+  The dashed circle in the polar view is an <strong>isotropic radiator</strong> &mdash; the same
+  power spread evenly in every direction, and the reference every gain figure is measured
+  against. That is what the i in dBi means. Everything the pattern pushes out along boresight
+  it had to take from somewhere else, and the sidelobes are where the leftovers land. They
+  are why a dish aimed at one satellite can still hear a second one a few degrees off.
+</p>
+
+<script>
+(function () {
+  "use strict";
+
+  var cv = document.getElementById("scope");
+  var ctx = cv.getContext("2d");
+
+  var FLOOR = -40, EFF = 0.55;
+  var state = {
+    dOverL: 30, taper: "uniform", ghz: 8, view: "solid",
+    cursor: null, yaw: -0.62, pitch: 0.42
+  };
+
+  /* ---- pattern maths ------------------------------------------------ */
+
+  function sinc(x) {
+    if (Math.abs(x) < 1e-9) return 1;
+    var a = Math.PI * x;
+    return Math.sin(a) / a;
+  }
+  function fieldAt(u, taper) {
+    if (taper === "cosine")  return (Math.PI / 4) * (sinc(u - 0.5) + sinc(u + 0.5));
+    if (taper === "cosine2") return 0.5 * sinc(u) + 0.25 * (sinc(u - 1) + sinc(u + 1));
+    return sinc(u);
+  }
+  function patternDb(theta) {
+    var u = state.dOverL * Math.sin(theta);
+    var f = fieldAt(u, state.taper) / fieldAt(0, state.taper);
+    var p = f * f;
+    return p < 1e-12 ? -200 : 10 * Math.log10(p);
+  }
+  function peakGainDbi() {
+    return 10 * Math.log10(EFF * Math.pow(Math.PI * state.dOverL, 2));
+  }
+  function analyse() {
+    var STEP = 0.002 * Math.PI / 180;
+    var half = null, nullAt = null, prev = 0, falling = true, t;
+    for (t = STEP; t < Math.PI / 2; t += STEP) {
+      var db = patternDb(t);
+      if (half === null && db <= -3) half = t;
+      if (falling && db > prev && prev < -15) { nullAt = t; falling = false; break; }
+      prev = db;
+    }
+    var sll = -200, sllAt = null;
+    if (nullAt !== null) {
+      for (t = nullAt; t < Math.PI / 2; t += STEP * 5) {
+        var d2 = patternDb(t);
+        if (d2 > sll) { sll = d2; sllAt = t; }
+      }
+    }
+    return {
+      hpbwDeg: half === null ? null : half * 2 * 180 / Math.PI,
+      nullDeg: nullAt === null ? null : nullAt * 180 / Math.PI,
+      sllDb: sll, sllAt: sllAt
+    };
+  }
+
+  /* Gain mapped to a 0..1 radius, floored at FLOOR dB. */
+  function radial(db) {
+    return Math.max(0, Math.min(1, 1 - Math.max(FLOOR, Math.min(0, db)) / FLOOR));
+  }
+
+  /* Cold at the floor, hot on boresight. */
+  var RAMP = [
+    [0.00, 29, 43, 107], [0.22, 26, 127, 181], [0.45, 37, 176, 122],
+    [0.66, 201, 209, 50], [0.85, 240, 106, 42], [1.00, 194, 24, 28]
+  ];
+  function heat(t) {
+    t = Math.max(0, Math.min(1, t));
+    for (var i = 1; i < RAMP.length; i++) {
+      if (t <= RAMP[i][0]) {
+        var a = RAMP[i - 1], b = RAMP[i];
+        var k = (t - a[0]) / (b[0] - a[0]);
+        return [
+          Math.round(a[1] + (b[1] - a[1]) * k),
+          Math.round(a[2] + (b[2] - a[2]) * k),
+          Math.round(a[3] + (b[3] - a[3]) * k)
+        ];
+      }
+    }
+    return RAMP[RAMP.length - 1].slice(1);
+  }
+
+  /* ---- canvas plumbing ---------------------------------------------- */
+
+  function fit() {
+    var box = cv.parentElement.getBoundingClientRect();
+    var dpr = window.devicePixelRatio || 1;
+    var w = Math.max(300, box.width);
+    var h = Math.round(w * 0.63);
+    cv.style.height = h + "px";
+    cv.width = Math.round(w * dpr);
+    cv.height = Math.round(h * dpr);
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    return { w: w, h: h };
+  }
+  function cssVar(n) {
+    return getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+  }
+
+  /* ---- 3D: the pattern revolved about the boresight axis ------------- */
+
+  function draw3D(W, H) {
+    var cx = W * 0.47, cy = H * 0.52;
+    var scale = Math.min(W, H) * 0.40;
+
+    var NT = 130, NP = 54;
+    var cosY = Math.cos(state.yaw),   sinY = Math.sin(state.yaw);
+    var cosP = Math.cos(state.pitch), sinP = Math.sin(state.pitch);
+
+    function project(x, y, z) {
+      var x1 =  x * cosY + z * sinY;
+      var z1 = -x * sinY + z * cosY;
+      var y1 =  y * cosP - z1 * sinP;
+      var z2 =  y * sinP + z1 * cosP;
+      var d  = 1 / (1 + z2 * 0.26);
+      return { x: cx + x1 * scale * d, y: cy - y1 * scale * d, depth: z2 };
+    }
+
+    var pts = [], t, p;
+    for (t = 0; t <= NT; t++) {
+      var theta = (t / NT) * Math.PI;
+      var r = radial(patternDb(theta));
+      var row = [];
+      for (p = 0; p <= NP; p++) {
+        var phi = (p / NP) * Math.PI * 2;
+        // boresight along +x so the main lobe points right, as on the slide
+        row.push({
+          pt: project(r * Math.cos(theta),
+                      r * Math.sin(theta) * Math.cos(phi),
+                      r * Math.sin(theta) * Math.sin(phi)),
+          r: r
+        });
+      }
+      pts.push(row);
+    }
+
+    var quads = [];
+    for (t = 0; t < NT; t++) {
+      for (p = 0; p < NP; p++) {
+        var a = pts[t][p], b = pts[t][p + 1], c = pts[t + 1][p + 1], d = pts[t + 1][p];
+        if (a.r < 0.004 && c.r < 0.004) continue;
+        quads.push({
+          z: (a.pt.depth + b.pt.depth + c.pt.depth + d.pt.depth) / 4,
+          v: [a.pt, b.pt, c.pt, d.pt],
+          shade: (a.r + c.r) / 2,
+          band: p / NP
+        });
+      }
+    }
+    quads.sort(function (m, n) { return n.z - m.z; });
+
+    ctx.lineWidth = 0.6;
+    quads.forEach(function (q) {
+      var col = heat(q.shade);
+      var lift = 0.55 + 0.45 * Math.cos(q.band * Math.PI * 2 + state.yaw);
+      var f = 0.45 + 0.55 * lift;
+      ctx.beginPath();
+      ctx.moveTo(q.v[0].x, q.v[0].y);
+      ctx.lineTo(q.v[1].x, q.v[1].y);
+      ctx.lineTo(q.v[2].x, q.v[2].y);
+      ctx.lineTo(q.v[3].x, q.v[3].y);
+      ctx.closePath();
+      ctx.fillStyle = "rgb(" + Math.round(col[0] * f) + "," +
+                               Math.round(col[1] * f) + "," +
+                               Math.round(col[2] * f) + ")";
+      ctx.fill();
+      ctx.strokeStyle = "rgba(0,0,0,.20)";
+      ctx.stroke();
+    });
+
+    var o = project(0, 0, 0), tip = project(1.18, 0, 0);
+    ctx.save();
+    ctx.setLineDash([4, 5]);
+    ctx.beginPath();
+    ctx.moveTo(o.x, o.y);
+    ctx.lineTo(tip.x, tip.y);
+    ctx.strokeStyle = cssVar("--iso");
+    ctx.lineWidth = 1.1;
+    ctx.stroke();
+    ctx.restore();
+    ctx.fillStyle = cssVar("--dim");
+    ctx.font = "12px ui-sans-serif,system-ui,sans-serif";
+    ctx.textAlign = "left";
+    ctx.fillText("boresight", tip.x + 6, tip.y + 4);
+  }
+
+  /* ---- 2D polar scope ------------------------------------------------ */
+
+  function draw2D(W, H) {
+    var cx = W * 0.5, cy = H * 0.5;
+    var R = Math.min(W, H) * 0.5 - 32;
+    var grid = cssVar("--grid"), gridKey = cssVar("--grid-key");
+    var beam = cssVar("--beam"), side = cssVar("--side");
+    var iso = cssVar("--iso"), dim = cssVar("--dim");
+    var d, a;
+
+    ctx.lineWidth = 1;
+    for (d = 0; d >= FLOOR; d -= 10) {
+      var r = radial(d) * R;
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.strokeStyle = (d === 0) ? gridKey : grid;
+      ctx.stroke();
+      if (d < 0) {
+        ctx.fillStyle = dim;
+        ctx.font = "11px ui-sans-serif,system-ui,sans-serif";
+        ctx.textAlign = "center";
+        ctx.fillText(d + " dB", cx, cy - r - 4);
+      }
+    }
+    for (a = 0; a < 360; a += 30) {
+      var rad = a * Math.PI / 180;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + R * Math.cos(rad), cy + R * Math.sin(rad));
+      ctx.strokeStyle = grid;
+      ctx.stroke();
+    }
+    ctx.fillStyle = dim;
+    ctx.font = "12px ui-sans-serif,system-ui,sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("0\u00B0", cx + R + 16, cy + 4);
+    ctx.fillText("90\u00B0", cx, cy + R + 18);
+    ctx.fillText("-90\u00B0", cx, cy - R - 18);
+
+    var g0 = peakGainDbi();
+    if (g0 < -FLOOR) {
+      ctx.save();
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.arc(cx, cy, radial(-g0) * R, 0, Math.PI * 2);
+      ctx.strokeStyle = iso;
+      ctx.lineWidth = 1.25;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    var info = analyse();
+    var nullRad = info.nullDeg === null ? Math.PI / 2 : info.nullDeg * Math.PI / 180;
+    var STEP = 0.15 * Math.PI / 180;
+
+    function stroke(from, to, colour, width) {
+      ctx.beginPath();
+      var started = false;
+      for (var t = from; t <= to; t += STEP) {
+        var db = patternDb(t);
+        if (db < FLOOR) { started = false; continue; }
+        var rr = radial(db) * R;
+        var x = cx + rr * Math.cos(t), y = cy + rr * Math.sin(t);
+        if (started) ctx.lineTo(x, y); else { ctx.moveTo(x, y); started = true; }
+      }
+      ctx.strokeStyle = colour;
+      ctx.lineWidth = width;
+      ctx.lineJoin = "round";
+      ctx.stroke();
+    }
+    stroke(-Math.PI, -nullRad, side, 1.6);
+    stroke(nullRad, Math.PI, side, 1.6);
+    stroke(-nullRad, nullRad, beam, 2.4);
+
+    if (info.sllAt !== null && info.sllDb > FLOOR) {
+      var rs = radial(info.sllDb) * R;
+      [1, -1].forEach(function (sgn) {
+        ctx.beginPath();
+        ctx.arc(cx + rs * Math.cos(sgn * info.sllAt), cy + rs * Math.sin(sgn * info.sllAt),
+                3.5, 0, Math.PI * 2);
+        ctx.fillStyle = side;
+        ctx.fill();
+      });
+    }
+
+    if (state.cursor !== null) {
+      ctx.save();
+      ctx.setLineDash([3, 4]);
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.lineTo(cx + R * Math.cos(state.cursor), cy + R * Math.sin(state.cursor));
+      ctx.strokeStyle = beam;
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      ctx.restore();
+      var cdb = patternDb(state.cursor);
+      if (cdb >= FLOOR) {
+        var cr = radial(cdb) * R;
+        ctx.beginPath();
+        ctx.arc(cx + cr * Math.cos(state.cursor), cy + cr * Math.sin(state.cursor),
+                4.5, 0, Math.PI * 2);
+        ctx.fillStyle = beam;
+        ctx.fill();
+      }
+    }
+  }
+
+  /* ---- frame --------------------------------------------------------- */
+
+  function legend() {
+    var el = document.getElementById("legend");
+    if (state.view === "solid") {
+      el.innerHTML =
+        '<span class="key"><span class="ramp"></span>Low gain to high</span>' +
+        '<span class="key">Drag to rotate</span>' +
+        '<span class="key">The pattern spun about boresight</span>';
+    } else {
+      el.innerHTML =
+        '<span class="key"><span class="swatch" style="background:var(--beam)"></span>Main beam</span>' +
+        '<span class="key"><span class="swatch" style="background:var(--side)"></span>Sidelobes</span>' +
+        '<span class="key"><span class="swatch iso"></span>Isotropic radiator</span>' +
+        '<span class="key">Rings every 10 dB</span>';
+    }
+  }
+
+  function draw() {
+    var s = fit();
+    ctx.clearRect(0, 0, s.w, s.h);
+    if (state.view === "solid") draw3D(s.w, s.h); else draw2D(s.w, s.h);
+
+    var g0 = peakGainDbi(), info = analyse();
+    document.getElementById("rGain").innerHTML = g0.toFixed(1) + "<small>dBi</small>";
+    document.getElementById("rBw").innerHTML =
+      (info.hpbwDeg === null ? "\u2014" : info.hpbwDeg.toFixed(2)) + "<small>\u00B0</small>";
+    document.getElementById("rSll").innerHTML =
+      (info.sllDb <= FLOOR ? "below 40" : Math.abs(info.sllDb).toFixed(1)) +
+      "<small>dB down</small>";
+
+    var cEl = document.getElementById("rCursor"), cLb = document.getElementById("rCursorLabel");
+    if (state.view === "solid") {
+      cLb.textContent = "First null at";
+      cEl.innerHTML = info.nullDeg === null ? "\u2014"
+        : info.nullDeg.toFixed(2) + "<small>\u00B0 off axis</small>";
+    } else if (state.cursor === null) {
+      cLb.textContent = "Gain at cursor";
+      cEl.innerHTML = "<small>drag the scope</small>";
+    } else {
+      cLb.textContent = "Gain " + (state.cursor * 180 / Math.PI).toFixed(1) + "\u00B0 off boresight";
+      cEl.innerHTML = (g0 + patternDb(state.cursor)).toFixed(1) + "<small>dBi</small>";
+    }
+
+    var lambda = 299.792458 / state.ghz;
+    var m = state.dOverL * lambda / 1000;
+    document.getElementById("physical").textContent =
+      "At " + state.ghz + " GHz that is a dish about " +
+      (m < 1 ? (m * 100).toFixed(0) + " cm" : m.toFixed(2) + " m") + " across.";
+  }
+
+  /* ---- input --------------------------------------------------------- */
+
+  var dia = document.getElementById("dia");
+  dia.addEventListener("input", function () {
+    state.dOverL = Number(dia.value);
+    document.getElementById("diaOut").textContent = dia.value + " \u03BB";
+    draw();
+  });
+
+  function segment(sel, key, cast, attr) {
+    document.querySelectorAll(sel).forEach(function (b) {
+      b.addEventListener("click", function () {
+        document.querySelectorAll(sel).forEach(function (o) {
+          o.setAttribute("aria-pressed", String(o === b));
+        });
+        state[key] = cast(b.dataset[attr]);
+        if (key === "view") {
+          cv.classList.toggle("flat", state.view === "flat");
+          legend();
+        }
+        draw();
+      });
+    });
+  }
+  segment("[data-taper]", "taper", String, "taper");
+  segment("[data-ghz]", "ghz", Number, "ghz");
+  segment("[data-view]", "view", String, "view");
+
+  var drag = null;
+  function readCursor(ev) {
+    var r = cv.getBoundingClientRect();
+    var x = ev.clientX - r.left - r.width / 2;
+    var y = ev.clientY - r.top - r.height / 2;
+    state.cursor = Math.hypot(x, y) < 8 ? null : Math.atan2(y, x);
+    draw();
+  }
+  cv.addEventListener("pointerdown", function (e) {
+    cv.setPointerCapture(e.pointerId);
+    if (state.view === "solid") {
+      drag = { x: e.clientX, y: e.clientY, yaw: state.yaw, pitch: state.pitch };
+    } else {
+      readCursor(e);
+    }
+  });
+  cv.addEventListener("pointermove", function (e) {
+    if (!e.buttons) return;
+    if (state.view === "solid" && drag) {
+      state.yaw = drag.yaw + (e.clientX - drag.x) * 0.008;
+      state.pitch = Math.max(-1.35, Math.min(1.35, drag.pitch + (e.clientY - drag.y) * 0.008));
+      draw();
+    } else if (state.view === "flat") {
+      readCursor(e);
+    }
+  });
+  cv.addEventListener("pointerup", function () { drag = null; });
+
+  window.addEventListener("resize", draw);
+  legend();
+  draw();
+})();
+</script>
+</body>
+</html>

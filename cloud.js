@@ -212,6 +212,8 @@
       card.shuffleChoices = ad.shuffle !== false;
     }
 
+    if (ad.visual) card.visual = ad.visual;
+
     if (row.question_type === "numeric") {
       card.entry = {
         value: ad.value || "",

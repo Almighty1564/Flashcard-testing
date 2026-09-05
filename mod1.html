@@ -66,6 +66,14 @@ input[type=text],input[type=password],select{width:100%;background:#0d1117;color
 .bar{height:14px;background:#202731;border-radius:999px;overflow:hidden;display:flex}.seg{height:100%}.confident{background:var(--accent)}.correct{background:var(--good)}.guessed{background:var(--warn)}.wrong{background:var(--bad)}.unanswered{background:var(--gray)}.untested{background:#242b35}
 .score{text-align:right}.score strong{display:block;font-size:20px}.score span{font-size:10px;color:var(--muted)}
 .priority-list{display:grid;gap:7px;margin-top:10px}.priority{border:1px solid var(--line);background:var(--panel2);padding:9px;border-radius:8px}
+.visual-bar{margin-top:14px}
+.visual-btn{background:var(--panel2);color:var(--text);border:1px solid var(--line);
+  border-radius:10px;padding:10px 14px;font:inherit;font-weight:700;cursor:pointer}
+.visual-btn:hover{border-color:var(--accent)}
+.visual-frame{margin-top:12px;border:1px solid var(--line);border-radius:12px;
+  overflow:hidden;background:#06090f}
+.visual-frame iframe{display:block;width:100%;height:620px;border:0}
+@media(max-width:850px){.visual-frame iframe{height:560px}}
 .entry-wrap{display:flex;align-items:center;gap:10px;margin-top:18px;flex-wrap:wrap}
 .entry-input{flex:1 1 260px;max-width:420px;background:var(--panel2);color:var(--text);
   border:1px solid var(--line);border-radius:10px;padding:13px;font-size:18px}
@@ -349,6 +357,7 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
       <div id="questionMeta" class="question-meta"></div>
       <div id="questionText" class="question-text"></div>
       <div id="questionImageWrap"></div>
+      <div id="visualWrap" class="visual-bar"></div>
       <div id="interaction"></div>
       <div id="reportBox" class="report-box hidden">
         <h4>Report a problem</h4>
@@ -704,7 +713,29 @@ function renderCard(){
   document.getElementById("questionText").textContent=currentCard.question?.text||"";
   const qi=currentCard.question?.image;
   document.getElementById("questionImageWrap").innerHTML=qi?`<img class="question-image" src="${qi}" alt="Question image">`:"";
+  renderVisual();
   renderInteraction();
+}
+/* Optional interactive page attached to a question. Loaded only when the
+   student asks for it, so it costs nothing on questions that do not use one. */
+function renderVisual(){
+  const wrap=document.getElementById("visualWrap");
+  const src=currentCard.visual;
+  if(!src){ wrap.innerHTML=""; return; }
+
+  wrap.innerHTML=`<button type="button" class="visual-btn" id="visualToggle">Open visual</button>`;
+  const btn=document.getElementById("visualToggle");
+  let open=false;
+
+  btn.onclick=()=>{
+    open=!open;
+    btn.textContent=open?"Hide visual":"Open visual";
+    if(!open){ const f=wrap.querySelector(".visual-frame"); if(f)f.remove(); return; }
+    const box=document.createElement("div");
+    box.className="visual-frame";
+    box.innerHTML=`<iframe src="${esc(src)}" loading="lazy" title="Interactive visual"></iframe>`;
+    wrap.appendChild(box);
+  };
 }
 function renderInteraction(){
   const el=document.getElementById("interaction");
