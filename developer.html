@@ -1111,6 +1111,8 @@ async function fileToDataUrl(file){
 function syncDraftFromForm(){
   draft.groupId=document.getElementById("questionGroup").value;
   draft.type=document.getElementById("questionType").value;
+  if(draft.groupId) lastGroupId=draft.groupId;
+  if(draft.type) lastType=draft.type;
   draft.questionText=document.getElementById("questionText").value;
   draft.visual=document.getElementById("questionVisual").value;
   draft.answerText=document.getElementById("flashAnswerText").value;
@@ -1408,10 +1410,16 @@ function carryImagePaths(next,prev){
     if(p.rightImage && p.rightImage===old.rightImage) p.rightImagePath=old.rightImagePath||null;
   });
 }
+/* Stay in the group and question type the author was last using, so writing a run
+   of questions for one group does not mean re-picking it after every save. */
+let lastGroupId="", lastType="";
+
 function newQuestion(){
   editingId=null;
   draft=emptyDraft();
-  draft.groupId=project.groups[0]?.id || "";
+  const keepGroup = lastGroupId && project.groups.some(g=>g.id===lastGroupId);
+  draft.groupId = keepGroup ? lastGroupId : (project.groups[0]?.id || "");
+  if(lastType) draft.type=lastType;
   fillFormFromDraft();
   document.getElementById("saveQuestionBtn").textContent="Save Question";
 }
