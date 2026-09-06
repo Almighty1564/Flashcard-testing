@@ -83,6 +83,13 @@
   .hint{margin:8px 0 0;font-size:12.5px;color:var(--dim);line-height:1.5}
   .taper-viz{display:block;width:100%;height:auto;margin-top:12px;
     border:1px solid var(--edge);border-radius:3px;background:#080d13}
+  .geometry{margin:30px 0 0;padding-top:20px;border-top:1px solid var(--edge)}
+  .geo-stage{display:grid;grid-template-columns:minmax(0,1fr) 216px;gap:20px;align-items:start}
+  @media(max-width:840px){.geo-stage{grid-template-columns:1fr}}
+  #profile{display:block;width:100%;height:auto;background:#080d13;
+    border:1px solid var(--edge);border-radius:3px}
+  .geo-readouts{display:grid;gap:1px;background:var(--edge);margin:0;
+    border:1px solid var(--edge);border-radius:4px;overflow:hidden}
   .glossary{margin:26px 0 0;padding-top:18px;border-top:1px solid var(--edge);
     display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
   .glossary dt{font-size:14px;font-weight:650;margin-bottom:3px}
@@ -157,6 +164,34 @@
   </div>
 </div>
 
+<section class="geometry">
+  <div class="field-head" style="margin-bottom:12px">
+    <span style="font-size:16px;font-weight:650">Dish geometry</span>
+  </div>
+  <div class="geo-stage">
+    <canvas id="profile" width="640" height="330"
+            aria-label="Cross-section of the reflector showing diameter, depth and focal length"></canvas>
+    <dl class="geo-readouts">
+      <div class="cell"><dt>Diameter D</dt><dd id="gD">&mdash;</dd></div>
+      <div class="cell"><dt>Depth c</dt><dd id="gC">&mdash;</dd></div>
+      <div class="cell"><dt>Focal length F</dt><dd id="gF">&mdash;</dd></div>
+      <div class="cell"><dt>Rim angle from feed</dt><dd id="gRim">&mdash;</dd></div>
+      <div class="cell"><dt>Aperture area</dt><dd id="gArea">&mdash;</dd></div>
+    </dl>
+  </div>
+  <label class="field" for="fod" style="margin-top:16px;display:block;max-width:460px">
+    <span class="field-head">
+      <span>Focal ratio f/D &mdash; how deep the dish is</span>
+      <span id="fodOut">0.40</span>
+    </span>
+    <input id="fod" type="range" min="0.25" max="0.70" value="0.40" step="0.01">
+  </label>
+  <p class="hint" style="max-width:70ch">A low f/D is a deep bowl that wraps around the feed,
+    so the rim sits at a wide angle and the horn must spray broadly to light it. A high f/D is
+    a shallow dish with the feed far out front, needing a narrow horn pattern. The depth follows
+    from the other two: c = D&sup2; / 16F.</p>
+</section>
+
 <dl class="glossary">
   <div>
     <dt>Boresight</dt>
@@ -207,7 +242,7 @@
 
   var FLOOR = -40, EFF = 0.55;
   var state = {
-    dMetres: 1.2, taper: "uniform", ghz: 8, view: "solid",
+    dMetres: 1.2, fOverD: 0.4, taper: "uniform", ghz: 8, view: "solid",
     cursor: null, yaw: -0.62, pitch: 0.42, dragging: false
   };
 
@@ -231,10 +266,28 @@
     if (taper === "cosine2") return 0.5 * sinc(u) + 0.25 * (sinc(u - 1) + sinc(u + 1));
     return sinc(u);
   }
+  /* Spillover past the rim is what leaks out the back. Lighting the edge hard
+     spills more, so the backlobe tracks the taper. */
+  var BACKLOBE_DB = { uniform: -22, cosine: -30, cosine2: -36 };
+
   function patternDb(theta) {
-    var u = dOverL() * Math.sin(theta);
+    var a = Math.abs(theta);
+    while (a > Math.PI) a = 2 * Math.PI - a;
+
+    // Aperture pattern. On its own this is symmetric front to back.
+    var u = dOverL() * Math.sin(a);
     var f = fieldAt(u, state.taper) / fieldAt(0, state.taper);
-    var p = f * f;
+    var aperture = f * f;
+
+    // The reflector is solid metal, so the rearward image lobe does not exist.
+    // This obliquity term is 1 on boresight and falls to zero straight behind.
+    var front = Math.pow((1 + Math.cos(a)) / 2, 2);
+
+    // What does appear behind is spillover past the rim, peaking at 180 degrees.
+    var backPeak = Math.pow(10, (BACKLOBE_DB[state.taper] || -26) / 10);
+    var spill = backPeak * Math.exp(-Math.pow((a - Math.PI) / 0.62, 2));
+
+    var p = aperture * front + spill;
     return p < 1e-12 ? -200 : 10 * Math.log10(p);
   }
   function peakGainDbi() {
@@ -425,7 +478,7 @@
 
   function drawDish(project) {
     var R = dishRadiusUnits();
-    var F = 0.8 * R;                       // f/D of 0.4, typical prime focus
+    var F = state.fOverD * 2 * R;          // focal length, from the f/D control
     var vertex = -F;                       // places the focus at the origin
     var NR = 9, NP = 40, i, p;
 
@@ -469,14 +522,24 @@
       ctx.strokeStyle = "rgba(120,140,150,.42)";
       ctx.stroke();
     }
+    // Feed horn at the focus, aimed back into the reflector.
+    var mouth = project(-0.04, 0, 0), throat = project(0.07, 0, 0);
+    var lipA = project(-0.04, 0.045, 0.045), lipB = project(-0.04, -0.045, -0.045);
     ctx.beginPath();
-    ctx.arc(feed.x, feed.y, 4, 0, Math.PI * 2);
-    ctx.fillStyle = "#c8d4da";
+    ctx.moveTo(throat.x, throat.y);
+    ctx.lineTo(lipA.x, lipA.y);
+    ctx.lineTo(lipB.x, lipB.y);
+    ctx.closePath();
+    ctx.fillStyle = "rgba(200,212,218,.85)";
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(mouth.x, mouth.y, 3, 0, Math.PI * 2);
+    ctx.fillStyle = "#e8f0f4";
     ctx.fill();
     ctx.fillStyle = cssVar("--dim");
     ctx.font = "11px ui-sans-serif,system-ui,sans-serif";
-    ctx.textAlign = "right";
-    ctx.fillText("feed", feed.x - 8, feed.y + 4);
+    ctx.textAlign = "left";
+    ctx.fillText("feed horn", throat.x + 7, throat.y + 4);
   }
 
   /* ---- aperture illumination preview --------------------------------- */
@@ -536,6 +599,162 @@
 
     var note = document.getElementById("taperNote");
     if (note) note.textContent = TAPER_NOTE[state.taper];
+  }
+
+  /* ---- reflector cross-section --------------------------------------- */
+
+  function geometry() {
+    var D = state.dMetres;
+    var F = state.fOverD * D;
+    return {
+      D: D, F: F,
+      depth: (D * D) / (16 * F),                                  // c = D^2 / 16F
+      rimDeg: 2 * Math.atan(1 / (4 * state.fOverD)) * 180 / Math.PI,
+      area: Math.PI * D * D / 4
+    };
+  }
+
+  function metres(v) {
+    return v < 1 ? (v * 100).toFixed(1) + " cm" : v.toFixed(2) + " m";
+  }
+
+  function drawProfile() {
+    var c = document.getElementById("profile");
+    if (!c) return;
+    var g = c.getContext("2d");
+    var dpr = window.devicePixelRatio || 1;
+    var w = c.clientWidth || 640, h = 330;
+    c.width = Math.round(w * dpr);
+    c.height = Math.round(h * dpr);
+    c.style.height = h + "px";
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, w, h);
+
+    var G = geometry();
+    var padL = 74, padR = 132, padY = 40;
+    var usableW = w - padL - padR, usableH = h - padY * 2;
+
+    // scale so the whole dish plus its focus fits
+    var extentX = Math.max(G.depth, G.F) * 1.12;
+    var k = Math.min(usableW / extentX, usableH / G.D);
+    var vx = padL, cy = h / 2;                       // vertex position on screen
+
+    function X(m) { return vx + m * k; }
+    function Y(m) { return cy - m * k; }
+
+    // the reflector profile: x = y^2 / (4F)
+    g.beginPath();
+    for (var i = 0; i <= 120; i++) {
+      var y = -G.D / 2 + (i / 120) * G.D;
+      var x = (y * y) / (4 * G.F);
+      if (i === 0) g.moveTo(X(x), Y(y)); else g.lineTo(X(x), Y(y));
+    }
+    g.strokeStyle = "#c8d4da";
+    g.lineWidth = 2.4;
+    g.stroke();
+
+    var rimX = X(G.depth), topY = Y(G.D / 2), botY = Y(-G.D / 2);
+    var fx = X(G.F);
+
+    // axis
+    g.save();
+    g.setLineDash([4, 4]);
+    g.beginPath();
+    g.moveTo(X(0) - 16, cy);
+    g.lineTo(X(extentX), cy);
+    g.strokeStyle = "rgba(255,255,255,.20)";
+    g.lineWidth = 1;
+    g.stroke();
+    g.restore();
+
+    // rays: feed to reflector, then out parallel along boresight
+    g.strokeStyle = "rgba(255,176,58,.55)";
+    g.lineWidth = 1;
+    for (var r = 1; r <= 6; r++) {
+      var yy = (r / 6) * (G.D / 2) * 0.94;
+      [yy, -yy].forEach(function (yv) {
+        var xr = (yv * yv) / (4 * G.F);
+        g.beginPath();
+        g.moveTo(fx, cy);
+        g.lineTo(X(xr), Y(yv));
+        g.lineTo(X(extentX), Y(yv));
+        g.stroke();
+      });
+    }
+
+    g.fillStyle = cssVar("--dim");
+    g.font = "12px ui-sans-serif,system-ui,sans-serif";
+    g.textAlign = "left";
+    g.fillText("collimated beam \u2192", X(extentX) - 4, cy - 10);
+
+    // feed at the focus
+    g.beginPath();
+    g.arc(fx, cy, 5, 0, Math.PI * 2);
+    g.fillStyle = "#ffb03a";
+    g.fill();
+    g.fillStyle = cssVar("--text");
+    g.textAlign = "center";
+    g.fillText("feed", fx, cy + 22);
+
+    function dimLine(x1, y1, x2, y2, label, side) {
+      g.strokeStyle = "rgba(255,255,255,.45)";
+      g.lineWidth = 1;
+      g.beginPath();
+      g.moveTo(x1, y1);
+      g.lineTo(x2, y2);
+      g.stroke();
+      var ang = Math.atan2(y2 - y1, x2 - x1);
+      [[x1, y1, ang], [x2, y2, ang + Math.PI]].forEach(function (a) {
+        g.beginPath();
+        g.moveTo(a[0], a[1]);
+        g.lineTo(a[0] + 7 * Math.cos(a[2] + 0.4), a[1] + 7 * Math.sin(a[2] + 0.4));
+        g.lineTo(a[0] + 7 * Math.cos(a[2] - 0.4), a[1] + 7 * Math.sin(a[2] - 0.4));
+        g.closePath();
+        g.fillStyle = "rgba(255,255,255,.45)";
+        g.fill();
+      });
+      g.fillStyle = cssVar("--text");
+      g.font = "12px ui-sans-serif,system-ui,sans-serif";
+      g.textAlign = side === "below" ? "center" : "right";
+      g.fillText(label, side === "below" ? (x1 + x2) / 2 : x1 - 9,
+                        side === "below" ? y1 + 16 : (y1 + y2) / 2 + 4);
+    }
+
+    // D across the aperture
+    dimLine(rimX + 26, topY, rimX + 26, botY, "", "side");
+    g.save();
+    g.translate(rimX + 44, cy);
+    g.rotate(-Math.PI / 2);
+    g.fillStyle = cssVar("--text");
+    g.textAlign = "center";
+    g.fillText("D = " + metres(G.D), 0, 0);
+    g.restore();
+
+    // depth c, from vertex plane to rim plane
+    g.save();
+    g.setLineDash([3, 3]);
+    g.strokeStyle = "rgba(255,255,255,.18)";
+    g.beginPath(); g.moveTo(X(0), cy); g.lineTo(X(0), topY - 14); g.stroke();
+    g.beginPath(); g.moveTo(rimX, topY); g.lineTo(rimX, topY - 14); g.stroke();
+    g.restore();
+    dimLine(X(0), topY - 14, rimX, topY - 14, "c = " + metres(G.depth), "below");
+
+    // focal length F
+    g.save();
+    g.setLineDash([3, 3]);
+    g.strokeStyle = "rgba(255,255,255,.18)";
+    g.beginPath(); g.moveTo(fx, cy); g.lineTo(fx, botY + 14); g.stroke();
+    g.beginPath(); g.moveTo(X(0), cy); g.lineTo(X(0), botY + 14); g.stroke();
+    g.restore();
+    dimLine(X(0), botY + 14, fx, botY + 14, "F = " + metres(G.F), "below");
+
+    document.getElementById("gD").innerHTML = metres(G.D);
+    document.getElementById("gC").innerHTML = metres(G.depth);
+    document.getElementById("gF").innerHTML = metres(G.F);
+    document.getElementById("gRim").innerHTML =
+      G.rimDeg.toFixed(0) + "<small>\u00B0 half-angle</small>";
+    document.getElementById("gArea").innerHTML =
+      G.area.toFixed(2) + "<small>m\u00B2</small>";
   }
 
   /* ---- 2D polar scope ------------------------------------------------ */
@@ -690,6 +909,7 @@
     }
 
     drawTaper();
+    drawProfile();
 
     document.getElementById("physical").textContent =
       "At " + state.ghz + " GHz that is " + dOverL().toFixed(1) +
@@ -711,6 +931,13 @@
   dia.addEventListener("input", function () {
     state.dMetres = Number(dia.value);
     syncDia();
+    draw();
+  });
+
+  var fod = document.getElementById("fod");
+  fod.addEventListener("input", function () {
+    state.fOverD = Number(fod.value);
+    document.getElementById("fodOut").textContent = state.fOverD.toFixed(2);
     draw();
   });
 
