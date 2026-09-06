@@ -180,9 +180,8 @@ section under it pulls out one idea and lets you push on it until it makes sense
     flatten as it reflects: that is a spherical wave being turned into a <em>plane wave</em>.
     A wide, flat, in-step wavefront is what a narrow beam is made of.</p>
   <canvas id="wave" width="760" height="330"
-          aria-label="Animation of a spherical wave flattening into a plane wave"></canvas>
+          aria-label="A spherical wave flattening into a plane wave, shown at successive stages"></canvas>
   <div class="row">
-    <button type="button" id="wavePlay" class="btn">Pause</button>
     <label class="field" for="err" style="flex:1 1 240px;min-width:210px">
       <span class="field-head"><span>Dents in the surface, RMS</span><span id="errOut">0.0 mm</span></span>
       <input id="err" type="range" min="0" max="6" value="0" step="0.1">
@@ -225,7 +224,10 @@ section under it pulls out one idea and lets you push on it until it makes sense
     read the gain at that angle.</p>
   <canvas id="polar" width="760" height="560"
           aria-label="Labelled polar radiation pattern"></canvas>
-  <p class="hint">This is the same data as the 3D view at the top, sliced through the middle.</p>
+  <p class="hint">This one is deliberately drawn for a small dish, about nine wavelengths
+    across, so the lobes stay big enough to see and name. A real terminal dish is far larger,
+    which squeezes the main beam into the needle you see in the 3D view at the top &mdash; same
+    shape, same rules, just far narrower.</p>
 </section>
 
 <!-- ============ GLOSSARY ============ -->
@@ -316,7 +318,11 @@ section under it pulls out one idea and lets you push on it until it makes sense
 
   /* Efficiencies. Illumination efficiency measures how evenly the dish is lit;
      spillover efficiency measures how much of the feed's power lands on it. */
+  var effCache = {};
   function efficiencies(edgeDb) {
+    var key = state.fOverD.toFixed(3) + "|" + edgeDb.toFixed(2);
+    if (effCache[key]) return effCache[key];
+    if (Object.keys(effCache).length > 800) effCache = {};
     var save = state.edgeDb;
     state.edgeDb = edgeDb;
     var q = feedExponent(), thR = rimAngle();
@@ -330,26 +336,32 @@ section under it pulls out one idea and lets you push on it until it makes sense
     state.edgeDb = save;
     var etaT = 2 * i1 * i1 / i2;
     var etaS = 1 - Math.pow(Math.cos(thR), 2 * q + 1);
-    return { t: etaT, s: etaS, a: etaT * etaS, q: q };
+    effCache[key] = { t: etaT, s: etaS, a: etaT * etaS, q: q };
+    return effCache[key];
   }
 
+  var bestCache = {};
   function bestEdge() {
+    var bk = state.fOverD.toFixed(3);
+    if (bestCache[bk]) return bestCache[bk];
     var best = { a: -1, db: -10 };
     for (var db = -26; db <= -1; db += 0.25) {
       var e = efficiencies(db);
       if (e.a > best.a) best = { a: e.a, db: db };
     }
+    bestCache[bk] = best;
     return best;
   }
 
   /* Far field of the circular aperture: a Hankel transform, tabulated once per
      parameter change and interpolated afterwards so dragging stays smooth. */
-  var LUT = { step: 0, db: null, umax: 0 };
-
-  function rebuildPattern() {
+  function buildLUT(dol, edgeDb) {
+    var save = state.edgeDb;
+    state.edgeDb = edgeDb;
     var q = feedExponent();
-    var N = 220, M = 2600;
-    var umax = Math.max(4, dOverL());
+    state.edgeDb = save;
+    var N = 200, M = 2200;
+    var umax = Math.max(4, dol);
     var amps = new Float64Array(N), rhos = new Float64Array(N), norm = 0, i, k;
     for (i = 0; i < N; i++) {
       rhos[i] = (i + 0.5) / N;
@@ -363,47 +375,57 @@ section under it pulls out one idea and lets you push on it until it makes sense
       var f = Math.abs(acc / norm);
       db[k] = f < 1e-7 ? -140 : 20 * Math.log10(f);
     }
-    LUT.db = db; LUT.umax = umax; LUT.step = umax / M;
+    return { db: db, umax: umax, step: umax / M };
   }
 
-  function apertureDb(u) {
-    if (!LUT.db) rebuildPattern();
-    var x = Math.abs(u) / LUT.step;
-    if (x >= LUT.db.length - 1) return -140;
+  function apertureDb(lut, u) {
+    var x = Math.abs(u) / lut.step;
+    if (x >= lut.db.length - 1) return -140;
     var i = Math.floor(x), f = x - i;
-    return LUT.db[i] * (1 - f) + LUT.db[i + 1] * f;
+    return lut.db[i] * (1 - f) + lut.db[i + 1] * f;
   }
 
-  /* Full pattern: aperture beam forward only, plus a spillover cone that leaves
-     past the rim. Straight backwards is solid reflector, so nothing goes there. */
-  function patternDb(theta) {
+  /* Everything the pattern needs, worked out once per parameter change instead
+     of once per call. This is what keeps the render cheap. */
+  function makeCtx(dol, edgeDb) {
+    var e = efficiencies(edgeDb);
+    var thR = rimAngle();
+    var g0 = e.a * Math.pow(Math.PI * dol, 2);
+    var width = 0.38;
+    var solid = Math.max(0.35, 2 * Math.PI * Math.sin(thR) * width * 2);
+    return {
+      lut: buildLUT(dol, edgeDb), dol: dol, eff: e, g0: g0,
+      centre: Math.PI - thR, width: width,
+      spillPeak: (4 * Math.PI * (1 - e.s)) / (solid * g0)
+    };
+  }
+
+  function ctxDb(ctx, theta) {
     var a = Math.abs(theta);
     while (a > Math.PI) a = 2 * Math.PI - a;
-
-    var main = Math.pow(10, apertureDb(dOverL() * Math.sin(a)) / 10) *
+    var main = Math.pow(10, apertureDb(ctx.lut, ctx.dol * Math.sin(a)) / 10) *
                Math.pow((1 + Math.cos(a)) / 2, 2);
-
-    var e = efficiencies(state.edgeDb);
-    var g0 = e.a * Math.pow(Math.PI * dOverL(), 2);          // peak gain, linear
-    var thR = rimAngle();
-    var centre = Math.PI - thR;                              // where spillover exits
-    var width = 0.38;
-    var solid = 2 * Math.PI * Math.sin(thR) * width * 2;
-    var spillPeak = (4 * Math.PI * (1 - e.s)) / (Math.max(0.35, solid) * g0);
-    var spill = spillPeak * Math.exp(-Math.pow((a - centre) / width, 2));
-
+    var spill = ctx.spillPeak * Math.exp(-Math.pow((a - ctx.centre) / ctx.width, 2));
     var p = main + spill;
     return p < 1e-14 ? -200 : 10 * Math.log10(p);
   }
 
-  function peakGainDbi() {
-    return 10 * Math.log10(efficiencies(state.edgeDb).a * Math.pow(Math.PI * dOverL(), 2));
-  }
+  /* Full pattern: aperture beam forward only, plus a spillover cone that leaves
+     past the rim. Straight backwards is solid reflector, so nothing goes there. */
+  /* MAIN follows the controls. TEACH is a deliberately modest dish used only by
+     the labelled diagram at the bottom, so its lobes stay legible no matter what
+     the sliders are set to. */
+  var MAIN = null, TEACH = null;
+  function patternDb(theta) { return ctxDb(MAIN, theta); }
+  function teachDb(theta)   { return ctxDb(TEACH, theta); }
 
-  function analyse() {
+  function peakGainDbi() { return 10 * Math.log10(MAIN.g0); }
+
+  function analyse(ctx) {
+    ctx = ctx || MAIN;
     var STEP = 0.004 * Math.PI / 180, half = null, nullAt = null, prev = 0, falling = true, t;
     for (t = STEP; t < Math.PI / 2; t += STEP) {
-      var d = patternDb(t);
+      var d = ctxDb(ctx, t);
       if (half === null && d <= -3) half = t;
       if (falling && d > prev && prev < -22) { nullAt = t; falling = false; break; }
       prev = d;
@@ -411,7 +433,7 @@ section under it pulls out one idea and lets you push on it until it makes sense
     var sll = -200, sllAt = null;
     if (nullAt !== null) {
       for (t = nullAt; t < Math.PI / 2.4; t += STEP * 4) {
-        var d2 = patternDb(t);
+        var d2 = ctxDb(ctx, t);
         if (d2 > sll) { sll = d2; sllAt = t; }
       }
     }
@@ -585,7 +607,9 @@ section under it pulls out one idea and lets you push on it until it makes sense
 
   /* ===================== polar view ==================================== */
 
-  function drawPolar(g, W, H, labelled) {
+  function drawPolar(g, W, H, labelled, ctx) {
+    ctx = ctx || MAIN;
+    var pdb = function (t) { return ctxDb(ctx, t); };
     var cx = W * 0.5, cy = H * 0.5, R = Math.min(W, H) * 0.5 - 46;
     var grid = cssVar("--grid"), key = cssVar("--grid-key");
     var beam = cssVar("--beam"), side = cssVar("--side");
@@ -608,20 +632,20 @@ section under it pulls out one idea and lets you push on it until it makes sense
       g.strokeStyle = grid; g.stroke();
     }
 
-    var g0 = peakGainDbi();
+    var g0 = 10 * Math.log10(ctx.g0);
     if (g0 < -FLOOR) {
       g.save(); g.setLineDash([5, 5]);
       g.beginPath(); g.arc(cx, cy, radial(-g0) * R, 0, Math.PI * 2);
       g.strokeStyle = cssVar("--iso"); g.lineWidth = 1.25; g.stroke(); g.restore();
     }
 
-    var info = analyse();
+    var info = analyse(ctx);
     var nullRad = info.nullDeg === null ? Math.PI / 2 : info.nullDeg * Math.PI / 180;
     var STEP = 0.12 * Math.PI / 180;
     function stroke(from, to, colour, width) {
       g.beginPath(); var on = false;
       for (var t = from; t <= to; t += STEP) {
-        var db = patternDb(t);
+        var db = pdb(t);
         if (db < FLOOR) { on = false; continue; }
         var rr = radial(db) * R, x = cx + rr * Math.cos(t), y = cy + rr * Math.sin(t);
         on ? g.lineTo(x, y) : (g.moveTo(x, y), on = true);
@@ -640,11 +664,11 @@ section under it pulls out one idea and lets you push on it until it makes sense
             26, 20, "first sidelobe", side);
       }
       if (info.nullDeg !== null) {
-        var rn = radial(patternDb(nullRad)) * R;
+        var rn = radial(pdb(nullRad)) * R;
         tag(g, cx + rn * Math.cos(nullRad), cy + rn * Math.sin(nullRad),
             -30, 26, "null", dim);
       }
-      var sa = Math.PI - rimAngle(), sdb = patternDb(sa);
+      var sa = ctx.centre, sdb = pdb(sa);
       if (sdb > FLOOR) {
         tag(g, cx + radial(sdb) * R * Math.cos(sa), cy + radial(sdb) * R * Math.sin(sa),
             -26, -20, "spillover", spillC);
@@ -752,7 +776,7 @@ section under it pulls out one idea and lets you push on it until it makes sense
 
   /* ===================== 3. wavefront ================================== */
 
-  var wave = { t: 0, playing: true, errMm: 0, last: 0 };
+  var wave = { errMm: 0 };
 
   function drawWave() {
     var s = prep("wave", 0.43), g = s.g, w = s.w, h = s.h;
@@ -781,9 +805,12 @@ section under it pulls out one idea and lets you push on it until it makes sense
     g.fillStyle = cssVar("--beam"); g.fill();
     g.fillStyle = cssVar("--text"); g.fillText("feed", X(0), cy + 22);
 
+    /* Successive stages of one wavefront, drawn together rather than animated.
+       Read left to right: sphere, part-reflected, flat. */
     var travel = P0 * 1.5;
-    for (var n = 0; n < 5; n++) {
-      var sTrav = ((wave.t + n / 5) % 1) * travel, pts = [];
+    var STAGES = [0.12, 0.30, 0.48, 0.66, 0.84, 0.99];
+    for (var n = 0; n < STAGES.length; n++) {
+      var sTrav = STAGES[n] * travel, pts = [];
       for (var j = 0; j <= 90; j++) {
         var y = -D / 2 + (j / 90) * D;
         var xs = -F + y * y / (4 * F), r1 = F + y * y / (4 * F);
@@ -793,11 +820,11 @@ section under it pulls out one idea and lets you push on it until it makes sense
         else { px = Math.max(xs, xs + (sTrav - r1) - 2 * e); py = y; }
         pts.push([X(px), Y(py)]);
       }
-      var fade = .2 + .55 * (1 - Math.abs(sTrav / travel - .45) * 1.6);
       g.beginPath();
       pts.forEach(function (P, idx) { idx ? g.lineTo(P[0], P[1]) : g.moveTo(P[0], P[1]); });
-      g.strokeStyle = "rgba(255,176,58," + Math.max(.12, Math.min(.85, fade)) + ")";
-      g.lineWidth = 2; g.stroke();
+      g.strokeStyle = "rgba(255,176,58," + (0.30 + 0.55 * (n / (STAGES.length - 1))) + ")";
+      g.lineWidth = n === STAGES.length - 1 ? 2.6 : 1.7;
+      g.stroke();
     }
 
     g.fillStyle = cssVar("--dim"); g.textAlign = "left";
@@ -950,10 +977,14 @@ section under it pulls out one idea and lets you push on it until it makes sense
     drawIllum();
     drawWave();
     var s = prep("polar", 0.74);
-    drawPolar(s.g, s.w, s.h, true);
+    drawPolar(s.g, s.w, s.h, true, TEACH);
   }
 
-  function refresh() { rebuildPattern(); drawAll(); }
+  function refresh() {
+    MAIN = makeCtx(dOverL(), state.edgeDb);
+    TEACH = makeCtx(9, -10);
+    drawAll();
+  }
 
   /* ===================== input ======================================== */
 
@@ -1030,25 +1061,9 @@ section under it pulls out one idea and lets you push on it until it makes sense
     if (state.dragging) { state.dragging = false; drawHero(); }
   });
 
-  var playBtn = document.getElementById("wavePlay");
-  playBtn.addEventListener("click", function () {
-    wave.playing = !wave.playing;
-    playBtn.textContent = wave.playing ? "Pause" : "Play";
-  });
-  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    wave.playing = false; playBtn.textContent = "Play"; wave.t = 0.42;
-  }
-  function loop(ts) {
-    if (!wave.last) wave.last = ts;
-    var dt = (ts - wave.last) / 1000; wave.last = ts;
-    if (wave.playing) { wave.t = (wave.t + dt * 0.22) % 1; drawWave(); }
-    requestAnimationFrame(loop);
-  }
-
   window.addEventListener("resize", drawAll);
   syncDia();
   refresh();
-  requestAnimationFrame(loop);
 })();
 </script>
 </body>
