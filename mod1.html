@@ -74,6 +74,22 @@ input[type=text],input[type=password],select{width:100%;background:#0d1117;color
   overflow:hidden;background:#06090f}
 .visual-frame iframe{display:block;width:100%;height:620px;border:0}
 #toolHost iframe{height:calc(100vh - 210px);min-height:520px}
+
+/* A tool page scrolls inside its own frame, so the page header above it never
+   scrolls away and just eats the screen. Hide it while a tool is open. */
+body.tool-open .back-modules,
+body.tool-open .topbar,
+body.tool-open .side-toggle{display:none!important}
+body.tool-open .main{padding:0}
+body.tool-open .shell{grid-template-columns:1fr}
+body.tool-open .sidebar{display:none}
+body.tool-open #toolView .builder-toolbar{
+  position:sticky;top:0;z-index:5;margin:0;padding:8px 12px;
+  background:#0b0f14;border-bottom:1px solid var(--line)}
+body.tool-open #toolView .builder-toolbar h3{font-size:15px}
+body.tool-open #toolView .builder-toolbar .muted{display:none}
+body.tool-open #toolHost{border:0;border-radius:0}
+body.tool-open #toolHost iframe{height:calc(100vh - 46px);min-height:0}
 @media(max-width:850px){.visual-frame iframe{height:560px}}
 .entry-wrap{display:flex;align-items:center;gap:10px;margin-top:18px;flex-wrap:wrap}
 .entry-input{flex:1 1 260px;max-width:420px;background:var(--panel2);color:var(--text);
@@ -1276,6 +1292,7 @@ function showOverallProgress(){
 let calcApp=null;
 function showTool(tool){
   hideViews();
+  document.body.classList.add("tool-open");
   document.getElementById("toolTitle").textContent=tool.title||tool.label;
   document.getElementById("toolView").classList.remove("hidden");
   const host=document.getElementById("toolHost");
@@ -1343,6 +1360,7 @@ document.getElementById("skipBtn").onclick=skipCurrent;
   btn.onclick=()=>{ if(tool.kind==="calc") showCalc(); else showTool(tool); };
 })();
 document.getElementById("closeToolBtn").onclick=()=>{
+  document.body.classList.remove("tool-open");
   document.getElementById("toolHost").innerHTML="";
   showStudy();
 };

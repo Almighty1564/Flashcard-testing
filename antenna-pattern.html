@@ -32,7 +32,15 @@
   #scope.flat{cursor:crosshair}
 
   .stage{display:grid;grid-template-columns:minmax(0,1fr) 228px;gap:20px;align-items:start}
-  @media(max-width:860px){.stage{grid-template-columns:1fr}}
+  @media(max-width:860px){
+    /* On a phone the readouts must not sit between the render and its sliders. */
+    .stage{grid-template-columns:1fr;gap:14px}
+    .stage .scope-box{order:1}
+    .hero .controls{order:2;margin-top:4px}
+    .stage .readouts{order:3}
+    .readouts{grid-template-columns:1fr 1fr}
+    .cell dd{font-size:18px}
+  }
   .scope-box{position:relative}
   .viewtabs{position:absolute;top:10px;left:10px;display:flex;gap:5px;z-index:2}
   .viewtabs button{padding:6px 12px;font:inherit;font-size:13px;cursor:pointer;
@@ -40,6 +48,12 @@
     border:1px solid var(--grid-key);border-radius:3px}
   .viewtabs button[aria-pressed=true]{background:var(--beam);color:#0d0900;
     border-color:var(--beam);font-weight:600}
+  .zoomtabs{position:absolute;top:10px;right:10px;display:flex;gap:5px;z-index:2}
+  .zoomtabs button{min-width:34px;padding:6px 9px;font:inherit;font-size:14px;cursor:pointer;
+    background:rgba(6,9,15,.75);color:var(--dim);
+    border:1px solid var(--grid-key);border-radius:3px;line-height:1}
+  .zoomtabs button:hover{color:var(--text);border-color:var(--side)}
+  #zoomReset{font-size:11.5px}
 
   .readouts{display:grid;gap:1px;background:var(--edge);margin:0;
     border:1px solid var(--edge);border-radius:4px;overflow:hidden}
@@ -104,6 +118,11 @@ section under it pulls out one idea and lets you push on it until it makes sense
         <button type="button" data-view="solid" aria-pressed="true">3D</button>
         <button type="button" data-view="flat" aria-pressed="false">Polar</button>
       </div>
+      <div class="zoomtabs">
+        <button type="button" id="zoomOut" aria-label="Zoom out">&minus;</button>
+        <button type="button" id="zoomIn" aria-label="Zoom in">+</button>
+        <button type="button" id="zoomReset" aria-label="Reset view">reset</button>
+      </div>
       <canvas id="scope" width="1080" height="660"
               aria-label="The dish and the beam it produces. Drag to rotate."></canvas>
     </div>
@@ -116,7 +135,7 @@ section under it pulls out one idea and lets you push on it until it makes sense
     </dl>
   </div>
 
-  <div class="controls">
+  <div class="controls" id="heroControls">
     <div>
       <label class="field" for="dia">
         <span class="field-head"><span>Dish diameter</span><span id="diaOut">1.20 m</span></span>
@@ -292,7 +311,8 @@ section under it pulls out one idea and lets you push on it until it makes sense
 
   var state = {
     dMetres: 1.2, ghz: 8, fOverD: 0.40, edgeDb: -10,
-    view: "solid", cursor: null, yaw: -0.62, pitch: 0.40, dragging: false
+    view: "solid", cursor: null, yaw: -0.62, pitch: 0.40, dragging: false,
+    zoom: 1, panX: 0, panY: 0
   };
   var FLOOR = -40;
 
@@ -494,7 +514,8 @@ section under it pulls out one idea and lets you push on it until it makes sense
   function dishRadiusUnits() { return 0.10 + (state.dMetres / 6) * 0.46; }
 
   function draw3D(g, W, H) {
-    var cx = W * 0.46, cy = H * 0.52, scale = Math.min(W, H) * 0.40;
+    var cx = W * 0.46 + state.panX, cy = H * 0.52 + state.panY;
+    var scale = Math.min(W, H) * 0.40 * state.zoom;
     var NT = Math.round(Math.max(150, Math.min(480, 150 + dOverL() * 2.2)));
     var NP = 50;
     if (state.dragging) { NT = Math.round(NT * 0.55); NP = 34; }
@@ -610,7 +631,10 @@ section under it pulls out one idea and lets you push on it until it makes sense
   function drawPolar(g, W, H, labelled, ctx) {
     ctx = ctx || MAIN;
     var pdb = function (t) { return ctxDb(ctx, t); };
-    var cx = W * 0.5, cy = H * 0.5, R = Math.min(W, H) * 0.5 - 46;
+    var Z = labelled ? 1 : state.zoom;
+    var cx = W * 0.5 + (labelled ? 0 : state.panX);
+    var cy = H * 0.5 + (labelled ? 0 : state.panY);
+    var R = (Math.min(W, H) * 0.5 - 46) * Z;
     var grid = cssVar("--grid"), key = cssVar("--grid-key");
     var beam = cssVar("--beam"), side = cssVar("--side");
     var spillC = cssVar("--spill"), dim = cssVar("--dim");
@@ -657,7 +681,7 @@ section under it pulls out one idea and lets you push on it until it makes sense
     stroke(-nullRad, nullRad, beam, 2.6);
 
     if (labelled) {
-      tag(g, cx + radial(0) * R, cy, 20, -18, "main beam \\u2014 peak gain", beam);
+      tag(g, cx + radial(0) * R, cy, 20, -18, "main beam \u2014 peak gain", beam);
       if (info.sllAt !== null && info.sllDb > FLOOR) {
         var rs = radial(info.sllDb) * R;
         tag(g, cx + rs * Math.cos(info.sllAt), cy + rs * Math.sin(info.sllAt),
@@ -680,8 +704,8 @@ section under it pulls out one idea and lets you push on it until it makes sense
       }
       g.fillStyle = dim; g.textAlign = "center";
       g.font = "12px ui-sans-serif,system-ui,sans-serif";
-      g.fillText("0\\u00B0 boresight", cx + R + 6, cy - 8);
-      g.fillText("180\\u00B0 behind the dish", cx - R + 18, cy - 8);
+      g.fillText("0\u00B0 boresight", cx + R + 6, cy - 8);
+      g.fillText("180\u00B0 behind the dish", cx - R + 18, cy - 8);
     }
 
     if (state.cursor !== null && !labelled) {
@@ -733,7 +757,7 @@ section under it pulls out one idea and lets you push on it until it makes sense
       });
     }
     g.fillStyle = cssVar("--dim"); g.font = "12px ui-sans-serif,system-ui,sans-serif";
-    g.textAlign = "right"; g.fillText("beam leaves parallel \\u2192", w - 14, cy - 12);
+    g.textAlign = "right"; g.fillText("beam leaves parallel \u2192", w - 14, cy - 12);
 
     g.beginPath(); g.arc(fx, cy, 5, 0, Math.PI * 2);
     g.fillStyle = cssVar("--beam"); g.fill();
@@ -766,11 +790,11 @@ section under it pulls out one idea and lets you push on it until it makes sense
     document.getElementById("gC").innerHTML = metres(G.depth);
     document.getElementById("gF").innerHTML = metres(G.F);
     document.getElementById("gRim").innerHTML =
-      G.rimDeg.toFixed(0) + "<small>\\u00B0 half-angle</small>";
-    document.getElementById("gArea").innerHTML = G.area.toFixed(2) + "<small>m\\u00B2</small>";
+      G.rimDeg.toFixed(0) + "<small>\u00B0 half-angle</small>";
+    document.getElementById("gArea").innerHTML = G.area.toFixed(2) + "<small>m\u00B2</small>";
     document.getElementById("fodHint").textContent =
       "At f/D " + state.fOverD.toFixed(2) + " the feed sees the rim " +
-      G.rimDeg.toFixed(0) + "\\u00B0 off its own axis. A deep dish (low f/D) needs a horn that " +
+      G.rimDeg.toFixed(0) + "\u00B0 off its own axis. A deep dish (low f/D) needs a horn that " +
       "sprays wide; a shallow one needs a narrow horn held far out front.";
   }
 
@@ -842,7 +866,7 @@ section under it pulls out one idea and lets you push on it until it makes sense
         "that, because the error is paid on the way in and again on the way out. At " +
         state.ghz + " GHz a wavelength is only " + lamMm.toFixed(0) + " mm, so this costs " +
         loss.toFixed(1) + " dB. Switch the band to Ka at the top and watch the same dents get " +
-        "far more expensive \\u2014 surface tolerance is measured in wavelengths, not millimetres.";
+        "far more expensive \u2014 surface tolerance is measured in wavelengths, not millimetres.";
   }
 
   /* ===================== 4. illumination trade ========================= */
@@ -887,7 +911,7 @@ section under it pulls out one idea and lets you push on it until it makes sense
 
     [["t", "rgba(255,176,58,.85)", "how evenly the dish is lit"],
      ["s", "rgba(201,106,214,.85)", "how much power lands on it"],
-     ["a", "#35c9d6", "the product \\u2014 what you actually get"]].forEach(function (L, li) {
+     ["a", "#35c9d6", "the product \u2014 what you actually get"]].forEach(function (L, li) {
       g.beginPath();
       for (var db = -26; db <= -1; db += 0.5) {
         var val = efficiencies(db)[L[0]];
@@ -927,20 +951,21 @@ section under it pulls out one idea and lets you push on it until it makes sense
     document.getElementById("illumNote").textContent =
       Math.abs(d) < 1.5
         ? "You are at the sweet spot. Neither loss dominates, and this is why textbooks quote " +
-          "roughly \\u221210 dB edge illumination as the right answer for a prime-focus dish."
+          "roughly \u221210 dB edge illumination as the right answer for a prime-focus dish."
         : d > 0
           ? "The rim is lit too brightly. Illumination efficiency is excellent, but " +
             ((1 - now.s) * 100).toFixed(0) + "% of the feed's power sails straight past the dish. " +
             "Turn the edge illumination down toward " + best.db.toFixed(0) + " dB."
           : "The rim is too dark. Almost nothing is spilled, but the outer part of the dish is " +
-            "barely working \\u2014 you are carrying metal you do not use. Turn the edge " +
+            "barely working \u2014 you are carrying metal you do not use. Turn the edge " +
             "illumination up toward " + best.db.toFixed(0) + " dB.";
   }
 
   /* ===================== frame ========================================= */
 
   function drawHero() {
-    var s = prep("scope", 0.61), g = s.g;
+    var ratio = (window.innerWidth || 1000) < 620 ? 0.92 : 0.61;
+    var s = prep("scope", ratio), g = s.g;
     s.c.classList.toggle("flat", state.view === "flat");
     if (state.view === "solid") draw3D(g, s.w, s.h);
     else drawPolar(g, s.w, s.h, false);
@@ -948,7 +973,7 @@ section under it pulls out one idea and lets you push on it until it makes sense
     var g0 = peakGainDbi(), info = analyse(), e = efficiencies(state.edgeDb);
     document.getElementById("rGain").innerHTML = g0.toFixed(1) + "<small>dBi</small>";
     document.getElementById("rBw").innerHTML =
-      (info.hpbwDeg === null ? "\\u2014" : info.hpbwDeg.toFixed(2)) + "<small>\\u00B0</small>";
+      (info.hpbwDeg === null ? "\u2014" : info.hpbwDeg.toFixed(2)) + "<small>\u00B0</small>";
     document.getElementById("rSll").innerHTML =
       (info.sllDb <= FLOOR ? "below 40" : Math.abs(info.sllDb).toFixed(1)) +
       "<small>dB down</small>";
@@ -957,13 +982,13 @@ section under it pulls out one idea and lets you push on it until it makes sense
     var lab = document.getElementById("rCurLabel"), val = document.getElementById("rCur");
     if (state.view === "solid") {
       lab.textContent = "First null at";
-      val.innerHTML = info.nullDeg === null ? "\\u2014"
-        : info.nullDeg.toFixed(2) + "<small>\\u00B0 off axis</small>";
+      val.innerHTML = info.nullDeg === null ? "\u2014"
+        : info.nullDeg.toFixed(2) + "<small>\u00B0 off axis</small>";
     } else if (state.cursor === null) {
       lab.textContent = "Gain at cursor";
       val.innerHTML = "<small>drag the plot</small>";
     } else {
-      lab.textContent = (state.cursor * 180 / Math.PI).toFixed(1) + "\\u00B0 off boresight";
+      lab.textContent = (state.cursor * 180 / Math.PI).toFixed(1) + "\u00B0 off boresight";
       val.innerHTML = (g0 + patternDb(state.cursor)).toFixed(1) + "<small>dBi</small>";
     }
 
@@ -1056,10 +1081,62 @@ section under it pulls out one idea and lets you push on it until it makes sense
       drawHero();
     } else if (state.view === "flat") readCursor(e);
   });
-  scope.addEventListener("pointerup", function () {
+  scope.addEventListener("pointerup", function (e) {
     drag = null;
+    pointers.delete(e.pointerId);
+    pinch = null;
     if (state.dragging) { state.dragging = false; drawHero(); }
   });
+  scope.addEventListener("pointercancel", function (e) {
+    pointers.delete(e.pointerId); pinch = null; drag = null;
+  });
+
+  /* ---- zoom and pan ---- */
+  function setZoom(z, ax, ay) {
+    var old = state.zoom;
+    state.zoom = Math.max(0.5, Math.min(6, z));
+    if (ax !== undefined) {
+      // keep the point under the fingers put
+      var r = scope.getBoundingClientRect();
+      var dx = ax - r.left - r.width / 2, dy = ay - r.top - r.height / 2;
+      var k = state.zoom / old;
+      state.panX = dx - (dx - state.panX) * k;
+      state.panY = dy - (dy - state.panY) * k;
+    }
+    drawHero();
+  }
+
+  scope.addEventListener("wheel", function (e) {
+    e.preventDefault();
+    setZoom(state.zoom * (e.deltaY < 0 ? 1.12 : 1 / 1.12), e.clientX, e.clientY);
+  }, { passive: false });
+
+  var pointers = new Map(), pinch = null;
+  scope.addEventListener("pointerdown", function (e) { pointers.set(e.pointerId, e); });
+  scope.addEventListener("pointermove", function (e) {
+    if (!pointers.has(e.pointerId)) return;
+    pointers.set(e.pointerId, e);
+    if (pointers.size !== 2) return;
+    var p = [...pointers.values()];
+    var dist = Math.hypot(p[0].clientX - p[1].clientX, p[0].clientY - p[1].clientY);
+    var mx = (p[0].clientX + p[1].clientX) / 2, my = (p[0].clientY + p[1].clientY) / 2;
+    if (pinch) {
+      setZoom(state.zoom * (dist / pinch.dist), mx, my);
+      state.panX += mx - pinch.mx;
+      state.panY += my - pinch.my;
+      drawHero();
+    }
+    pinch = { dist: dist, mx: mx, my: my };
+    drag = null;
+  });
+
+  document.getElementById("zoomIn").onclick = function () { setZoom(state.zoom * 1.35); };
+  document.getElementById("zoomOut").onclick = function () { setZoom(state.zoom / 1.35); };
+  document.getElementById("zoomReset").onclick = function () {
+    state.zoom = 1; state.panX = 0; state.panY = 0;
+    state.yaw = -0.62; state.pitch = 0.40;
+    drawHero();
+  };
 
   window.addEventListener("resize", drawAll);
   syncDia();
