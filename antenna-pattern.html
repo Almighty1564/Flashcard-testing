@@ -3,71 +3,65 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Antenna pattern explorer</title>
+<title>How a dish antenna works</title>
 <style>
   :root{
     --void:#06090f; --panel:#0b1219; --grid:#14303a; --grid-key:#1e4a59;
-    --beam:#ffb03a; --side:#35c9d6; --iso:#5d7078;
+    --beam:#ffb03a; --side:#35c9d6; --spill:#c96ad6; --iso:#5d7078;
     --text:#dce6ea; --dim:#7d8f9a; --edge:#17242e;
   }
   *{box-sizing:border-box}
   html,body{margin:0;background:var(--void);color:var(--text);
-    font-family:ui-sans-serif,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif}
-  .wrap{max-width:1080px;margin:0 auto;padding:24px 18px 40px}
+    font-family:ui-sans-serif,system-ui,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-text-size-adjust:100%}
+  .wrap{max-width:1060px;margin:0 auto;padding:26px 18px 60px}
 
-  header{margin-bottom:18px}
-  h1{margin:0 0 6px;font-size:26px;font-weight:650;letter-spacing:-.015em}
-  .lede{margin:0;color:var(--dim);font-size:15px;line-height:1.5;max-width:64ch}
+  h1{margin:0 0 8px;font-size:29px;font-weight:650;letter-spacing:-.02em}
+  .lede{margin:0 0 6px;color:var(--dim);font-size:15.5px;line-height:1.55;max-width:66ch}
 
-  .stage{display:grid;grid-template-columns:minmax(0,1fr) 236px;gap:22px;align-items:start}
-  @media(max-width:840px){.stage{grid-template-columns:1fr}}
+  section{margin-top:38px;padding-top:24px;border-top:1px solid var(--edge)}
+  section.hero{margin-top:22px;padding-top:0;border-top:0}
+  h2{margin:0 0 6px;font-size:19px;font-weight:650}
+  .say{margin:0 0 16px;color:var(--dim);font-size:14.5px;line-height:1.6;max-width:70ch}
+  .say em{color:var(--text);font-style:normal;font-weight:600}
 
-  .scope{position:relative;background:var(--panel);border:1px solid var(--edge);
-    border-radius:4px;overflow:hidden}
-  canvas{display:block;width:100%;height:auto;touch-action:none;cursor:grab}
-  canvas.flat{cursor:crosshair}
-  canvas:active{cursor:grabbing}
+  canvas{display:block;width:100%;height:auto;background:#080d13;
+    border:1px solid var(--edge);border-radius:4px}
+  #scope{cursor:grab;touch-action:none}
+  #scope:active{cursor:grabbing}
+  #scope.flat{cursor:crosshair}
 
+  .stage{display:grid;grid-template-columns:minmax(0,1fr) 228px;gap:20px;align-items:start}
+  @media(max-width:860px){.stage{grid-template-columns:1fr}}
+  .scope-box{position:relative}
   .viewtabs{position:absolute;top:10px;left:10px;display:flex;gap:5px;z-index:2}
   .viewtabs button{padding:6px 12px;font:inherit;font-size:13px;cursor:pointer;
-    background:rgba(6,9,15,.72);color:var(--dim);
+    background:rgba(6,9,15,.75);color:var(--dim);
     border:1px solid var(--grid-key);border-radius:3px}
   .viewtabs button[aria-pressed=true]{background:var(--beam);color:#0d0900;
     border-color:var(--beam);font-weight:600}
-  .viewtabs button:focus-visible{outline:2px solid var(--side);outline-offset:2px}
 
-  .legend{display:flex;gap:16px;flex-wrap:wrap;padding:10px 13px;
-    border-top:1px solid var(--edge);font-size:12.5px;color:var(--dim)}
-  .key{display:flex;align-items:center;gap:7px}
-  .swatch{width:15px;height:3px;border-radius:2px}
-  .swatch.iso{height:0;border-top:1px dashed var(--iso)}
-  .ramp{width:64px;height:9px;border-radius:2px;
-    background:linear-gradient(90deg,#1d2b6b,#1a7fb5,#25b07a,#c9d132,#f06a2a,#c2181c)}
-
-  .readouts{display:grid;gap:1px;background:var(--edge);
+  .readouts{display:grid;gap:1px;background:var(--edge);margin:0;
     border:1px solid var(--edge);border-radius:4px;overflow:hidden}
   .cell{background:var(--panel);padding:11px 13px}
   .cell dt{margin:0 0 3px;font-size:12px;color:var(--dim)}
   .cell dd{margin:0;font-size:20px;font-weight:600;font-variant-numeric:tabular-nums}
   .cell dd small{font-size:13px;font-weight:400;color:var(--dim);margin-left:3px}
-  .cell.live dd{color:var(--beam)}
+  .cell.hi dd{color:var(--beam)}
 
-  .controls{margin-top:20px;display:grid;gap:18px;
-    grid-template-columns:minmax(0,1.35fr) minmax(0,1fr)}
-  @media(max-width:840px){.controls{grid-template-columns:1fr}}
-
+  .controls{display:grid;gap:20px;margin-top:18px;
+    grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
   .field-head{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:8px}
   .field-head span:first-child{font-size:14px}
   .field-head span:last-child{font-size:15px;font-weight:600;
     font-variant-numeric:tabular-nums;color:var(--beam)}
-
-  input[type=range]{width:100%;-webkit-appearance:none;appearance:none;
-    height:26px;background:transparent;cursor:pointer}
+  input[type=range]{width:100%;-webkit-appearance:none;appearance:none;height:26px;
+    background:transparent;cursor:pointer}
   input[type=range]::-webkit-slider-runnable-track{height:2px;background:var(--grid-key)}
   input[type=range]::-moz-range-track{height:2px;background:var(--grid-key)}
-  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:16px;height:16px;
-    border-radius:50%;background:var(--beam);margin-top:-7px;border:0}
-  input[type=range]::-moz-range-thumb{width:16px;height:16px;border-radius:50%;
+  input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:17px;height:17px;
+    border-radius:50%;background:var(--beam);margin-top:-7.5px;border:0}
+  input[type=range]::-moz-range-thumb{width:17px;height:17px;border-radius:50%;
     background:var(--beam);border:0}
   input[type=range]:focus-visible{outline:2px solid var(--side);outline-offset:4px}
 
@@ -78,277 +72,345 @@
   .segmented button:hover{color:var(--text);border-color:var(--side)}
   .segmented button[aria-pressed=true]{background:var(--beam);border-color:var(--beam);
     color:#0d0900;font-weight:600}
-  .segmented button:focus-visible{outline:2px solid var(--side);outline-offset:2px}
-
-  .hint{margin:8px 0 0;font-size:12.5px;color:var(--dim);line-height:1.5}
-  .taper-viz{display:block;width:100%;height:auto;margin-top:12px;
-    border:1px solid var(--edge);border-radius:3px;background:#080d13}
-  .wavefront{margin:30px 0 0;padding-top:20px;border-top:1px solid var(--edge)}
-  #wave{display:block;width:100%;height:auto;background:#080d13;
-    border:1px solid var(--edge);border-radius:3px}
-  .wave-controls{display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;margin-top:14px}
-  .wave-btn{padding:9px 16px;background:transparent;color:var(--text);
+  .btn{padding:9px 16px;background:transparent;color:var(--text);
     border:1px solid var(--grid-key);border-radius:3px;font:inherit;cursor:pointer}
-  .wave-btn:hover{border-color:var(--side)}
-  .wave-btn:focus-visible{outline:2px solid var(--side);outline-offset:2px}
-  .wavefront .cell dt{margin:0 0 3px;font-size:12px;color:var(--dim)}
-  .wavefront .cell dd{margin:0;font-size:20px;font-weight:600;
-    font-variant-numeric:tabular-nums;color:var(--beam)}
-  .wavefront .cell dd small{font-size:13px;font-weight:400;color:var(--dim);margin-left:3px}
-  .geometry{margin:30px 0 0;padding-top:20px;border-top:1px solid var(--edge)}
-  .geo-stage{display:grid;grid-template-columns:minmax(0,1fr) 216px;gap:20px;align-items:start}
-  @media(max-width:840px){.geo-stage{grid-template-columns:1fr}}
-  #profile{display:block;width:100%;height:auto;background:#080d13;
-    border:1px solid var(--edge);border-radius:3px}
-  .geo-readouts{display:grid;gap:1px;background:var(--edge);margin:0;
-    border:1px solid var(--edge);border-radius:4px;overflow:hidden}
-  .glossary{margin:26px 0 0;padding-top:18px;border-top:1px solid var(--edge);
-    display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(250px,1fr))}
+  .btn:hover{border-color:var(--side)}
+  .hint{margin:10px 0 0;font-size:12.5px;color:var(--dim);line-height:1.55}
+  .row{display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;margin-top:14px}
+
+  .two{display:grid;grid-template-columns:minmax(0,1fr) 210px;gap:20px;align-items:start}
+  @media(max-width:860px){.two{grid-template-columns:1fr}}
+
+  .glossary{margin:0;display:grid;gap:14px;
+    grid-template-columns:repeat(auto-fit,minmax(248px,1fr))}
   .glossary dt{font-size:14px;font-weight:650;margin-bottom:3px}
   .glossary dd{margin:0;font-size:13.5px;color:var(--dim);line-height:1.55}
-  .glossary em{color:var(--text);font-style:normal}
-  .note{margin-top:26px;padding-top:18px;border-top:1px solid var(--edge);
-    color:var(--dim);font-size:14px;line-height:1.6;max-width:70ch}
-  .note strong{color:var(--text);font-weight:600}
+  .src{margin-top:26px;font-size:12.5px;color:var(--dim);line-height:1.7}
+  .src a{color:var(--side)}
 </style>
 </head>
 <body>
 <div class="wrap">
 
-<header>
-  <h1>Where the energy actually goes</h1>
-  <p class="lede">A dish does not send power in one clean spear. It sends a main beam plus a
-    ring of weaker sidelobes. Drag to spin the pattern, then widen the dish and watch the
-    beam sharpen while new lobes appear beside it.</p>
-</header>
+<h1>How a dish antenna works</h1>
+<p class="lede">Everything below is live. The top view is the whole antenna at once; each
+section under it pulls out one idea and lets you push on it until it makes sense.</p>
 
-<div class="stage">
-  <div class="scope">
-    <div class="viewtabs" role="group" aria-label="View">
-      <button type="button" data-view="solid" aria-pressed="true">3D</button>
-      <button type="button" data-view="flat" aria-pressed="false">Polar</button>
+<!-- ============ 1. THE WHOLE ANTENNA ============ -->
+<section class="hero">
+  <div class="stage">
+    <div class="scope-box">
+      <div class="viewtabs" role="group" aria-label="View">
+        <button type="button" data-view="solid" aria-pressed="true">3D</button>
+        <button type="button" data-view="flat" aria-pressed="false">Polar</button>
+      </div>
+      <canvas id="scope" width="1080" height="660"
+              aria-label="The dish and the beam it produces. Drag to rotate."></canvas>
     </div>
-    <canvas id="scope" width="1100" height="700"
-            aria-label="Antenna radiation pattern. Drag to rotate."></canvas>
-    <div class="legend" id="legend"></div>
+    <dl class="readouts">
+      <div class="cell hi"><dt>Gain on boresight</dt><dd id="rGain">&mdash;</dd></div>
+      <div class="cell"><dt>Half-power beamwidth</dt><dd id="rBw">&mdash;</dd></div>
+      <div class="cell"><dt>Tallest sidelobe</dt><dd id="rSll">&mdash;</dd></div>
+      <div class="cell"><dt>Aperture efficiency</dt><dd id="rEff">&mdash;</dd></div>
+      <div class="cell"><dt id="rCurLabel">Cursor</dt><dd id="rCur">&mdash;</dd></div>
+    </dl>
   </div>
 
-  <dl class="readouts">
-    <div class="cell"><dt>Peak gain on boresight</dt><dd id="rGain">&mdash;</dd></div>
-    <div class="cell"><dt>Half-power beamwidth</dt><dd id="rBw">&mdash;</dd></div>
-    <div class="cell"><dt>Tallest sidelobe</dt><dd id="rSll">&mdash;</dd></div>
-    <div class="cell live"><dt id="rCursorLabel">Gain at cursor</dt><dd id="rCursor">&mdash;</dd></div>
-  </dl>
-</div>
-
-<div class="controls">
-  <div>
-    <label class="field" for="dia">
-      <span class="field-head">
-        <span>Dish diameter</span>
-        <span id="diaOut">1.20 m</span>
-      </span>
-      <input id="dia" type="range" min="0.2" max="5.6" value="1.2" step="0.05">
-    </label>
-    <p class="hint" id="physical"></p>
-  </div>
-  <div>
-    <span class="field-head"><span>Feed illumination</span></span>
-    <div class="segmented" role="group" aria-label="Feed illumination taper">
-      <button type="button" data-taper="uniform" aria-pressed="true">Uniform</button>
-      <button type="button" data-taper="cosine" aria-pressed="false">Tapered</button>
-      <button type="button" data-taper="cosine2" aria-pressed="false">Heavily tapered</button>
+  <div class="controls">
+    <div>
+      <label class="field" for="dia">
+        <span class="field-head"><span>Dish diameter</span><span id="diaOut">1.20 m</span></span>
+        <input id="dia" type="range" min="0.2" max="5.6" value="1.2" step="0.05">
+      </label>
+      <p class="hint" id="diaHint"></p>
     </div>
-    <canvas id="taperViz" class="taper-viz" width="640" height="150"
-            aria-label="Cross-section of the dish showing how brightly the feed lights it"></canvas>
-    <p class="hint" id="taperNote"></p>
-  </div>
-</div>
-
-<div class="controls" style="margin-top:14px">
-  <div>
-    <span class="field-head"><span>Band, for the physical size readout</span></span>
-    <div class="segmented" role="group" aria-label="Frequency band">
-      <button type="button" data-ghz="8" aria-pressed="true">X &middot; 8 GHz</button>
-      <button type="button" data-ghz="14.25" aria-pressed="false">Ku &middot; 14.25 GHz</button>
-      <button type="button" data-ghz="30" aria-pressed="false">Ka &middot; 30 GHz</button>
+    <div>
+      <span class="field-head"><span>Frequency band</span></span>
+      <div class="segmented" role="group" aria-label="Frequency band">
+        <button type="button" data-ghz="8" aria-pressed="true">X &middot; 8 GHz</button>
+        <button type="button" data-ghz="14.25" aria-pressed="false">Ku &middot; 14.25</button>
+        <button type="button" data-ghz="30" aria-pressed="false">Ka &middot; 30</button>
+      </div>
+      <p class="hint">Wavelength is what the dish is really measured in. The same dish is a
+        bigger antenna at a higher frequency.</p>
+    </div>
+    <div>
+      <label class="field" for="taper">
+        <span class="field-head"><span>Edge illumination</span><span id="taperOut">&minus;10 dB</span></span>
+        <input id="taper" type="range" min="-26" max="-1" value="-10" step="0.5">
+      </label>
+      <p class="hint">How brightly the feed lights the rim compared with the centre.
+        Section 4 is entirely about this number.</p>
     </div>
   </div>
-</div>
+</section>
 
-<section class="geometry">
-  <div class="field-head" style="margin-bottom:12px">
-    <span style="font-size:16px;font-weight:650">Dish geometry</span>
-  </div>
-  <div class="geo-stage">
-    <canvas id="profile" width="640" height="330"
-            aria-label="Cross-section of the reflector showing diameter, depth and focal length"></canvas>
-    <dl class="geo-readouts">
+<!-- ============ 2. GEOMETRY ============ -->
+<section>
+  <h2>1 &middot; The shape of the reflector</h2>
+  <p class="say">A dish is a <em>paraboloid</em>, and it is fully described by two numbers:
+    the diameter <em>D</em> across the mouth, and the focal length <em>F</em> from the bottom
+    of the bowl out to the feed. The depth <em>c</em> is not a free choice &mdash; it follows
+    from those two as c = D&sup2;/16F. Drag f/D and watch a shallow dish turn into a deep bowl
+    that wraps around its own feed.</p>
+  <div class="two">
+    <canvas id="profile" width="760" height="340"
+            aria-label="Cross-section of the reflector with diameter, depth and focal length marked"></canvas>
+    <dl class="readouts">
       <div class="cell"><dt>Diameter D</dt><dd id="gD">&mdash;</dd></div>
       <div class="cell"><dt>Depth c</dt><dd id="gC">&mdash;</dd></div>
       <div class="cell"><dt>Focal length F</dt><dd id="gF">&mdash;</dd></div>
-      <div class="cell"><dt>Rim angle from feed</dt><dd id="gRim">&mdash;</dd></div>
+      <div class="cell"><dt>Rim seen from feed</dt><dd id="gRim">&mdash;</dd></div>
       <div class="cell"><dt>Aperture area</dt><dd id="gArea">&mdash;</dd></div>
     </dl>
   </div>
-  <label class="field" for="fod" style="margin-top:16px;display:block;max-width:460px">
-    <span class="field-head">
-      <span>Focal ratio f/D &mdash; how deep the dish is</span>
-      <span id="fodOut">0.40</span>
-    </span>
+  <label class="field" for="fod" style="display:block;max-width:440px;margin-top:16px">
+    <span class="field-head"><span>Focal ratio f/D</span><span id="fodOut">0.40</span></span>
     <input id="fod" type="range" min="0.25" max="0.70" value="0.40" step="0.01">
   </label>
-  <p class="hint" style="max-width:70ch">A low f/D is a deep bowl that wraps around the feed,
-    so the rim sits at a wide angle and the horn must spray broadly to light it. A high f/D is
-    a shallow dish with the feed far out front, needing a narrow horn pattern. The depth follows
-    from the other two: c = D&sup2; / 16F.</p>
+  <p class="hint" id="fodHint" style="max-width:70ch"></p>
 </section>
 
-<section class="wavefront">
-  <div class="field-head" style="margin-bottom:6px">
-    <span style="font-size:16px;font-weight:650">Why the beam comes out narrow</span>
-  </div>
-  <p class="hint" style="max-width:72ch;margin-bottom:14px">
-    The feed radiates a <em>spherical</em> wave in all directions. Every path from the focus,
-    off the reflector, out to the aperture plane is exactly the same length &mdash; that is the
-    defining property of a parabola. Same length means same travel time, so the whole wave
-    arrives at the mouth of the dish <em>in step</em>, flattened into a plane wave marching in
-    one direction. A wide, flat, in-step wavefront is precisely what a narrow beam is.
-  </p>
-
-  <canvas id="wave" width="640" height="330"
-          aria-label="Animation of a spherical wave from the feed flattening into a plane wave"></canvas>
-
-  <div class="wave-controls">
-    <button type="button" id="wavePlay" class="wave-btn">Pause</button>
-    <label class="field" for="err" style="flex:1 1 260px;min-width:220px">
-      <span class="field-head">
-        <span>Surface error, RMS</span>
-        <span id="errOut">0.0 mm</span>
-      </span>
+<!-- ============ 3. WAVEFRONT ============ -->
+<section>
+  <h2>2 &middot; Why the beam comes out narrow</h2>
+  <p class="say">The feed radiates a <em>spherical</em> wave &mdash; the curved arcs. Every
+    path from the feed, off the reflector, out to the aperture plane is the same length, so
+    every part of the wave arrives at the mouth of the dish at the same moment. Watch an arc
+    flatten as it reflects: that is a spherical wave being turned into a <em>plane wave</em>.
+    A wide, flat, in-step wavefront is what a narrow beam is made of.</p>
+  <canvas id="wave" width="760" height="330"
+          aria-label="Animation of a spherical wave flattening into a plane wave"></canvas>
+  <div class="row">
+    <button type="button" id="wavePlay" class="btn">Pause</button>
+    <label class="field" for="err" style="flex:1 1 240px;min-width:210px">
+      <span class="field-head"><span>Dents in the surface, RMS</span><span id="errOut">0.0 mm</span></span>
       <input id="err" type="range" min="0" max="6" value="0" step="0.1">
     </label>
-    <div class="cell" style="min-width:150px;border:1px solid var(--edge);border-radius:4px">
-      <dt>Gain lost to error</dt>
-      <dd id="ruze">0.0<small>dB</small></dd>
+    <div class="cell" style="min-width:148px;border:1px solid var(--edge);border-radius:4px">
+      <dt>Gain lost</dt><dd id="ruze" style="color:var(--beam)">&mdash;</dd>
     </div>
   </div>
   <p class="hint" id="waveNote" style="max-width:72ch"></p>
 </section>
 
-<dl class="glossary">
-  <div>
-    <dt>Boresight</dt>
-    <dd>The axis the dish is aimed along, straight out of the centre of the reflector.
-      It is where gain peaks, and it is the zero that every other angle is measured from.
-      Pointing a terminal <em>is</em> putting the satellite on boresight.</dd>
+<!-- ============ 4. ILLUMINATION ============ -->
+<section>
+  <h2>3 &middot; Lighting the dish: the trade nobody escapes</h2>
+  <p class="say">Point a horn at a reflector and you cannot win twice. Spray wide enough to
+    light the rim brightly and a lot of the beam misses the dish entirely &mdash; that wasted
+    power is <em>spillover</em>. Narrow the horn to stop the waste and the outer part of the
+    dish goes dark, so you paid for metal you are not using. The left panel is the dish seen
+    face-on, lit as the feed actually lights it. The right panel is the score.</p>
+  <div class="two">
+    <canvas id="illum" width="760" height="300"
+            aria-label="The dish face lit by the feed, and the efficiency trade-off curve"></canvas>
+    <dl class="readouts">
+      <div class="cell"><dt>Illumination efficiency</dt><dd id="eT">&mdash;</dd></div>
+      <div class="cell"><dt>Spillover efficiency</dt><dd id="eS">&mdash;</dd></div>
+      <div class="cell hi"><dt>Aperture efficiency</dt><dd id="eA">&mdash;</dd></div>
+      <div class="cell"><dt>Best possible here</dt><dd id="eBest">&mdash;</dd></div>
+    </dl>
   </div>
-  <div>
-    <dt>Main beam</dt>
-    <dd>The single large lobe around boresight, ending at the first null. Nearly all the
-      useful power lives here.</dd>
-  </div>
-  <div>
-    <dt>Sidelobe</dt>
-    <dd>Any smaller lobe outside the main beam. Power you did not aim anywhere useful, and
-      the path by which you interfere with, or get interfered with by, an adjacent satellite.</dd>
-  </div>
-  <div>
-    <dt>Null</dt>
-    <dd>An angle where the lobes meet and gain collapses. Point a null at an interferer and
-      you stop hearing it.</dd>
-  </div>
-  <div>
-    <dt>Half-power beamwidth</dt>
-    <dd>How wide the main beam is, measured where gain has fallen by 3 dB &mdash; half the
-      power. It is the practical answer to how tightly you must hold your pointing.</dd>
-  </div>
-  <div>
-    <dt>dBi</dt>
-    <dd>Gain compared against an isotropic radiator, the dashed circle in the polar view.</dd>
-  </div>
-</dl>
+  <p class="hint" id="illumNote" style="max-width:72ch"></p>
+</section>
 
-<p class="note">
-  The dashed circle in the polar view is an <strong>isotropic radiator</strong> &mdash; the same
-  power spread evenly in every direction, and the reference every gain figure is measured
-  against. That is what the i in dBi means. Everything the pattern pushes out along boresight
-  it had to take from somewhere else, and the sidelobes are where the leftovers land. They
-  are why a dish aimed at one satellite can still hear a second one a few degrees off.
-</p>
+<!-- ============ 5. READING THE PATTERN ============ -->
+<section>
+  <h2>4 &middot; Reading a radiation pattern</h2>
+  <p class="say">Distance from the centre means <em>gain</em>, not distance in space. The
+    further the trace sits from the middle, the more power goes that way. The dashed circle is
+    an isotropic radiator &mdash; the same power spread evenly in every direction &mdash; and
+    it is the reference every dBi figure is measured against. Drag anywhere on the plot to
+    read the gain at that angle.</p>
+  <canvas id="polar" width="760" height="560"
+          aria-label="Labelled polar radiation pattern"></canvas>
+  <p class="hint">This is the same data as the 3D view at the top, sliced through the middle.</p>
+</section>
+
+<!-- ============ GLOSSARY ============ -->
+<section>
+  <h2>The words</h2>
+  <dl class="glossary">
+    <div><dt>Boresight</dt><dd>The axis the dish is aimed along, straight out of the middle of
+      the reflector. Gain peaks here, and every other angle is measured from it. Pointing a
+      terminal is putting the satellite on boresight.</dd></div>
+    <div><dt>Main beam</dt><dd>The one large lobe around boresight, ending at the first null.
+      Nearly all the useful power is in here.</dd></div>
+    <div><dt>Sidelobe</dt><dd>Any smaller lobe outside the main beam. Power aimed nowhere
+      useful, and the route by which you interfere with the satellite next door.</dd></div>
+    <div><dt>Spillover</dt><dd>Feed energy that misses the reflector completely and carries on
+      into space. It leaves as a cone off to the side, never straight out the back &mdash;
+      straight back is solid metal.</dd></div>
+    <div><dt>Null</dt><dd>An angle where lobes meet and gain collapses. Put a null on an
+      interferer and you stop hearing it.</dd></div>
+    <div><dt>Half-power beamwidth</dt><dd>How wide the main beam is, measured where gain has
+      fallen 3 dB. It is the practical answer to how accurately you must point.</dd></div>
+    <div><dt>Aperture efficiency</dt><dd>How much of the dish's physical area you actually get
+      to use. 50&ndash;70&nbsp;% is normal on a real antenna.</dd></div>
+    <div><dt>dBi</dt><dd>Gain measured against an isotropic radiator.</dd></div>
+  </dl>
+  <p class="src">Model checked against standard results: uniform circular aperture 58.4&deg;
+    &lambda;/D beamwidth with &minus;17.6 dB first sidelobe; the illumination and spillover
+    efficiencies here peak at &minus;10.4 dB edge taper for 83&nbsp;% aperture efficiency,
+    matching the &minus;10 to &minus;11 dB optimum quoted in
+    <a href="https://www.gmrt.ncra.tifr.res.in/doc/WEBLF/LFRA/node172.html">NCRA's low-frequency
+    radio astronomy notes</a> and in
+    <a href="http://www.w1ghz.org/antbook/chap4.pdf">Paul Wade's <em>Parabolic Dish
+    Antennas</em></a>. Surface error uses the Ruze relation.</p>
+</section>
+
+</div>
 
 <script>
 (function () {
   "use strict";
 
-  var cv = document.getElementById("scope");
-  var ctx = cv.getContext("2d");
+  /* ===================== Bessel, for the circular aperture ============= */
 
-  var FLOOR = -40, EFF = 0.55;
+  function J0(x) {
+    var a = Math.abs(x), z, p, q, xx, y2;
+    if (a < 8) {
+      z = x * x;
+      p = 57568490574 + z * (-13362590354 + z * (651619640.7 + z * (-11214424.18 +
+          z * (77392.33017 + z * (-184.9052456)))));
+      q = 57568490411 + z * (1029532985 + z * (9494680.718 + z * (59272.64853 +
+          z * (267.8532712 + z))));
+      return p / q;
+    }
+    z = 8 / a; y2 = z * z; xx = a - 0.785398164;
+    p = 1 + y2 * (-0.1098628627e-2 + y2 * (0.2734510407e-4 + y2 * (-0.2073370639e-5 +
+        y2 * 0.2093887211e-6)));
+    q = -0.1562499995e-1 + y2 * (0.1430488765e-3 + y2 * (-0.6911147651e-5 +
+        y2 * (0.7621095161e-6 + y2 * (-0.934935152e-7))));
+    return Math.sqrt(0.636619772 / a) * (Math.cos(xx) * p - z * Math.sin(xx) * q);
+  }
+
+  /* ===================== state ========================================= */
+
   var state = {
-    dMetres: 1.2, fOverD: 0.4, taper: "uniform", ghz: 8, view: "solid",
-    cursor: null, yaw: -0.62, pitch: 0.42, dragging: false
+    dMetres: 1.2, ghz: 8, fOverD: 0.40, edgeDb: -10,
+    view: "solid", cursor: null, yaw: -0.62, pitch: 0.40, dragging: false
   };
+  var FLOOR = -40;
 
-  /* Physics only cares about the dish in wavelengths, so derive it. */
   function lambdaM() { return 0.299792458 / state.ghz; }
   function dOverL()  { return state.dMetres / lambdaM(); }
-
-  /* Keep the slider inside a range that stays honest to draw: past roughly
-     150 wavelengths the far sidelobes are finer than the screen can resolve. */
   function maxMetres() { return Math.min(6, Math.round(150 * lambdaM() * 20) / 20); }
+  function rimAngle() { return 2 * Math.atan(1 / (4 * state.fOverD)); }
 
-  /* ---- pattern maths ------------------------------------------------ */
-
-  function sinc(x) {
-    if (Math.abs(x) < 1e-9) return 1;
-    var a = Math.PI * x;
-    return Math.sin(a) / a;
+  /* Aperture amplitude at normalised radius rho, from a cos^q feed plus the
+     spherical spreading loss out to the rim. This is the physical chain:
+     feed pattern -> extra distance to the rim -> brightness on the dish. */
+  function feedExponent() {
+    var thR = rimAngle();
+    var spread = Math.pow(Math.cos(thR / 2), 2);
+    var want = Math.pow(10, state.edgeDb / 20) / spread;      // needed feed taper
+    return Math.log(Math.max(1e-6, want)) / Math.log(Math.cos(thR));
   }
-  function fieldAt(u, taper) {
-    if (taper === "cosine")  return (Math.PI / 4) * (sinc(u - 0.5) + sinc(u + 0.5));
-    if (taper === "cosine2") return 0.5 * sinc(u) + 0.25 * (sinc(u - 1) + sinc(u + 1));
-    return sinc(u);
+  function apAmp(rho, q) {
+    var tR = Math.tan(rimAngle() / 2);
+    var th = 2 * Math.atan(rho * tR);
+    return Math.pow(Math.cos(th), q) * Math.pow(Math.cos(th / 2), 2);
   }
-  /* Spillover past the rim is what leaks out the back. Lighting the edge hard
-     spills more, so the backlobe tracks the taper. */
-  var BACKLOBE_DB = { uniform: -22, cosine: -30, cosine2: -36 };
 
+  /* Efficiencies. Illumination efficiency measures how evenly the dish is lit;
+     spillover efficiency measures how much of the feed's power lands on it. */
+  function efficiencies(edgeDb) {
+    var save = state.edgeDb;
+    state.edgeDb = edgeDb;
+    var q = feedExponent(), thR = rimAngle();
+    var N = 400, i1 = 0, i2 = 0, k, rho, A;
+    for (k = 0; k < N; k++) {
+      rho = (k + 0.5) / N;
+      A = apAmp(rho, q);
+      i1 += A * rho / N;
+      i2 += A * A * rho / N;
+    }
+    state.edgeDb = save;
+    var etaT = 2 * i1 * i1 / i2;
+    var etaS = 1 - Math.pow(Math.cos(thR), 2 * q + 1);
+    return { t: etaT, s: etaS, a: etaT * etaS, q: q };
+  }
+
+  function bestEdge() {
+    var best = { a: -1, db: -10 };
+    for (var db = -26; db <= -1; db += 0.25) {
+      var e = efficiencies(db);
+      if (e.a > best.a) best = { a: e.a, db: db };
+    }
+    return best;
+  }
+
+  /* Far field of the circular aperture: a Hankel transform, tabulated once per
+     parameter change and interpolated afterwards so dragging stays smooth. */
+  var LUT = { step: 0, db: null, umax: 0 };
+
+  function rebuildPattern() {
+    var q = feedExponent();
+    var N = 220, M = 2600;
+    var umax = Math.max(4, dOverL());
+    var amps = new Float64Array(N), rhos = new Float64Array(N), norm = 0, i, k;
+    for (i = 0; i < N; i++) {
+      rhos[i] = (i + 0.5) / N;
+      amps[i] = apAmp(rhos[i], q);
+      norm += amps[i] * rhos[i];
+    }
+    var db = new Float64Array(M + 1);
+    for (k = 0; k <= M; k++) {
+      var u = (k / M) * umax, acc = 0;
+      for (i = 0; i < N; i++) acc += amps[i] * J0(Math.PI * u * rhos[i]) * rhos[i];
+      var f = Math.abs(acc / norm);
+      db[k] = f < 1e-7 ? -140 : 20 * Math.log10(f);
+    }
+    LUT.db = db; LUT.umax = umax; LUT.step = umax / M;
+  }
+
+  function apertureDb(u) {
+    if (!LUT.db) rebuildPattern();
+    var x = Math.abs(u) / LUT.step;
+    if (x >= LUT.db.length - 1) return -140;
+    var i = Math.floor(x), f = x - i;
+    return LUT.db[i] * (1 - f) + LUT.db[i + 1] * f;
+  }
+
+  /* Full pattern: aperture beam forward only, plus a spillover cone that leaves
+     past the rim. Straight backwards is solid reflector, so nothing goes there. */
   function patternDb(theta) {
     var a = Math.abs(theta);
     while (a > Math.PI) a = 2 * Math.PI - a;
 
-    // Aperture pattern. On its own this is symmetric front to back.
-    var u = dOverL() * Math.sin(a);
-    var f = fieldAt(u, state.taper) / fieldAt(0, state.taper);
-    var aperture = f * f;
+    var main = Math.pow(10, apertureDb(dOverL() * Math.sin(a)) / 10) *
+               Math.pow((1 + Math.cos(a)) / 2, 2);
 
-    // The reflector is solid metal, so the rearward image lobe does not exist.
-    // This obliquity term is 1 on boresight and falls to zero straight behind.
-    var front = Math.pow((1 + Math.cos(a)) / 2, 2);
+    var e = efficiencies(state.edgeDb);
+    var g0 = e.a * Math.pow(Math.PI * dOverL(), 2);          // peak gain, linear
+    var thR = rimAngle();
+    var centre = Math.PI - thR;                              // where spillover exits
+    var width = 0.38;
+    var solid = 2 * Math.PI * Math.sin(thR) * width * 2;
+    var spillPeak = (4 * Math.PI * (1 - e.s)) / (Math.max(0.35, solid) * g0);
+    var spill = spillPeak * Math.exp(-Math.pow((a - centre) / width, 2));
 
-    // What does appear behind is spillover past the rim, peaking at 180 degrees.
-    var backPeak = Math.pow(10, (BACKLOBE_DB[state.taper] || -26) / 10);
-    var spill = backPeak * Math.exp(-Math.pow((a - Math.PI) / 0.62, 2));
-
-    var p = aperture * front + spill;
-    return p < 1e-12 ? -200 : 10 * Math.log10(p);
+    var p = main + spill;
+    return p < 1e-14 ? -200 : 10 * Math.log10(p);
   }
+
   function peakGainDbi() {
-    return 10 * Math.log10(EFF * Math.pow(Math.PI * dOverL(), 2));
+    return 10 * Math.log10(efficiencies(state.edgeDb).a * Math.pow(Math.PI * dOverL(), 2));
   }
+
   function analyse() {
-    var STEP = 0.002 * Math.PI / 180;
-    var half = null, nullAt = null, prev = 0, falling = true, t;
+    var STEP = 0.004 * Math.PI / 180, half = null, nullAt = null, prev = 0, falling = true, t;
     for (t = STEP; t < Math.PI / 2; t += STEP) {
-      var db = patternDb(t);
-      if (half === null && db <= -3) half = t;
-      if (falling && db > prev && prev < -15) { nullAt = t; falling = false; break; }
-      prev = db;
+      var d = patternDb(t);
+      if (half === null && d <= -3) half = t;
+      if (falling && d > prev && prev < -22) { nullAt = t; falling = false; break; }
+      prev = d;
     }
     var sll = -200, sllAt = null;
     if (nullAt !== null) {
-      for (t = nullAt; t < Math.PI / 2; t += STEP * 5) {
+      for (t = nullAt; t < Math.PI / 2.4; t += STEP * 4) {
         var d2 = patternDb(t);
         if (d2 > sll) { sll = d2; sllAt = t; }
       }
@@ -360,766 +422,612 @@
     };
   }
 
-  /* Illumination amplitude across the aperture, r from 0 at centre to 1 at the rim.
-     This is the physical thing the taper buttons choose. */
-  function illumination(r, taper) {
-    var x = Math.min(1, Math.abs(r));
-    if (taper === "cosine")  return Math.cos(Math.PI * x / 2);
-    if (taper === "cosine2") return Math.pow(Math.cos(Math.PI * x / 2), 2);
-    return 1;
-  }
-
-  var TAPER_NOTE = {
-    uniform:  "The feed lights the reflector evenly right out to the rim. Sharpest possible " +
-              "beam for the size, but the abrupt edge throws the most sidelobe energy.",
-    cosine:   "The feed rolls off toward the rim, so the edge contributes little. Sidelobes " +
-              "drop by roughly 10 dB and the main beam widens to pay for it.",
-    cosine2:  "The rim is barely lit at all. Sidelobes fall furthest, and the beam is widest " +
-              "\u2014 the choice when a neighbouring satellite matters more than raw gain."
-  };
-
-  /* Gain mapped to a 0..1 radius, floored at FLOOR dB. */
   function radial(db) {
     return Math.max(0, Math.min(1, 1 - Math.max(FLOOR, Math.min(0, db)) / FLOOR));
   }
 
-  /* Cold at the floor, hot on boresight. */
-  var RAMP = [
-    [0.00, 29, 43, 107], [0.22, 26, 127, 181], [0.45, 37, 176, 122],
-    [0.66, 201, 209, 50], [0.85, 240, 106, 42], [1.00, 194, 24, 28]
-  ];
-  function heat(t) {
-    t = Math.max(0, Math.min(1, t));
-    for (var i = 1; i < RAMP.length; i++) {
-      if (t <= RAMP[i][0]) {
-        var a = RAMP[i - 1], b = RAMP[i];
-        var k = (t - a[0]) / (b[0] - a[0]);
-        return [
-          Math.round(a[1] + (b[1] - a[1]) * k),
-          Math.round(a[2] + (b[2] - a[2]) * k),
-          Math.round(a[3] + (b[3] - a[3]) * k)
-        ];
-      }
-    }
-    return RAMP[RAMP.length - 1].slice(1);
-  }
+  /* ===================== helpers ======================================= */
 
-  /* ---- canvas plumbing ---------------------------------------------- */
-
-  function fit() {
-    var box = cv.parentElement.getBoundingClientRect();
-    var dpr = window.devicePixelRatio || 1;
-    var w = Math.max(300, box.width);
-    var h = Math.round(w * 0.63);
-    cv.style.height = h + "px";
-    cv.width = Math.round(w * dpr);
-    cv.height = Math.round(h * dpr);
-    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-    return { w: w, h: h };
-  }
   function cssVar(n) {
     return getComputedStyle(document.documentElement).getPropertyValue(n).trim();
   }
-
-  /* ---- 3D: the pattern revolved about the boresight axis ------------- */
-
-  function draw3D(W, H) {
-    var cx = W * 0.47, cy = H * 0.52;
-    var scale = Math.min(W, H) * 0.40;
-
-    /* More samples for bigger dishes, fewer while the pointer is moving. */
-    var NT = Math.round(Math.max(150, Math.min(560, 160 + dOverL() * 2.6)));
-    var NP = 52;
-    if (state.dragging) { NT = Math.round(NT * 0.55); NP = 36; }
-    var cosY = Math.cos(state.yaw),   sinY = Math.sin(state.yaw);
-    var cosP = Math.cos(state.pitch), sinP = Math.sin(state.pitch);
-
-    function project(x, y, z) {
-      var x1 =  x * cosY + z * sinY;
-      var z1 = -x * sinY + z * cosY;
-      var y1 =  y * cosP - z1 * sinP;
-      var z2 =  y * sinP + z1 * cosP;
-      var d  = 1 / (1 + z2 * 0.26);
-      return { x: cx + x1 * scale * d, y: cy - y1 * scale * d, depth: z2 };
-    }
-
-    var pts = [], t, p;
-    for (t = 0; t <= NT; t++) {
-      var theta = (t / NT) * Math.PI;
-      var r = radial(patternDb(theta));
-      var row = [];
-      for (p = 0; p <= NP; p++) {
-        var phi = (p / NP) * Math.PI * 2;
-        // boresight along +x so the main lobe points right, as on the slide
-        row.push({
-          pt: project(r * Math.cos(theta),
-                      r * Math.sin(theta) * Math.cos(phi),
-                      r * Math.sin(theta) * Math.sin(phi)),
-          r: r
-        });
-      }
-      pts.push(row);
-    }
-
-    var quads = [];
-    for (t = 0; t < NT; t++) {
-      for (p = 0; p < NP; p++) {
-        var a = pts[t][p], b = pts[t][p + 1], c = pts[t + 1][p + 1], d = pts[t + 1][p];
-        if (a.r < 0.004 && c.r < 0.004) continue;
-        quads.push({
-          z: (a.pt.depth + b.pt.depth + c.pt.depth + d.pt.depth) / 4,
-          v: [a.pt, b.pt, c.pt, d.pt],
-          shade: (a.r + c.r) / 2,
-          band: p / NP
-        });
-      }
-    }
-    quads.sort(function (m, n) { return n.z - m.z; });
-
-    ctx.lineWidth = 0.6;
-    quads.forEach(function (q) {
-      var col = heat(q.shade);
-      var lift = 0.55 + 0.45 * Math.cos(q.band * Math.PI * 2 + state.yaw);
-      var f = 0.45 + 0.55 * lift;
-      ctx.beginPath();
-      ctx.moveTo(q.v[0].x, q.v[0].y);
-      ctx.lineTo(q.v[1].x, q.v[1].y);
-      ctx.lineTo(q.v[2].x, q.v[2].y);
-      ctx.lineTo(q.v[3].x, q.v[3].y);
-      ctx.closePath();
-      ctx.fillStyle = "rgb(" + Math.round(col[0] * f) + "," +
-                               Math.round(col[1] * f) + "," +
-                               Math.round(col[2] * f) + ")";
-      ctx.fill();
-      ctx.strokeStyle = "rgba(0,0,0,.20)";
-      ctx.stroke();
-    });
-
-    drawDish(project);
-
-    var o = project(0, 0, 0), tip = project(1.18, 0, 0);
-    ctx.save();
-    ctx.setLineDash([4, 5]);
-    ctx.beginPath();
-    ctx.moveTo(o.x, o.y);
-    ctx.lineTo(tip.x, tip.y);
-    ctx.strokeStyle = cssVar("--iso");
-    ctx.lineWidth = 1.1;
-    ctx.stroke();
-    ctx.restore();
-    ctx.fillStyle = cssVar("--dim");
-    ctx.font = "12px ui-sans-serif,system-ui,sans-serif";
-    ctx.textAlign = "left";
-    ctx.fillText("boresight", tip.x + 6, tip.y + 4);
-  }
-
-  /* The reflector itself, scaled by the diameter slider so the dish visibly grows
-     as the beam it produces narrows. The feed sits at the focus, which is the
-     origin the pattern radiates from. */
-  function dishRadiusUnits() {
-    return 0.10 + (state.dMetres / 6) * 0.52;
-  }
-
-  function drawDish(project) {
-    var R = dishRadiusUnits();
-    var F = state.fOverD * 2 * R;          // focal length, from the f/D control
-    var vertex = -F;                       // places the focus at the origin
-    var NR = 9, NP = 40, i, p;
-
-    function surface(u, phi) {
-      return project(vertex + (u * u) / (4 * F), u * Math.cos(phi), u * Math.sin(phi));
-    }
-
-    ctx.lineWidth = 1;
-
-    for (i = 1; i <= NR; i++) {
-      var u = (i / NR) * R;
-      var lit = illumination(i / NR, state.taper);
-      ctx.beginPath();
-      for (p = 0; p <= NP; p++) {
-        var q = surface(u, (p / NP) * Math.PI * 2);
-        if (p === 0) ctx.moveTo(q.x, q.y); else ctx.lineTo(q.x, q.y);
-      }
-      var v = Math.round(70 + 150 * lit);   // brightness tracks the illumination
-      ctx.strokeStyle = "rgba(" + v + "," + Math.round(v * 1.05) + "," +
-                        Math.round(v * 1.12) + ",.9)";
-      ctx.stroke();
-    }
-
-    for (p = 0; p < 12; p++) {
-      var phi = (p / 12) * Math.PI * 2;
-      ctx.beginPath();
-      for (i = 0; i <= NR; i++) {
-        var q2 = surface((i / NR) * R, phi);
-        if (i === 0) ctx.moveTo(q2.x, q2.y); else ctx.lineTo(q2.x, q2.y);
-      }
-      ctx.strokeStyle = "rgba(120,140,150,.5)";
-      ctx.stroke();
-    }
-
-    var feed = project(0, 0, 0);
-    for (p = 0; p < 3; p++) {
-      var rim = surface(R, (p / 3) * Math.PI * 2 + 0.4);
-      ctx.beginPath();
-      ctx.moveTo(feed.x, feed.y);
-      ctx.lineTo(rim.x, rim.y);
-      ctx.strokeStyle = "rgba(120,140,150,.42)";
-      ctx.stroke();
-    }
-    // Feed horn at the focus, aimed back into the reflector.
-    var mouth = project(-0.04, 0, 0), throat = project(0.07, 0, 0);
-    var lipA = project(-0.04, 0.045, 0.045), lipB = project(-0.04, -0.045, -0.045);
-    ctx.beginPath();
-    ctx.moveTo(throat.x, throat.y);
-    ctx.lineTo(lipA.x, lipA.y);
-    ctx.lineTo(lipB.x, lipB.y);
-    ctx.closePath();
-    ctx.fillStyle = "rgba(200,212,218,.85)";
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(mouth.x, mouth.y, 3, 0, Math.PI * 2);
-    ctx.fillStyle = "#e8f0f4";
-    ctx.fill();
-    ctx.fillStyle = cssVar("--dim");
-    ctx.font = "11px ui-sans-serif,system-ui,sans-serif";
-    ctx.textAlign = "left";
-    ctx.fillText("feed horn", throat.x + 7, throat.y + 4);
-  }
-
-  /* ---- aperture illumination preview --------------------------------- */
-
-  function drawTaper() {
-    var c = document.getElementById("taperViz");
-    if (!c) return;
-    var g = c.getContext("2d");
+  function prep(id, ratio) {
+    var c = document.getElementById(id), g = c.getContext("2d");
     var dpr = window.devicePixelRatio || 1;
-    var w = c.clientWidth || 640, h = 150;
-    c.width = Math.round(w * dpr);
-    c.height = Math.round(h * dpr);
+    var w = c.clientWidth || 700, h = Math.round(w * ratio);
+    c.width = Math.round(w * dpr); c.height = Math.round(h * dpr);
     c.style.height = h + "px";
     g.setTransform(dpr, 0, 0, dpr, 0, 0);
     g.clearRect(0, 0, w, h);
-
-    var padX = 26, span = w - padX * 2, half = span / 2, cx = padX + half;
-    var barTop = 26, barH = 30, baseY = 118;
-
-    for (var px = 0; px <= span; px++) {
-      var r = (px - half) / half;
-      var a = illumination(r, state.taper);
-      var v = Math.round(18 + 217 * a);
-      g.fillStyle = "rgb(" + v + "," + Math.round(v * 0.70) + "," + Math.round(v * 0.24) + ")";
-      g.fillRect(padX + px, barTop, 1.5, barH);
-    }
-    g.strokeStyle = "rgba(255,255,255,.18)";
-    g.lineWidth = 1;
-    g.strokeRect(padX, barTop, span, barH);
-
-    g.beginPath();
-    for (var k = 0; k <= span; k++) {
-      var rr = (k - half) / half;
-      var y = baseY - illumination(rr, state.taper) * 44;
-      if (k === 0) g.moveTo(padX + k, y); else g.lineTo(padX + k, y);
-    }
-    g.strokeStyle = cssVar("--beam");
-    g.lineWidth = 2;
-    g.stroke();
-
-    g.strokeStyle = "rgba(255,255,255,.10)";
-    g.lineWidth = 1;
-    g.beginPath();
-    g.moveTo(padX, baseY);
-    g.lineTo(padX + span, baseY);
-    g.stroke();
-
-    g.fillStyle = cssVar("--dim");
-    g.font = "11px ui-sans-serif,system-ui,sans-serif";
-    g.textAlign = "center";
-    g.fillText("rim", padX + 10, 16);
-    g.fillText("centre of dish", cx, 16);
-    g.fillText("rim", padX + span - 10, 16);
-    g.textAlign = "left";
-    g.fillText(illumination(1, state.taper) < 0.01
-      ? "Edge of dish: dark" : "Edge of dish: fully lit", padX, h - 6);
-
-    var note = document.getElementById("taperNote");
-    if (note) note.textContent = TAPER_NOTE[state.taper];
+    return { g: g, w: w, h: h, c: c };
   }
-
-  /* ---- reflector cross-section --------------------------------------- */
-
-  function geometry() {
-    var D = state.dMetres;
-    var F = state.fOverD * D;
-    return {
-      D: D, F: F,
-      depth: (D * D) / (16 * F),                                  // c = D^2 / 16F
-      rimDeg: 2 * Math.atan(1 / (4 * state.fOverD)) * 180 / Math.PI,
-      area: Math.PI * D * D / 4
-    };
-  }
-
   function metres(v) {
     return v < 1 ? (v * 100).toFixed(1) + " cm" : v.toFixed(2) + " m";
   }
+  function heat(t) {
+    var R = [[0, 29, 43, 107], [.22, 26, 127, 181], [.45, 37, 176, 122],
+             [.66, 201, 209, 50], [.85, 240, 106, 42], [1, 194, 24, 28]];
+    t = Math.max(0, Math.min(1, t));
+    for (var i = 1; i < R.length; i++) {
+      if (t <= R[i][0]) {
+        var a = R[i - 1], b = R[i], k = (t - a[0]) / (b[0] - a[0]);
+        return [Math.round(a[1] + (b[1] - a[1]) * k),
+                Math.round(a[2] + (b[2] - a[2]) * k),
+                Math.round(a[3] + (b[3] - a[3]) * k)];
+      }
+    }
+    return [194, 24, 28];
+  }
+  function tag(g, x, y, dx, dy, text, colour) {
+    g.strokeStyle = colour; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(x, y); g.lineTo(x + dx, y + dy); g.stroke();
+    g.beginPath(); g.arc(x, y, 2.6, 0, Math.PI * 2); g.fillStyle = colour; g.fill();
+    g.font = "12px ui-sans-serif,system-ui,sans-serif";
+    g.textAlign = dx < 0 ? "right" : "left";
+    g.fillText(text, x + dx + (dx < 0 ? -5 : 5), y + dy + 4);
+  }
+
+  /* ===================== 1. hero render ================================ */
+
+  function dishRadiusUnits() { return 0.10 + (state.dMetres / 6) * 0.46; }
+
+  function draw3D(g, W, H) {
+    var cx = W * 0.46, cy = H * 0.52, scale = Math.min(W, H) * 0.40;
+    var NT = Math.round(Math.max(150, Math.min(480, 150 + dOverL() * 2.2)));
+    var NP = 50;
+    if (state.dragging) { NT = Math.round(NT * 0.55); NP = 34; }
+
+    var cY = Math.cos(state.yaw), sY = Math.sin(state.yaw);
+    var cP = Math.cos(state.pitch), sP = Math.sin(state.pitch);
+    function project(x, y, z) {
+      var x1 = x * cY + z * sY, z1 = -x * sY + z * cY;
+      var y1 = y * cP - z1 * sP, z2 = y * sP + z1 * cP;
+      var d = 1 / (1 + z2 * 0.26);
+      return { x: cx + x1 * scale * d, y: cy - y1 * scale * d, depth: z2 };
+    }
+
+    // ---- reflector, lit as the feed lights it
+    var R = dishRadiusUnits(), F = state.fOverD * 2 * R, vertex = -F;
+    var q = feedExponent(), i, p;
+    function surf(u, phi) {
+      return project(vertex + (u * u) / (4 * F), u * Math.cos(phi), u * Math.sin(phi));
+    }
+    g.lineWidth = 1;
+    for (i = 1; i <= 9; i++) {
+      var lit = apAmp(i / 9, q);
+      g.beginPath();
+      for (p = 0; p <= 40; p++) {
+        var s = surf((i / 9) * R, (p / 40) * Math.PI * 2);
+        p ? g.lineTo(s.x, s.y) : g.moveTo(s.x, s.y);
+      }
+      var v = Math.round(60 + 165 * lit);
+      g.strokeStyle = "rgba(" + v + "," + Math.round(v * 1.04) + "," + Math.round(v * 1.1) + ",.92)";
+      g.stroke();
+    }
+    for (p = 0; p < 12; p++) {
+      g.beginPath();
+      for (i = 0; i <= 9; i++) {
+        var s2 = surf((i / 9) * R, (p / 12) * Math.PI * 2);
+        i ? g.lineTo(s2.x, s2.y) : g.moveTo(s2.x, s2.y);
+      }
+      g.strokeStyle = "rgba(120,140,150,.42)";
+      g.stroke();
+    }
+
+    // ---- the pattern, revolved
+    var pts = [], t;
+    for (t = 0; t <= NT; t++) {
+      var th = (t / NT) * Math.PI, r = radial(patternDb(th)), row = [];
+      for (p = 0; p <= NP; p++) {
+        var phi = (p / NP) * Math.PI * 2;
+        row.push({ pt: project(r * Math.cos(th), r * Math.sin(th) * Math.cos(phi),
+                               r * Math.sin(th) * Math.sin(phi)), r: r });
+      }
+      pts.push(row);
+    }
+    var quads = [];
+    for (t = 0; t < NT; t++) for (p = 0; p < NP; p++) {
+      var a = pts[t][p], b = pts[t][p + 1], c = pts[t + 1][p + 1], d = pts[t + 1][p];
+      if (a.r < 0.004 && c.r < 0.004) continue;
+      quads.push({ z: (a.pt.depth + b.pt.depth + c.pt.depth + d.pt.depth) / 4,
+                   v: [a.pt, b.pt, c.pt, d.pt], shade: (a.r + c.r) / 2, band: p / NP });
+    }
+    quads.sort(function (m, n) { return n.z - m.z; });
+    g.lineWidth = 0.6;
+    quads.forEach(function (Q) {
+      var col = heat(Q.shade);
+      var f = 0.45 + 0.55 * (0.55 + 0.45 * Math.cos(Q.band * Math.PI * 2 + state.yaw));
+      g.beginPath();
+      g.moveTo(Q.v[0].x, Q.v[0].y); g.lineTo(Q.v[1].x, Q.v[1].y);
+      g.lineTo(Q.v[2].x, Q.v[2].y); g.lineTo(Q.v[3].x, Q.v[3].y);
+      g.closePath();
+      g.fillStyle = "rgb(" + Math.round(col[0] * f) + "," + Math.round(col[1] * f) +
+                    "," + Math.round(col[2] * f) + ")";
+      g.fill();
+      g.strokeStyle = "rgba(0,0,0,.2)";
+      g.stroke();
+    });
+
+    // ---- feed horn, aimed back into the dish
+    var feed = project(0, 0, 0), throat = project(0.075, 0, 0);
+    var lipA = project(-0.04, 0.045, 0.045), lipB = project(-0.04, -0.045, -0.045);
+    g.beginPath();
+    g.moveTo(throat.x, throat.y); g.lineTo(lipA.x, lipA.y); g.lineTo(lipB.x, lipB.y);
+    g.closePath();
+    g.fillStyle = "rgba(200,212,218,.9)"; g.fill();
+
+    // ---- labels, so nothing has to be guessed
+    var info = analyse();
+    var dim = cssVar("--dim");
+    tag(g, project(1, 0, 0).x, project(1, 0, 0).y, 34, -26, "main beam", cssVar("--beam"));
+    if (info.sllAt !== null && info.sllDb > FLOOR) {
+      var sp = project(radial(info.sllDb) * Math.cos(info.sllAt),
+                       radial(info.sllDb) * Math.sin(info.sllAt), 0);
+      tag(g, sp.x, sp.y, 30, 30, "sidelobes", cssVar("--side"));
+    }
+    var scDb = patternDb(Math.PI - rimAngle());
+    if (scDb > FLOOR) {
+      var sc = project(radial(scDb) * Math.cos(Math.PI - rimAngle()),
+                       radial(scDb) * Math.sin(Math.PI - rimAngle()), 0);
+      tag(g, sc.x, sc.y, -30, -22, "spillover", cssVar("--spill"));
+    }
+    tag(g, surf(R, Math.PI * 1.35).x, surf(R, Math.PI * 1.35).y, -26, 24, "reflector", "#9fb3bd");
+    tag(g, feed.x, feed.y, -34, 34, "feed", "#e8f0f4");
+
+    var tip = project(1.3, 0, 0);
+    g.save(); g.setLineDash([4, 5]);
+    g.beginPath(); g.moveTo(feed.x, feed.y); g.lineTo(tip.x, tip.y);
+    g.strokeStyle = "rgba(120,140,150,.6)"; g.lineWidth = 1; g.stroke(); g.restore();
+    g.fillStyle = dim; g.textAlign = "left";
+    g.font = "12px ui-sans-serif,system-ui,sans-serif";
+    g.fillText("boresight", tip.x + 6, tip.y + 4);
+  }
+
+  /* ===================== polar view ==================================== */
+
+  function drawPolar(g, W, H, labelled) {
+    var cx = W * 0.5, cy = H * 0.5, R = Math.min(W, H) * 0.5 - 46;
+    var grid = cssVar("--grid"), key = cssVar("--grid-key");
+    var beam = cssVar("--beam"), side = cssVar("--side");
+    var spillC = cssVar("--spill"), dim = cssVar("--dim");
+    var d, a;
+
+    g.lineWidth = 1;
+    for (d = 0; d >= FLOOR; d -= 10) {
+      g.beginPath(); g.arc(cx, cy, radial(d) * R, 0, Math.PI * 2);
+      g.strokeStyle = d === 0 ? key : grid; g.stroke();
+      if (d < 0) {
+        g.fillStyle = dim; g.font = "11px ui-sans-serif,system-ui,sans-serif";
+        g.textAlign = "center"; g.fillText(d + " dB", cx, cy - radial(d) * R - 4);
+      }
+    }
+    for (a = 0; a < 360; a += 30) {
+      var rad = a * Math.PI / 180;
+      g.beginPath(); g.moveTo(cx, cy);
+      g.lineTo(cx + R * Math.cos(rad), cy + R * Math.sin(rad));
+      g.strokeStyle = grid; g.stroke();
+    }
+
+    var g0 = peakGainDbi();
+    if (g0 < -FLOOR) {
+      g.save(); g.setLineDash([5, 5]);
+      g.beginPath(); g.arc(cx, cy, radial(-g0) * R, 0, Math.PI * 2);
+      g.strokeStyle = cssVar("--iso"); g.lineWidth = 1.25; g.stroke(); g.restore();
+    }
+
+    var info = analyse();
+    var nullRad = info.nullDeg === null ? Math.PI / 2 : info.nullDeg * Math.PI / 180;
+    var STEP = 0.12 * Math.PI / 180;
+    function stroke(from, to, colour, width) {
+      g.beginPath(); var on = false;
+      for (var t = from; t <= to; t += STEP) {
+        var db = patternDb(t);
+        if (db < FLOOR) { on = false; continue; }
+        var rr = radial(db) * R, x = cx + rr * Math.cos(t), y = cy + rr * Math.sin(t);
+        on ? g.lineTo(x, y) : (g.moveTo(x, y), on = true);
+      }
+      g.strokeStyle = colour; g.lineWidth = width; g.lineJoin = "round"; g.stroke();
+    }
+    stroke(-Math.PI, -nullRad, side, 1.6);
+    stroke(nullRad, Math.PI, side, 1.6);
+    stroke(-nullRad, nullRad, beam, 2.6);
+
+    if (labelled) {
+      tag(g, cx + radial(0) * R, cy, 20, -18, "main beam \\u2014 peak gain", beam);
+      if (info.sllAt !== null && info.sllDb > FLOOR) {
+        var rs = radial(info.sllDb) * R;
+        tag(g, cx + rs * Math.cos(info.sllAt), cy + rs * Math.sin(info.sllAt),
+            26, 20, "first sidelobe", side);
+      }
+      if (info.nullDeg !== null) {
+        var rn = radial(patternDb(nullRad)) * R;
+        tag(g, cx + rn * Math.cos(nullRad), cy + rn * Math.sin(nullRad),
+            -30, 26, "null", dim);
+      }
+      var sa = Math.PI - rimAngle(), sdb = patternDb(sa);
+      if (sdb > FLOOR) {
+        tag(g, cx + radial(sdb) * R * Math.cos(sa), cy + radial(sdb) * R * Math.sin(sa),
+            -26, -20, "spillover", spillC);
+      }
+      if (g0 < -FLOOR) {
+        g.fillStyle = cssVar("--iso"); g.textAlign = "center";
+        g.font = "11px ui-sans-serif,system-ui,sans-serif";
+        g.fillText("isotropic", cx, cy + radial(-g0) * R + 14);
+      }
+      g.fillStyle = dim; g.textAlign = "center";
+      g.font = "12px ui-sans-serif,system-ui,sans-serif";
+      g.fillText("0\\u00B0 boresight", cx + R + 6, cy - 8);
+      g.fillText("180\\u00B0 behind the dish", cx - R + 18, cy - 8);
+    }
+
+    if (state.cursor !== null && !labelled) {
+      g.save(); g.setLineDash([3, 4]);
+      g.beginPath(); g.moveTo(cx, cy);
+      g.lineTo(cx + R * Math.cos(state.cursor), cy + R * Math.sin(state.cursor));
+      g.strokeStyle = beam; g.lineWidth = 1; g.stroke(); g.restore();
+    }
+    return { cx: cx, cy: cy, R: R };
+  }
+
+  /* ===================== 2. geometry =================================== */
+
+  function geometry() {
+    var D = state.dMetres, F = state.fOverD * D;
+    return { D: D, F: F, depth: D * D / (16 * F),
+             rimDeg: rimAngle() * 180 / Math.PI, area: Math.PI * D * D / 4 };
+  }
 
   function drawProfile() {
-    var c = document.getElementById("profile");
-    if (!c) return;
-    var g = c.getContext("2d");
-    var dpr = window.devicePixelRatio || 1;
-    var w = c.clientWidth || 640, h = 330;
-    c.width = Math.round(w * dpr);
-    c.height = Math.round(h * dpr);
-    c.style.height = h + "px";
-    g.setTransform(dpr, 0, 0, dpr, 0, 0);
-    g.clearRect(0, 0, w, h);
-
+    var s = prep("profile", 0.45), g = s.g, w = s.w, h = s.h;
     var G = geometry();
-    var padL = 74, padR = 132, padY = 40;
-    var usableW = w - padL - padR, usableH = h - padY * 2;
+    var padL = 78, padR = 140;
+    var k = Math.min((w - padL - padR) / (Math.max(G.depth, G.F) * 1.15),
+                     (h - 84) / G.D);
+    var vx = padL, cy = h / 2;
+    function X(m) { return vx + m * k; } function Y(m) { return cy - m * k; }
 
-    // scale so the whole dish plus its focus fits
-    var extentX = Math.max(G.depth, G.F) * 1.12;
-    var k = Math.min(usableW / extentX, usableH / G.D);
-    var vx = padL, cy = h / 2;                       // vertex position on screen
-
-    function X(m) { return vx + m * k; }
-    function Y(m) { return cy - m * k; }
-
-    // the reflector profile: x = y^2 / (4F)
     g.beginPath();
     for (var i = 0; i <= 120; i++) {
       var y = -G.D / 2 + (i / 120) * G.D;
-      var x = (y * y) / (4 * G.F);
-      if (i === 0) g.moveTo(X(x), Y(y)); else g.lineTo(X(x), Y(y));
+      g.lineTo(X(y * y / (4 * G.F)), Y(y));
     }
-    g.strokeStyle = "#c8d4da";
-    g.lineWidth = 2.4;
-    g.stroke();
+    g.strokeStyle = "#c8d4da"; g.lineWidth = 2.6; g.stroke();
 
-    var rimX = X(G.depth), topY = Y(G.D / 2), botY = Y(-G.D / 2);
-    var fx = X(G.F);
+    var rimX = X(G.depth), topY = Y(G.D / 2), botY = Y(-G.D / 2), fx = X(G.F);
 
-    // axis
-    g.save();
-    g.setLineDash([4, 4]);
-    g.beginPath();
-    g.moveTo(X(0) - 16, cy);
-    g.lineTo(X(extentX), cy);
-    g.strokeStyle = "rgba(255,255,255,.20)";
-    g.lineWidth = 1;
-    g.stroke();
-    g.restore();
+    g.save(); g.setLineDash([4, 4]);
+    g.beginPath(); g.moveTo(X(0) - 18, cy); g.lineTo(w - 14, cy);
+    g.strokeStyle = "rgba(255,255,255,.18)"; g.lineWidth = 1; g.stroke(); g.restore();
 
-    // rays: feed to reflector, then out parallel along boresight
-    g.strokeStyle = "rgba(255,176,58,.55)";
-    g.lineWidth = 1;
+    g.strokeStyle = "rgba(255,176,58,.5)"; g.lineWidth = 1;
     for (var r = 1; r <= 6; r++) {
-      var yy = (r / 6) * (G.D / 2) * 0.94;
+      var yy = (r / 6) * (G.D / 2) * 0.95;
       [yy, -yy].forEach(function (yv) {
-        var xr = (yv * yv) / (4 * G.F);
-        g.beginPath();
-        g.moveTo(fx, cy);
-        g.lineTo(X(xr), Y(yv));
-        g.lineTo(X(extentX), Y(yv));
+        var xr = yv * yv / (4 * G.F);
+        g.beginPath(); g.moveTo(fx, cy); g.lineTo(X(xr), Y(yv)); g.lineTo(w - 14, Y(yv));
         g.stroke();
       });
     }
+    g.fillStyle = cssVar("--dim"); g.font = "12px ui-sans-serif,system-ui,sans-serif";
+    g.textAlign = "right"; g.fillText("beam leaves parallel \\u2192", w - 14, cy - 12);
 
-    g.fillStyle = cssVar("--dim");
-    g.font = "12px ui-sans-serif,system-ui,sans-serif";
-    g.textAlign = "left";
-    g.fillText("collimated beam \u2192", X(extentX) - 4, cy - 10);
+    g.beginPath(); g.arc(fx, cy, 5, 0, Math.PI * 2);
+    g.fillStyle = cssVar("--beam"); g.fill();
+    g.fillStyle = cssVar("--text"); g.textAlign = "center";
+    g.fillText("feed at the focus", fx, cy + 24);
 
-    // feed at the focus
-    g.beginPath();
-    g.arc(fx, cy, 5, 0, Math.PI * 2);
-    g.fillStyle = "#ffb03a";
-    g.fill();
-    g.fillStyle = cssVar("--text");
-    g.textAlign = "center";
-    g.fillText("feed", fx, cy + 22);
-
-    function dimLine(x1, y1, x2, y2, label, side) {
-      g.strokeStyle = "rgba(255,255,255,.45)";
-      g.lineWidth = 1;
-      g.beginPath();
-      g.moveTo(x1, y1);
-      g.lineTo(x2, y2);
-      g.stroke();
+    function dim2(x1, y1, x2, y2, label, vertical) {
+      g.strokeStyle = "rgba(255,255,255,.5)"; g.lineWidth = 1;
+      g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke();
       var ang = Math.atan2(y2 - y1, x2 - x1);
-      [[x1, y1, ang], [x2, y2, ang + Math.PI]].forEach(function (a) {
-        g.beginPath();
-        g.moveTo(a[0], a[1]);
-        g.lineTo(a[0] + 7 * Math.cos(a[2] + 0.4), a[1] + 7 * Math.sin(a[2] + 0.4));
-        g.lineTo(a[0] + 7 * Math.cos(a[2] - 0.4), a[1] + 7 * Math.sin(a[2] - 0.4));
-        g.closePath();
-        g.fillStyle = "rgba(255,255,255,.45)";
-        g.fill();
+      [[x1, y1, ang], [x2, y2, ang + Math.PI]].forEach(function (A) {
+        g.beginPath(); g.moveTo(A[0], A[1]);
+        g.lineTo(A[0] + 7 * Math.cos(A[2] + .4), A[1] + 7 * Math.sin(A[2] + .4));
+        g.lineTo(A[0] + 7 * Math.cos(A[2] - .4), A[1] + 7 * Math.sin(A[2] - .4));
+        g.closePath(); g.fillStyle = "rgba(255,255,255,.5)"; g.fill();
       });
-      g.fillStyle = cssVar("--text");
-      g.font = "12px ui-sans-serif,system-ui,sans-serif";
-      g.textAlign = side === "below" ? "center" : "right";
-      g.fillText(label, side === "below" ? (x1 + x2) / 2 : x1 - 9,
-                        side === "below" ? y1 + 16 : (y1 + y2) / 2 + 4);
+      g.fillStyle = cssVar("--text"); g.font = "12px ui-sans-serif,system-ui,sans-serif";
+      if (vertical) {
+        g.save(); g.translate(x1 - 12, (y1 + y2) / 2); g.rotate(-Math.PI / 2);
+        g.textAlign = "center"; g.fillText(label, 0, 0); g.restore();
+      } else {
+        g.textAlign = "center"; g.fillText(label, (x1 + x2) / 2, y1 - 7);
+      }
     }
-
-    // D across the aperture
-    dimLine(rimX + 26, topY, rimX + 26, botY, "", "side");
-    g.save();
-    g.translate(rimX + 44, cy);
-    g.rotate(-Math.PI / 2);
-    g.fillStyle = cssVar("--text");
-    g.textAlign = "center";
-    g.fillText("D = " + metres(G.D), 0, 0);
-    g.restore();
-
-    // depth c, from vertex plane to rim plane
-    g.save();
-    g.setLineDash([3, 3]);
-    g.strokeStyle = "rgba(255,255,255,.18)";
-    g.beginPath(); g.moveTo(X(0), cy); g.lineTo(X(0), topY - 14); g.stroke();
-    g.beginPath(); g.moveTo(rimX, topY); g.lineTo(rimX, topY - 14); g.stroke();
-    g.restore();
-    dimLine(X(0), topY - 14, rimX, topY - 14, "c = " + metres(G.depth), "below");
-
-    // focal length F
-    g.save();
-    g.setLineDash([3, 3]);
-    g.strokeStyle = "rgba(255,255,255,.18)";
-    g.beginPath(); g.moveTo(fx, cy); g.lineTo(fx, botY + 14); g.stroke();
-    g.beginPath(); g.moveTo(X(0), cy); g.lineTo(X(0), botY + 14); g.stroke();
-    g.restore();
-    dimLine(X(0), botY + 14, fx, botY + 14, "F = " + metres(G.F), "below");
+    dim2(rimX + 34, topY, rimX + 34, botY, "D = " + metres(G.D), true);
+    dim2(X(0), topY - 22, rimX, topY - 22, "depth c = " + metres(G.depth), false);
+    dim2(X(0), botY + 30, fx, botY + 30, "F = " + metres(G.F), false);
 
     document.getElementById("gD").innerHTML = metres(G.D);
     document.getElementById("gC").innerHTML = metres(G.depth);
     document.getElementById("gF").innerHTML = metres(G.F);
     document.getElementById("gRim").innerHTML =
-      G.rimDeg.toFixed(0) + "<small>\u00B0 half-angle</small>";
-    document.getElementById("gArea").innerHTML =
-      G.area.toFixed(2) + "<small>m\u00B2</small>";
+      G.rimDeg.toFixed(0) + "<small>\\u00B0 half-angle</small>";
+    document.getElementById("gArea").innerHTML = G.area.toFixed(2) + "<small>m\\u00B2</small>";
+    document.getElementById("fodHint").textContent =
+      "At f/D " + state.fOverD.toFixed(2) + " the feed sees the rim " +
+      G.rimDeg.toFixed(0) + "\\u00B0 off its own axis. A deep dish (low f/D) needs a horn that " +
+      "sprays wide; a shallow one needs a narrow horn held far out front.";
   }
 
-  /* ---- wavefront: spherical in, plane out ---------------------------- */
+  /* ===================== 3. wavefront ================================== */
 
-  var wave = { t: 0, playing: true, errMm: 0, raf: null, last: 0 };
-
-  /* Deterministic bumpiness so the ragged wavefront is stable frame to frame. */
-  function surfaceError(y, D) {
-    var n = Math.sin(y * 41.7 / D) * 0.6 + Math.sin(y * 97.3 / D + 1.7) * 0.4;
-    return n;                                   // roughly -1..1
-  }
+  var wave = { t: 0, playing: true, errMm: 0, last: 0 };
 
   function drawWave() {
-    var c = document.getElementById("wave");
-    if (!c) return;
-    var g = c.getContext("2d");
-    var dpr = window.devicePixelRatio || 1;
-    var w = c.clientWidth || 640, h = 330;
-    c.width = Math.round(w * dpr);
-    c.height = Math.round(h * dpr);
-    c.style.height = h + "px";
-    g.setTransform(dpr, 0, 0, dpr, 0, 0);
-    g.clearRect(0, 0, w, h);
-
-    var G = geometry();
-    var D = G.D, F = G.F;
-    var apertureX = -F + (D * D) / (16 * F);      // rim plane, focus at x=0
-    var P0 = F + (D * D) / (16 * F);              // the constant path length
+    var s = prep("wave", 0.43), g = s.g, w = s.w, h = s.h;
+    var G = geometry(), D = G.D, F = G.F;
+    var apX = -F + D * D / (16 * F), P0 = F + D * D / (16 * F);
     var errM = wave.errMm / 1000;
+    var padL = 66, padR = 160;
+    var k = Math.min((w - padL - padR) / (apX + F + P0 * 0.5), (h - 74) / D);
+    var ox = padL + F * k, cy = h / 2;
+    function X(m) { return ox + m * k; } function Y(m) { return cy - m * k; }
 
-    var padL = 60, padR = 150;
-    var k = Math.min((w - padL - padR) / (apertureX + F + P0 * 0.55), (h - 70) / D);
-    var ox = padL + F * k, cy = h / 2;            // ox is the focus on screen
-    function X(m) { return ox + m * k; }
-    function Y(m) { return cy - m * k; }
-
-    // reflector
     g.beginPath();
     for (var i = 0; i <= 120; i++) {
       var yy = -D / 2 + (i / 120) * D;
-      g.lineTo(X(-F + (yy * yy) / (4 * F)), Y(yy));
+      g.lineTo(X(-F + yy * yy / (4 * F)), Y(yy));
     }
-    g.strokeStyle = "#c8d4da";
-    g.lineWidth = 2.4;
-    g.stroke();
+    g.strokeStyle = "#c8d4da"; g.lineWidth = 2.6; g.stroke();
 
-    // aperture plane
-    g.save();
-    g.setLineDash([4, 5]);
-    g.beginPath();
-    g.moveTo(X(apertureX), Y(D / 2 + D * 0.08));
-    g.lineTo(X(apertureX), Y(-D / 2 - D * 0.08));
-    g.strokeStyle = "rgba(53,201,214,.55)";
-    g.lineWidth = 1.2;
-    g.stroke();
-    g.restore();
-    g.fillStyle = cssVar("--side");
-    g.font = "12px ui-sans-serif,system-ui,sans-serif";
-    g.textAlign = "center";
-    g.fillText("aperture plane", X(apertureX), Y(D / 2 + D * 0.08) - 8);
+    g.save(); g.setLineDash([4, 5]);
+    g.beginPath(); g.moveTo(X(apX), Y(D / 2 + D * .1)); g.lineTo(X(apX), Y(-D / 2 - D * .1));
+    g.strokeStyle = "rgba(53,201,214,.6)"; g.lineWidth = 1.2; g.stroke(); g.restore();
+    g.fillStyle = cssVar("--side"); g.font = "12px ui-sans-serif,system-ui,sans-serif";
+    g.textAlign = "center"; g.fillText("aperture plane", X(apX), Y(D / 2 + D * .1) - 8);
 
-    // feed
-    g.beginPath();
-    g.arc(X(0), cy, 5, 0, Math.PI * 2);
-    g.fillStyle = "#ffb03a";
-    g.fill();
-    g.fillStyle = cssVar("--text");
-    g.fillText("feed", X(0), cy + 22);
+    g.beginPath(); g.arc(X(0), cy, 5, 0, Math.PI * 2);
+    g.fillStyle = cssVar("--beam"); g.fill();
+    g.fillStyle = cssVar("--text"); g.fillText("feed", X(0), cy + 22);
 
-    /* Draw successive wavefronts. Each is the locus of points that have
-       travelled the same distance s from the feed. */
-    var travel = P0 * 1.55;
-    var COUNT = 5;
-
-    for (var n = 0; n < COUNT; n++) {
-      var s = ((wave.t + n / COUNT) % 1) * travel;
-      var pts = [], first = true;
-
+    var travel = P0 * 1.5;
+    for (var n = 0; n < 5; n++) {
+      var sTrav = ((wave.t + n / 5) % 1) * travel, pts = [];
       for (var j = 0; j <= 90; j++) {
         var y = -D / 2 + (j / 90) * D;
-        var xs = -F + (y * y) / (4 * F);           // point on the reflector
-        var r1 = F + (y * y) / (4 * F);            // focus to that point
-        var e = errM * surfaceError(y, D);         // surface bump, doubles on reflection
-
+        var xs = -F + y * y / (4 * F), r1 = F + y * y / (4 * F);
+        var e = errM * (Math.sin(y * 41.7 / D) * .6 + Math.sin(y * 97.3 / D + 1.7) * .4);
         var px, py;
-        if (s < r1) {
-          // still spherical, heading out from the feed
-          var f = s / r1;
-          px = xs * f; py = y * f;
-        } else {
-          // reflected: travelling parallel to the axis
-          px = xs + (s - r1) - 2 * e;
-          py = y;
-          if (px < xs) px = xs;
-        }
+        if (sTrav < r1) { var fr = sTrav / r1; px = xs * fr; py = y * fr; }
+        else { px = Math.max(xs, xs + (sTrav - r1) - 2 * e); py = y; }
         pts.push([X(px), Y(py)]);
       }
-
-      var fade = 0.20 + 0.55 * (1 - Math.abs(s / travel - 0.45) * 1.6);
+      var fade = .2 + .55 * (1 - Math.abs(sTrav / travel - .45) * 1.6);
       g.beginPath();
-      pts.forEach(function (p, idx) { idx ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]); });
-      g.strokeStyle = "rgba(255,176,58," + Math.max(0.12, Math.min(0.85, fade)) + ")";
-      g.lineWidth = 2;
-      g.stroke();
+      pts.forEach(function (P, idx) { idx ? g.lineTo(P[0], P[1]) : g.moveTo(P[0], P[1]); });
+      g.strokeStyle = "rgba(255,176,58," + Math.max(.12, Math.min(.85, fade)) + ")";
+      g.lineWidth = 2; g.stroke();
     }
 
-    // the constant-path claim, stated as a number
-    g.fillStyle = cssVar("--dim");
-    g.font = "12px ui-sans-serif,system-ui,sans-serif";
-    g.textAlign = "left";
-    g.fillText("every path = " + metres(P0), X(apertureX) + 14, cy - 8);
-    g.fillText(wave.errMm > 0.05 ? "wavefront no longer flat" : "wavefront arrives flat",
-               X(apertureX) + 14, cy + 12);
+    g.fillStyle = cssVar("--dim"); g.textAlign = "left";
+    g.fillText("every path = " + metres(P0), X(apX) + 16, cy - 10);
+    g.fillText(wave.errMm > .05 ? "arrives out of step" : "arrives flat and in step",
+               X(apX) + 16, cy + 10);
 
-    // Ruze: gain loss from RMS surface error
-    var lambdaMm = lambdaM() * 1000;
-    var lossDb = 685.8 * Math.pow(wave.errMm / lambdaMm, 2);
-    document.getElementById("ruze").innerHTML = lossDb.toFixed(1) + "<small>dB</small>";
+    var lamMm = lambdaM() * 1000;
+    var loss = 685.8 * Math.pow(wave.errMm / lamMm, 2);
+    document.getElementById("ruze").innerHTML = loss.toFixed(1) + "<small>dB</small>";
     document.getElementById("errOut").textContent = wave.errMm.toFixed(1) + " mm";
-    document.getElementById("waveNote").textContent = wave.errMm < 0.05
-      ? "A perfect surface: every ray arrives in step and the wavefront leaves flat."
+    document.getElementById("waveNote").textContent = wave.errMm < .05
+      ? "A perfect surface. Every ray arrives in step, so the wavefront leaves flat."
       : "Dents of " + wave.errMm.toFixed(1) + " mm put parts of the wave out of step by twice " +
-        "that. At " + state.ghz + " GHz the wavelength is only " + lambdaMm.toFixed(0) +
-        " mm, so that costs " + lossDb.toFixed(1) + " dB of gain \u2014 the out-of-step parts " +
-        "no longer add up on boresight. This is the Ruze relation, and it is why dish surface " +
-        "tolerance gets brutal as you move up in frequency.";
+        "that, because the error is paid on the way in and again on the way out. At " +
+        state.ghz + " GHz a wavelength is only " + lamMm.toFixed(0) + " mm, so this costs " +
+        loss.toFixed(1) + " dB. Switch the band to Ka at the top and watch the same dents get " +
+        "far more expensive \\u2014 surface tolerance is measured in wavelengths, not millimetres.";
   }
 
-  function waveLoop(ts) {
-    if (!wave.last) wave.last = ts;
-    var dt = (ts - wave.last) / 1000;
-    wave.last = ts;
-    if (wave.playing) {
-      wave.t = (wave.t + dt * 0.22) % 1;
-      drawWave();
+  /* ===================== 4. illumination trade ========================= */
+
+  function drawIllum() {
+    var s = prep("illum", 0.40), g = s.g, w = s.w, h = s.h;
+    var q = feedExponent();
+    var leftW = w * 0.40, cxL = leftW / 2, cyL = h / 2, rad = Math.min(leftW, h) * 0.36;
+
+    // dish face, lit as the feed lights it
+    for (var rr = rad; rr > 0; rr -= 1) {
+      var A = apAmp(rr / rad, q), v = Math.round(16 + 224 * A);
+      g.beginPath(); g.arc(cxL, cyL, rr, 0, Math.PI * 2);
+      g.fillStyle = "rgb(" + v + "," + Math.round(v * .70) + "," + Math.round(v * .24) + ")";
+      g.fill();
     }
-    wave.raf = requestAnimationFrame(waveLoop);
-  }
+    // spillover ring outside the rim
+    var spillR = rad * 1.30;
+    g.save();
+    g.beginPath(); g.arc(cxL, cyL, spillR, 0, Math.PI * 2);
+    g.arc(cxL, cyL, rad, 0, Math.PI * 2, true);
+    var e = efficiencies(state.edgeDb);
+    g.fillStyle = "rgba(201,106,214," + (0.10 + 0.55 * (1 - e.s)) + ")";
+    g.fill(); g.restore();
+    g.beginPath(); g.arc(cxL, cyL, rad, 0, Math.PI * 2);
+    g.strokeStyle = "rgba(255,255,255,.55)"; g.lineWidth = 1.4; g.stroke();
 
-  /* ---- 2D polar scope ------------------------------------------------ */
+    g.fillStyle = cssVar("--text"); g.font = "12px ui-sans-serif,system-ui,sans-serif";
+    g.textAlign = "center";
+    g.fillText("the dish, seen face-on", cxL, h - 14);
+    g.fillStyle = cssVar("--spill");
+    g.fillText("spillover: " + ((1 - e.s) * 100).toFixed(0) + "% missed the dish",
+               cxL, cyL - spillR - 10);
 
-  function draw2D(W, H) {
-    var cx = W * 0.5, cy = H * 0.5;
-    var R = Math.min(W, H) * 0.5 - 32;
-    var grid = cssVar("--grid"), gridKey = cssVar("--grid-key");
-    var beam = cssVar("--beam"), side = cssVar("--side");
-    var iso = cssVar("--iso"), dim = cssVar("--dim");
-    var d, a;
+    // the trade-off curve
+    var gx = leftW + 46, gw = w - gx - 22, gy = 34, gh = h - 92;
+    g.strokeStyle = "rgba(255,255,255,.16)"; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(gx, gy); g.lineTo(gx, gy + gh); g.lineTo(gx + gw, gy + gh); g.stroke();
 
-    ctx.lineWidth = 1;
-    for (d = 0; d >= FLOOR; d -= 10) {
-      var r = radial(d) * R;
-      ctx.beginPath();
-      ctx.arc(cx, cy, r, 0, Math.PI * 2);
-      ctx.strokeStyle = (d === 0) ? gridKey : grid;
-      ctx.stroke();
-      if (d < 0) {
-        ctx.fillStyle = dim;
-        ctx.font = "11px ui-sans-serif,system-ui,sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText(d + " dB", cx, cy - r - 4);
+    function px(db) { return gx + ((db + 26) / 25) * gw; }
+    function py(v)  { return gy + gh - v * gh; }
+
+    [["t", "rgba(255,176,58,.85)", "how evenly the dish is lit"],
+     ["s", "rgba(201,106,214,.85)", "how much power lands on it"],
+     ["a", "#35c9d6", "the product \\u2014 what you actually get"]].forEach(function (L, li) {
+      g.beginPath();
+      for (var db = -26; db <= -1; db += 0.5) {
+        var val = efficiencies(db)[L[0]];
+        db === -26 ? g.moveTo(px(db), py(val)) : g.lineTo(px(db), py(val));
       }
-    }
-    for (a = 0; a < 360; a += 30) {
-      var rad = a * Math.PI / 180;
-      ctx.beginPath();
-      ctx.moveTo(cx, cy);
-      ctx.lineTo(cx + R * Math.cos(rad), cy + R * Math.sin(rad));
-      ctx.strokeStyle = grid;
-      ctx.stroke();
-    }
-    ctx.fillStyle = dim;
-    ctx.font = "12px ui-sans-serif,system-ui,sans-serif";
-    ctx.textAlign = "center";
-    ctx.fillText("0\u00B0", cx + R + 16, cy + 4);
-    ctx.fillText("90\u00B0", cx, cy + R + 18);
-    ctx.fillText("-90\u00B0", cx, cy - R - 18);
+      g.strokeStyle = L[1]; g.lineWidth = li === 2 ? 2.4 : 1.5; g.stroke();
+      g.fillStyle = L[1]; g.font = "11.5px ui-sans-serif,system-ui,sans-serif";
+      g.textAlign = "left";
+      g.fillText(L[2], gx + 8, gy + 13 + li * 15);
+    });
 
-    var g0 = peakGainDbi();
-    if (g0 < -FLOOR) {
-      ctx.save();
-      ctx.setLineDash([5, 5]);
-      ctx.beginPath();
-      ctx.arc(cx, cy, radial(-g0) * R, 0, Math.PI * 2);
-      ctx.strokeStyle = iso;
-      ctx.lineWidth = 1.25;
-      ctx.stroke();
-      ctx.restore();
-    }
+    var best = bestEdge();
+    g.save(); g.setLineDash([3, 3]);
+    g.beginPath(); g.moveTo(px(best.db), gy); g.lineTo(px(best.db), gy + gh);
+    g.strokeStyle = "rgba(255,255,255,.35)"; g.lineWidth = 1; g.stroke(); g.restore();
+    g.fillStyle = cssVar("--text"); g.textAlign = "center";
+    g.font = "11.5px ui-sans-serif,system-ui,sans-serif";
+    g.fillText("best: " + best.db.toFixed(0) + " dB", px(best.db), gy - 8);
 
-    var info = analyse();
-    var nullRad = info.nullDeg === null ? Math.PI / 2 : info.nullDeg * Math.PI / 180;
-    var STEP = 0.15 * Math.PI / 180;
+    // where you are now
+    var now = efficiencies(state.edgeDb);
+    g.beginPath(); g.arc(px(state.edgeDb), py(now.a), 5, 0, Math.PI * 2);
+    g.fillStyle = "#fff"; g.fill();
 
-    function stroke(from, to, colour, width) {
-      ctx.beginPath();
-      var started = false;
-      for (var t = from; t <= to; t += STEP) {
-        var db = patternDb(t);
-        if (db < FLOOR) { started = false; continue; }
-        var rr = radial(db) * R;
-        var x = cx + rr * Math.cos(t), y = cy + rr * Math.sin(t);
-        if (started) ctx.lineTo(x, y); else { ctx.moveTo(x, y); started = true; }
-      }
-      ctx.strokeStyle = colour;
-      ctx.lineWidth = width;
-      ctx.lineJoin = "round";
-      ctx.stroke();
-    }
-    stroke(-Math.PI, -nullRad, side, 1.6);
-    stroke(nullRad, Math.PI, side, 1.6);
-    stroke(-nullRad, nullRad, beam, 2.4);
+    g.fillStyle = cssVar("--dim"); g.textAlign = "center";
+    g.fillText("bright rim", px(-2), gy + gh + 18);
+    g.fillText("dark rim", px(-25), gy + gh + 18);
+    g.fillText("edge illumination", gx + gw / 2, gy + gh + 34);
 
-    if (info.sllAt !== null && info.sllDb > FLOOR) {
-      var rs = radial(info.sllDb) * R;
-      [1, -1].forEach(function (sgn) {
-        ctx.beginPath();
-        ctx.arc(cx + rs * Math.cos(sgn * info.sllAt), cy + rs * Math.sin(sgn * info.sllAt),
-                3.5, 0, Math.PI * 2);
-        ctx.fillStyle = side;
-        ctx.fill();
-      });
-    }
+    document.getElementById("eT").innerHTML = (now.t * 100).toFixed(0) + "<small>%</small>";
+    document.getElementById("eS").innerHTML = (now.s * 100).toFixed(0) + "<small>%</small>";
+    document.getElementById("eA").innerHTML = (now.a * 100).toFixed(0) + "<small>%</small>";
+    document.getElementById("eBest").innerHTML =
+      (best.a * 100).toFixed(0) + "<small>% at " + best.db.toFixed(0) + " dB</small>";
 
-    if (state.cursor !== null) {
-      ctx.save();
-      ctx.setLineDash([3, 4]);
-      ctx.beginPath();
-      ctx.moveTo(cx, cy);
-      ctx.lineTo(cx + R * Math.cos(state.cursor), cy + R * Math.sin(state.cursor));
-      ctx.strokeStyle = beam;
-      ctx.lineWidth = 1;
-      ctx.stroke();
-      ctx.restore();
-      var cdb = patternDb(state.cursor);
-      if (cdb >= FLOOR) {
-        var cr = radial(cdb) * R;
-        ctx.beginPath();
-        ctx.arc(cx + cr * Math.cos(state.cursor), cy + cr * Math.sin(state.cursor),
-                4.5, 0, Math.PI * 2);
-        ctx.fillStyle = beam;
-        ctx.fill();
-      }
-    }
+    var d = state.edgeDb - best.db;
+    document.getElementById("illumNote").textContent =
+      Math.abs(d) < 1.5
+        ? "You are at the sweet spot. Neither loss dominates, and this is why textbooks quote " +
+          "roughly \\u221210 dB edge illumination as the right answer for a prime-focus dish."
+        : d > 0
+          ? "The rim is lit too brightly. Illumination efficiency is excellent, but " +
+            ((1 - now.s) * 100).toFixed(0) + "% of the feed's power sails straight past the dish. " +
+            "Turn the edge illumination down toward " + best.db.toFixed(0) + " dB."
+          : "The rim is too dark. Almost nothing is spilled, but the outer part of the dish is " +
+            "barely working \\u2014 you are carrying metal you do not use. Turn the edge " +
+            "illumination up toward " + best.db.toFixed(0) + " dB.";
   }
 
-  /* ---- frame --------------------------------------------------------- */
+  /* ===================== frame ========================================= */
 
-  function legend() {
-    var el = document.getElementById("legend");
-    if (state.view === "solid") {
-      el.innerHTML =
-        '<span class="key"><span class="ramp"></span>Low gain to high</span>' +
-        '<span class="key">Drag to rotate</span>' +
-        '<span class="key">The pattern spun about boresight</span>';
-    } else {
-      el.innerHTML =
-        '<span class="key"><span class="swatch" style="background:var(--beam)"></span>Main beam</span>' +
-        '<span class="key"><span class="swatch" style="background:var(--side)"></span>Sidelobes</span>' +
-        '<span class="key"><span class="swatch iso"></span>Isotropic radiator</span>' +
-        '<span class="key">Rings every 10 dB</span>';
-    }
-  }
+  function drawHero() {
+    var s = prep("scope", 0.61), g = s.g;
+    s.c.classList.toggle("flat", state.view === "flat");
+    if (state.view === "solid") draw3D(g, s.w, s.h);
+    else drawPolar(g, s.w, s.h, false);
 
-  function draw() {
-    var s = fit();
-    ctx.clearRect(0, 0, s.w, s.h);
-    if (state.view === "solid") draw3D(s.w, s.h); else draw2D(s.w, s.h);
-
-    var g0 = peakGainDbi(), info = analyse();
+    var g0 = peakGainDbi(), info = analyse(), e = efficiencies(state.edgeDb);
     document.getElementById("rGain").innerHTML = g0.toFixed(1) + "<small>dBi</small>";
     document.getElementById("rBw").innerHTML =
-      (info.hpbwDeg === null ? "\u2014" : info.hpbwDeg.toFixed(2)) + "<small>\u00B0</small>";
+      (info.hpbwDeg === null ? "\\u2014" : info.hpbwDeg.toFixed(2)) + "<small>\\u00B0</small>";
     document.getElementById("rSll").innerHTML =
       (info.sllDb <= FLOOR ? "below 40" : Math.abs(info.sllDb).toFixed(1)) +
       "<small>dB down</small>";
+    document.getElementById("rEff").innerHTML = (e.a * 100).toFixed(0) + "<small>%</small>";
 
-    var cEl = document.getElementById("rCursor"), cLb = document.getElementById("rCursorLabel");
+    var lab = document.getElementById("rCurLabel"), val = document.getElementById("rCur");
     if (state.view === "solid") {
-      cLb.textContent = "First null at";
-      cEl.innerHTML = info.nullDeg === null ? "\u2014"
-        : info.nullDeg.toFixed(2) + "<small>\u00B0 off axis</small>";
+      lab.textContent = "First null at";
+      val.innerHTML = info.nullDeg === null ? "\\u2014"
+        : info.nullDeg.toFixed(2) + "<small>\\u00B0 off axis</small>";
     } else if (state.cursor === null) {
-      cLb.textContent = "Gain at cursor";
-      cEl.innerHTML = "<small>drag the scope</small>";
+      lab.textContent = "Gain at cursor";
+      val.innerHTML = "<small>drag the plot</small>";
     } else {
-      cLb.textContent = "Gain " + (state.cursor * 180 / Math.PI).toFixed(1) + "\u00B0 off boresight";
-      cEl.innerHTML = (g0 + patternDb(state.cursor)).toFixed(1) + "<small>dBi</small>";
+      lab.textContent = (state.cursor * 180 / Math.PI).toFixed(1) + "\\u00B0 off boresight";
+      val.innerHTML = (g0 + patternDb(state.cursor)).toFixed(1) + "<small>dBi</small>";
     }
 
-    drawTaper();
-    drawProfile();
-    drawWave();
-
-    document.getElementById("physical").textContent =
-      "At " + state.ghz + " GHz that is " + dOverL().toFixed(1) +
-      " wavelengths across. Gain and beamwidth follow the dish measured in wavelengths, " +
-      "so the same dish sharpens as you move up in frequency.";
+    document.getElementById("diaHint").textContent =
+      "That is " + dOverL().toFixed(1) + " wavelengths across at " + state.ghz + " GHz.";
   }
 
-  /* ---- input --------------------------------------------------------- */
+  function drawAll() {
+    drawHero();
+    drawProfile();
+    drawIllum();
+    drawWave();
+    var s = prep("polar", 0.74);
+    drawPolar(s.g, s.w, s.h, true);
+  }
 
-  var dia = document.getElementById("dia");
+  function refresh() { rebuildPattern(); drawAll(); }
+
+  /* ===================== input ======================================== */
+
+  var dia = document.getElementById("dia"), taperEl = document.getElementById("taper");
+  var fodEl = document.getElementById("fod"), errEl = document.getElementById("err");
+
   function syncDia() {
     dia.max = maxMetres();
     if (state.dMetres > Number(dia.max)) state.dMetres = Number(dia.max);
     dia.value = state.dMetres;
     document.getElementById("diaOut").textContent =
-      state.dMetres < 1 ? Math.round(state.dMetres * 100) + " cm"
-                        : state.dMetres.toFixed(2) + " m";
+      state.dMetres < 1 ? Math.round(state.dMetres * 100) + " cm" : state.dMetres.toFixed(2) + " m";
   }
   dia.addEventListener("input", function () {
-    state.dMetres = Number(dia.value);
-    syncDia();
-    draw();
+    state.dMetres = Number(dia.value); syncDia(); refresh();
+  });
+  taperEl.addEventListener("input", function () {
+    state.edgeDb = Number(taperEl.value);
+    document.getElementById("taperOut").textContent = state.edgeDb.toFixed(1) + " dB";
+    refresh();
+  });
+  fodEl.addEventListener("input", function () {
+    state.fOverD = Number(fodEl.value);
+    document.getElementById("fodOut").textContent = state.fOverD.toFixed(2);
+    refresh();
+  });
+  errEl.addEventListener("input", function () {
+    wave.errMm = Number(errEl.value); drawWave();
   });
 
-  var errEl = document.getElementById("err");
-  errEl.addEventListener("input", function () {
-    wave.errMm = Number(errEl.value);
-    drawWave();
+  document.querySelectorAll("[data-ghz]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll("[data-ghz]").forEach(function (o) {
+        o.setAttribute("aria-pressed", String(o === b));
+      });
+      state.ghz = Number(b.dataset.ghz);
+      syncDia(); refresh();
+    });
+  });
+  document.querySelectorAll("[data-view]").forEach(function (b) {
+    b.addEventListener("click", function () {
+      document.querySelectorAll("[data-view]").forEach(function (o) {
+        o.setAttribute("aria-pressed", String(o === b));
+      });
+      state.view = b.dataset.view;
+      drawHero();
+    });
+  });
+
+  var scope = document.getElementById("scope"), drag = null;
+  function readCursor(ev) {
+    var r = scope.getBoundingClientRect();
+    var x = ev.clientX - r.left - r.width / 2, y = ev.clientY - r.top - r.height / 2;
+    state.cursor = Math.hypot(x, y) < 8 ? null : Math.atan2(y, x);
+    drawHero();
+  }
+  scope.addEventListener("pointerdown", function (e) {
+    scope.setPointerCapture(e.pointerId);
+    if (state.view === "solid") {
+      drag = { x: e.clientX, y: e.clientY, yaw: state.yaw, pitch: state.pitch };
+      state.dragging = true;
+    } else readCursor(e);
+  });
+  scope.addEventListener("pointermove", function (e) {
+    if (!e.buttons) return;
+    if (state.view === "solid" && drag) {
+      state.yaw = drag.yaw + (e.clientX - drag.x) * 0.008;
+      state.pitch = Math.max(-1.35, Math.min(1.35, drag.pitch + (e.clientY - drag.y) * 0.008));
+      drawHero();
+    } else if (state.view === "flat") readCursor(e);
+  });
+  scope.addEventListener("pointerup", function () {
+    drag = null;
+    if (state.dragging) { state.dragging = false; drawHero(); }
   });
 
   var playBtn = document.getElementById("wavePlay");
@@ -1127,77 +1035,20 @@
     wave.playing = !wave.playing;
     playBtn.textContent = wave.playing ? "Pause" : "Play";
   });
-
   if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-    wave.playing = false;
-    playBtn.textContent = "Play";
-    wave.t = 0.42;
+    wave.playing = false; playBtn.textContent = "Play"; wave.t = 0.42;
+  }
+  function loop(ts) {
+    if (!wave.last) wave.last = ts;
+    var dt = (ts - wave.last) / 1000; wave.last = ts;
+    if (wave.playing) { wave.t = (wave.t + dt * 0.22) % 1; drawWave(); }
+    requestAnimationFrame(loop);
   }
 
-  var fod = document.getElementById("fod");
-  fod.addEventListener("input", function () {
-    state.fOverD = Number(fod.value);
-    document.getElementById("fodOut").textContent = state.fOverD.toFixed(2);
-    draw();
-  });
-
-  function segment(sel, key, cast, attr) {
-    document.querySelectorAll(sel).forEach(function (b) {
-      b.addEventListener("click", function () {
-        document.querySelectorAll(sel).forEach(function (o) {
-          o.setAttribute("aria-pressed", String(o === b));
-        });
-        state[key] = cast(b.dataset[attr]);
-        if (key === "ghz") syncDia();
-        if (key === "view") {
-          cv.classList.toggle("flat", state.view === "flat");
-          legend();
-        }
-        draw();
-      });
-    });
-  }
-  segment("[data-taper]", "taper", String, "taper");
-  segment("[data-ghz]", "ghz", Number, "ghz");
-  segment("[data-view]", "view", String, "view");
-
-  var drag = null;
-  function readCursor(ev) {
-    var r = cv.getBoundingClientRect();
-    var x = ev.clientX - r.left - r.width / 2;
-    var y = ev.clientY - r.top - r.height / 2;
-    state.cursor = Math.hypot(x, y) < 8 ? null : Math.atan2(y, x);
-    draw();
-  }
-  cv.addEventListener("pointerdown", function (e) {
-    cv.setPointerCapture(e.pointerId);
-    if (state.view === "solid") {
-      drag = { x: e.clientX, y: e.clientY, yaw: state.yaw, pitch: state.pitch };
-      state.dragging = true;
-    } else {
-      readCursor(e);
-    }
-  });
-  cv.addEventListener("pointermove", function (e) {
-    if (!e.buttons) return;
-    if (state.view === "solid" && drag) {
-      state.yaw = drag.yaw + (e.clientX - drag.x) * 0.008;
-      state.pitch = Math.max(-1.35, Math.min(1.35, drag.pitch + (e.clientY - drag.y) * 0.008));
-      draw();
-    } else if (state.view === "flat") {
-      readCursor(e);
-    }
-  });
-  cv.addEventListener("pointerup", function () {
-    drag = null;
-    if (state.dragging) { state.dragging = false; draw(); }
-  });
-
-  window.addEventListener("resize", draw);
-  legend();
+  window.addEventListener("resize", drawAll);
   syncDia();
-  draw();
-  wave.raf = requestAnimationFrame(waveLoop);
+  refresh();
+  requestAnimationFrame(loop);
 })();
 </script>
 </body>
