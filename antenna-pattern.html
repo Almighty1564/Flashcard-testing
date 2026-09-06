@@ -83,6 +83,18 @@
   .hint{margin:8px 0 0;font-size:12.5px;color:var(--dim);line-height:1.5}
   .taper-viz{display:block;width:100%;height:auto;margin-top:12px;
     border:1px solid var(--edge);border-radius:3px;background:#080d13}
+  .wavefront{margin:30px 0 0;padding-top:20px;border-top:1px solid var(--edge)}
+  #wave{display:block;width:100%;height:auto;background:#080d13;
+    border:1px solid var(--edge);border-radius:3px}
+  .wave-controls{display:flex;gap:16px;align-items:flex-end;flex-wrap:wrap;margin-top:14px}
+  .wave-btn{padding:9px 16px;background:transparent;color:var(--text);
+    border:1px solid var(--grid-key);border-radius:3px;font:inherit;cursor:pointer}
+  .wave-btn:hover{border-color:var(--side)}
+  .wave-btn:focus-visible{outline:2px solid var(--side);outline-offset:2px}
+  .wavefront .cell dt{margin:0 0 3px;font-size:12px;color:var(--dim)}
+  .wavefront .cell dd{margin:0;font-size:20px;font-weight:600;
+    font-variant-numeric:tabular-nums;color:var(--beam)}
+  .wavefront .cell dd small{font-size:13px;font-weight:400;color:var(--dim);margin-left:3px}
   .geometry{margin:30px 0 0;padding-top:20px;border-top:1px solid var(--edge)}
   .geo-stage{display:grid;grid-template-columns:minmax(0,1fr) 216px;gap:20px;align-items:start}
   @media(max-width:840px){.geo-stage{grid-template-columns:1fr}}
@@ -190,6 +202,38 @@
     so the rim sits at a wide angle and the horn must spray broadly to light it. A high f/D is
     a shallow dish with the feed far out front, needing a narrow horn pattern. The depth follows
     from the other two: c = D&sup2; / 16F.</p>
+</section>
+
+<section class="wavefront">
+  <div class="field-head" style="margin-bottom:6px">
+    <span style="font-size:16px;font-weight:650">Why the beam comes out narrow</span>
+  </div>
+  <p class="hint" style="max-width:72ch;margin-bottom:14px">
+    The feed radiates a <em>spherical</em> wave in all directions. Every path from the focus,
+    off the reflector, out to the aperture plane is exactly the same length &mdash; that is the
+    defining property of a parabola. Same length means same travel time, so the whole wave
+    arrives at the mouth of the dish <em>in step</em>, flattened into a plane wave marching in
+    one direction. A wide, flat, in-step wavefront is precisely what a narrow beam is.
+  </p>
+
+  <canvas id="wave" width="640" height="330"
+          aria-label="Animation of a spherical wave from the feed flattening into a plane wave"></canvas>
+
+  <div class="wave-controls">
+    <button type="button" id="wavePlay" class="wave-btn">Pause</button>
+    <label class="field" for="err" style="flex:1 1 260px;min-width:220px">
+      <span class="field-head">
+        <span>Surface error, RMS</span>
+        <span id="errOut">0.0 mm</span>
+      </span>
+      <input id="err" type="range" min="0" max="6" value="0" step="0.1">
+    </label>
+    <div class="cell" style="min-width:150px;border:1px solid var(--edge);border-radius:4px">
+      <dt>Gain lost to error</dt>
+      <dd id="ruze">0.0<small>dB</small></dd>
+    </div>
+  </div>
+  <p class="hint" id="waveNote" style="max-width:72ch"></p>
 </section>
 
 <dl class="glossary">
@@ -757,6 +801,143 @@
       G.area.toFixed(2) + "<small>m\u00B2</small>";
   }
 
+  /* ---- wavefront: spherical in, plane out ---------------------------- */
+
+  var wave = { t: 0, playing: true, errMm: 0, raf: null, last: 0 };
+
+  /* Deterministic bumpiness so the ragged wavefront is stable frame to frame. */
+  function surfaceError(y, D) {
+    var n = Math.sin(y * 41.7 / D) * 0.6 + Math.sin(y * 97.3 / D + 1.7) * 0.4;
+    return n;                                   // roughly -1..1
+  }
+
+  function drawWave() {
+    var c = document.getElementById("wave");
+    if (!c) return;
+    var g = c.getContext("2d");
+    var dpr = window.devicePixelRatio || 1;
+    var w = c.clientWidth || 640, h = 330;
+    c.width = Math.round(w * dpr);
+    c.height = Math.round(h * dpr);
+    c.style.height = h + "px";
+    g.setTransform(dpr, 0, 0, dpr, 0, 0);
+    g.clearRect(0, 0, w, h);
+
+    var G = geometry();
+    var D = G.D, F = G.F;
+    var apertureX = -F + (D * D) / (16 * F);      // rim plane, focus at x=0
+    var P0 = F + (D * D) / (16 * F);              // the constant path length
+    var errM = wave.errMm / 1000;
+
+    var padL = 60, padR = 150;
+    var k = Math.min((w - padL - padR) / (apertureX + F + P0 * 0.55), (h - 70) / D);
+    var ox = padL + F * k, cy = h / 2;            // ox is the focus on screen
+    function X(m) { return ox + m * k; }
+    function Y(m) { return cy - m * k; }
+
+    // reflector
+    g.beginPath();
+    for (var i = 0; i <= 120; i++) {
+      var yy = -D / 2 + (i / 120) * D;
+      g.lineTo(X(-F + (yy * yy) / (4 * F)), Y(yy));
+    }
+    g.strokeStyle = "#c8d4da";
+    g.lineWidth = 2.4;
+    g.stroke();
+
+    // aperture plane
+    g.save();
+    g.setLineDash([4, 5]);
+    g.beginPath();
+    g.moveTo(X(apertureX), Y(D / 2 + D * 0.08));
+    g.lineTo(X(apertureX), Y(-D / 2 - D * 0.08));
+    g.strokeStyle = "rgba(53,201,214,.55)";
+    g.lineWidth = 1.2;
+    g.stroke();
+    g.restore();
+    g.fillStyle = cssVar("--side");
+    g.font = "12px ui-sans-serif,system-ui,sans-serif";
+    g.textAlign = "center";
+    g.fillText("aperture plane", X(apertureX), Y(D / 2 + D * 0.08) - 8);
+
+    // feed
+    g.beginPath();
+    g.arc(X(0), cy, 5, 0, Math.PI * 2);
+    g.fillStyle = "#ffb03a";
+    g.fill();
+    g.fillStyle = cssVar("--text");
+    g.fillText("feed", X(0), cy + 22);
+
+    /* Draw successive wavefronts. Each is the locus of points that have
+       travelled the same distance s from the feed. */
+    var travel = P0 * 1.55;
+    var COUNT = 5;
+
+    for (var n = 0; n < COUNT; n++) {
+      var s = ((wave.t + n / COUNT) % 1) * travel;
+      var pts = [], first = true;
+
+      for (var j = 0; j <= 90; j++) {
+        var y = -D / 2 + (j / 90) * D;
+        var xs = -F + (y * y) / (4 * F);           // point on the reflector
+        var r1 = F + (y * y) / (4 * F);            // focus to that point
+        var e = errM * surfaceError(y, D);         // surface bump, doubles on reflection
+
+        var px, py;
+        if (s < r1) {
+          // still spherical, heading out from the feed
+          var f = s / r1;
+          px = xs * f; py = y * f;
+        } else {
+          // reflected: travelling parallel to the axis
+          px = xs + (s - r1) - 2 * e;
+          py = y;
+          if (px < xs) px = xs;
+        }
+        pts.push([X(px), Y(py)]);
+      }
+
+      var fade = 0.20 + 0.55 * (1 - Math.abs(s / travel - 0.45) * 1.6);
+      g.beginPath();
+      pts.forEach(function (p, idx) { idx ? g.lineTo(p[0], p[1]) : g.moveTo(p[0], p[1]); });
+      g.strokeStyle = "rgba(255,176,58," + Math.max(0.12, Math.min(0.85, fade)) + ")";
+      g.lineWidth = 2;
+      g.stroke();
+    }
+
+    // the constant-path claim, stated as a number
+    g.fillStyle = cssVar("--dim");
+    g.font = "12px ui-sans-serif,system-ui,sans-serif";
+    g.textAlign = "left";
+    g.fillText("every path = " + metres(P0), X(apertureX) + 14, cy - 8);
+    g.fillText(wave.errMm > 0.05 ? "wavefront no longer flat" : "wavefront arrives flat",
+               X(apertureX) + 14, cy + 12);
+
+    // Ruze: gain loss from RMS surface error
+    var lambdaMm = lambdaM() * 1000;
+    var lossDb = 685.8 * Math.pow(wave.errMm / lambdaMm, 2);
+    document.getElementById("ruze").innerHTML = lossDb.toFixed(1) + "<small>dB</small>";
+    document.getElementById("errOut").textContent = wave.errMm.toFixed(1) + " mm";
+    document.getElementById("waveNote").textContent = wave.errMm < 0.05
+      ? "A perfect surface: every ray arrives in step and the wavefront leaves flat."
+      : "Dents of " + wave.errMm.toFixed(1) + " mm put parts of the wave out of step by twice " +
+        "that. At " + state.ghz + " GHz the wavelength is only " + lambdaMm.toFixed(0) +
+        " mm, so that costs " + lossDb.toFixed(1) + " dB of gain \u2014 the out-of-step parts " +
+        "no longer add up on boresight. This is the Ruze relation, and it is why dish surface " +
+        "tolerance gets brutal as you move up in frequency.";
+  }
+
+  function waveLoop(ts) {
+    if (!wave.last) wave.last = ts;
+    var dt = (ts - wave.last) / 1000;
+    wave.last = ts;
+    if (wave.playing) {
+      wave.t = (wave.t + dt * 0.22) % 1;
+      drawWave();
+    }
+    wave.raf = requestAnimationFrame(waveLoop);
+  }
+
   /* ---- 2D polar scope ------------------------------------------------ */
 
   function draw2D(W, H) {
@@ -910,6 +1091,7 @@
 
     drawTaper();
     drawProfile();
+    drawWave();
 
     document.getElementById("physical").textContent =
       "At " + state.ghz + " GHz that is " + dOverL().toFixed(1) +
@@ -933,6 +1115,24 @@
     syncDia();
     draw();
   });
+
+  var errEl = document.getElementById("err");
+  errEl.addEventListener("input", function () {
+    wave.errMm = Number(errEl.value);
+    drawWave();
+  });
+
+  var playBtn = document.getElementById("wavePlay");
+  playBtn.addEventListener("click", function () {
+    wave.playing = !wave.playing;
+    playBtn.textContent = wave.playing ? "Pause" : "Play";
+  });
+
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    wave.playing = false;
+    playBtn.textContent = "Play";
+    wave.t = 0.42;
+  }
 
   var fod = document.getElementById("fod");
   fod.addEventListener("input", function () {
@@ -997,6 +1197,7 @@
   legend();
   syncDia();
   draw();
+  wave.raf = requestAnimationFrame(waveLoop);
 })();
 </script>
 </body>
