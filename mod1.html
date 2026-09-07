@@ -201,6 +201,41 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
   body.sb-collapsed .shell{grid-template-columns:1fr}
   body.sb-collapsed .sidebar{max-height:0;padding-top:0;padding-bottom:0;border-bottom:0}
 }
+
+/* Diagram answer boxes sit on top of a light diagram, not the dark page, so they
+   need their own colours. The generic input[type=text] rule is an attribute
+   selector and outranks a plain class, so these selectors are deliberately
+   more specific rather than relying on source order. */
+.diagram-study-stage input.diagram-study-input,
+.diagram-author-stage input.diagram-author-field{
+  background:#ffffff;
+  color:#0d1117;
+  border:2px solid #1f6feb;
+  border-radius:6px;
+  padding:4px 6px;
+  width:auto;
+  font-weight:700;
+  text-align:center;
+  box-shadow:0 2px 8px rgba(0,0,0,.45);
+  caret-color:#0d1117;
+  -webkit-text-fill-color:#0d1117;
+}
+.diagram-study-stage input.diagram-study-input::placeholder{
+  color:#5b6570; opacity:1; font-weight:600;
+}
+.diagram-study-stage input.diagram-study-input:focus{
+  outline:none; border-color:#d29922;
+  box-shadow:0 0 0 3px rgba(210,153,34,.35);
+}
+.diagram-study-stage input.diagram-study-input:disabled{
+  opacity:1; color:#0d1117; -webkit-text-fill-color:#0d1117;
+}
+.diagram-study-stage input.diagram-study-input.correct{
+  background:#e6ffec; border-color:#2ea043;
+}
+.diagram-study-stage input.diagram-study-input.wrong{
+  background:#ffebe9; border-color:#cf222e;
+}
 </style>
 <link rel="stylesheet" href="./theme.css?v=4">
 </head>
