@@ -206,6 +206,10 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
    need their own colours. The generic input[type=text] rule is an attribute
    selector and outranks a plain class, so these selectors are deliberately
    more specific rather than relying on source order. */
+.diagram-study-label{position:absolute;transform:translate(-50%,-50%);
+  background:rgba(255,255,255,.94);color:#0d1117;border:1px solid #8b949e;border-radius:4px;
+  padding:4px 7px;font-size:13px;font-weight:700;line-height:1.25;text-align:center;
+  box-shadow:0 1px 5px rgba(0,0,0,.3);pointer-events:none;white-space:pre-wrap}
 .diagram-study-stage input.diagram-study-input,
 .diagram-author-stage input.diagram-author-field{
   background:#ffffff;
@@ -924,10 +928,11 @@ function renderEntry(el){
 }
 function renderDiagramEntry(el){
   const fields=(currentCard.diagram&&currentCard.diagram.fields)||[];
+  const labels=(currentCard.diagram&&currentCard.diagram.labels)||[];
   const img=currentCard.question&&currentCard.question.image;
   if(!img||!fields.length){el.innerHTML='<div class="feedback bad">Diagram question is missing its image or answer boxes.</div>';return;}
 
-  el.innerHTML=`<div class="diagram-study-stage" id="diagramStudyStage"><img src="${img}" alt="Diagram question">${fields.map(f=>`<input class="diagram-study-input" data-diagram-input="${esc(f.id)}" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="input answer here" style="left:${Number(f.x)||50}%;top:${Number(f.y)||50}%;width:${Number(f.w)||18}%">`).join("")}</div><div class="rating-row"><button type="button" id="submitDiagramBtn" class="btn primary">Check Answers</button></div>`;
+  el.innerHTML=`<div class="diagram-study-stage" id="diagramStudyStage"><img src="${img}" alt="Diagram question">${labels.map(l=>`<div class="diagram-study-label" style="left:${Number(l.x)||50}%;top:${Number(l.y)||50}%;width:${Number(l.w)||20}%">${esc(l.text||"")}</div>`).join("")}${fields.map(f=>`<input class="diagram-study-input" data-diagram-input="${esc(f.id)}" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="input answer here" style="left:${Number(f.x)||50}%;top:${Number(f.y)||50}%;width:${Number(f.w)||18}%">`).join("")}</div><div class="rating-row"><button type="button" id="submitDiagramBtn" class="btn primary">Check Answers</button></div>`;
 
   const submit=document.getElementById("submitDiagramBtn");
   function accepted(raw,f){

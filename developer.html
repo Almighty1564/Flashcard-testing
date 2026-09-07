@@ -127,6 +127,12 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent)}
 .diagram-author-stage img{display:block;max-width:100%;max-height:620px;width:auto;height:auto;margin:0;border-radius:0}
 .diagram-author-field{position:absolute;transform:translate(-50%,-50%);height:34px;min-width:70px;background:#fff;color:#111;border:2px solid #2f81f7;border-radius:5px;padding:4px 7px;font-size:12px;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,.35);cursor:move;user-select:none;display:flex;align-items:center;justify-content:center;white-space:nowrap;overflow:hidden}
 .diagram-author-field.active{border-color:#d29922;outline:2px solid rgba(210,153,34,.35)}
+.diagram-author-label,.diagram-study-label{position:absolute;transform:translate(-50%,-50%);
+  background:rgba(255,255,255,.94);color:#0d1117;border:1px solid #8b949e;border-radius:4px;
+  padding:4px 7px;font-size:13px;font-weight:700;line-height:1.25;text-align:center;
+  box-shadow:0 1px 5px rgba(0,0,0,.3)}
+.diagram-author-label{cursor:move;user-select:none;border-style:dashed;border-color:#3fb950}
+.diagram-author-label.active{border-color:#d29922;outline:2px solid rgba(210,153,34,.35)}
 .diagram-fields-list{display:grid;gap:9px;margin-top:14px}
 .diagram-field-row{border:1px solid var(--line);background:var(--panel2);border-radius:9px;padding:10px}
 .diagram-field-grid{display:grid;grid-template-columns:minmax(160px,1fr) minmax(180px,1.2fr) 88px auto;gap:8px;align-items:end}
@@ -497,13 +503,17 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
         <div class="row" style="justify-content:space-between;align-items:flex-start">
           <div>
             <div class="section-title" style="margin-bottom:2px">Diagram Fill-In</div>
-            <div class="small muted">Upload the question image above, add answer boxes, then drag each box over the value you want the student to replace.</div>
+            <div class="small muted">Upload the question image above, then drag boxes into place. Answer boxes are graded; labels are static text you place on the image.</div>
           </div>
-          <button id="addDiagramFieldBtn" class="btn" type="button">+ Add Answer Box</button>
+          <div class="row" style="gap:8px">
+            <button id="addDiagramLabelBtn" class="btn" type="button">+ Add Label</button>
+            <button id="addDiagramFieldBtn" class="btn" type="button">+ Add Answer Box</button>
+          </div>
         </div>
         <div id="diagramNoImage" class="issue" style="margin-top:12px">Insert a question image first.</div>
         <div id="diagramAuthorWrap"></div>
         <div id="diagramFieldsList" class="diagram-fields-list"></div>
+        <div id="diagramLabelsList" class="diagram-fields-list"></div>
         <div class="small muted" style="margin-top:10px">The white answer box covers the original number/text in the image during testing. Accepted answers ignore capitalization and extra spaces.</div>
       </div>
 
@@ -838,6 +848,7 @@ function emptyDraft(){
     numericUnit:"",
     numericAccept:"",
     diagramFields:[],
+    diagramLabels:[],
     choices:[
       {id:uid("choice"),text:"",image:null,correct:true},
       {id:uid("choice"),text:"",image:null,correct:false},
@@ -940,6 +951,10 @@ function answerBodyFor(q){
   if(q.type==="image-entry"){
     return {
       mode:"image-entry",
+      labels:(q.diagramLabels||[]).filter(l=>String(l.text||"").trim()).map(l=>({
+        id:l.id, x:Number(l.x)||50, y:Number(l.y)||50, w:Number(l.w)||20,
+        text:String(l.text||"").trim()
+      })),
       fields:(q.diagramFields||[]).map(f=>({
         id:f.id,x:Number(f.x),y:Number(f.y),w:Number(f.w)||18,
         answer:f.answer||"",
@@ -1098,6 +1113,10 @@ async function loadModuleIntoBuilder(slug){
     }
     q.visual=ad.visual||"";
     if(row.question_type==="numeric" && ad.mode==="image-entry"){
+      q.diagramLabels=(ad.labels||[]).map(l=>({
+        id:l.id||uid("label"), x:Number(l.x)||50, y:Number(l.y)||50,
+        w:Number(l.w)||20, text:l.text||""
+      }));
       q.diagramFields=(ad.fields||[]).map(f=>({
         id:f.id||uid("field"),x:Number(f.x)||50,y:Number(f.y)||50,w:Number(f.w)||18,
         answer:f.answer||"",accept:(f.accept||[]).join(", ")
@@ -1381,6 +1400,13 @@ function renderPairEditor(){
   };
   wire("left");wire("right");
 }
+function addDiagramLabel(){
+  syncDraftFromForm();
+  if(!draft.questionImage){ alert("Insert a question image first."); return; }
+  draft.diagramLabels=draft.diagramLabels||[];
+  draft.diagramLabels.push({id:uid("label"),x:50,y:50,w:20,text:""});
+  renderDiagramEditor();
+}
 function addDiagramField(){
   syncDraftFromForm();
   if(!draft.questionImage){ alert("Insert a question image first."); return; }
@@ -1393,11 +1419,34 @@ function renderDiagramEditor(){
   const list=document.getElementById("diagramFieldsList");
   const noImg=document.getElementById("diagramNoImage");
   if(!wrap||!list)return;
+  const labelList=document.getElementById("diagramLabelsList");
   const fields=draft.diagramFields||[];
+  const labels=draft.diagramLabels||[];
   noImg.classList.toggle("hidden",!!draft.questionImage);
-  if(!draft.questionImage){ wrap.innerHTML=""; list.innerHTML=""; return; }
-  wrap.innerHTML=`<div class="diagram-author-stage" id="diagramAuthorStage"><img src="${draft.questionImage}" alt="Diagram authoring image">${fields.map((f,i)=>`<div class="diagram-author-field" data-diagram-box="${esc(f.id)}" style="left:${Number(f.x)||50}%;top:${Number(f.y)||50}%;width:${Number(f.w)||18}%">${esc(f.answer||"input answer here")}</div>`).join("")}</div>`;
+  if(!draft.questionImage){ wrap.innerHTML=""; list.innerHTML=""; if(labelList)labelList.innerHTML=""; return; }
+  wrap.innerHTML=`<div class="diagram-author-stage" id="diagramAuthorStage"><img src="${draft.questionImage}" alt="Diagram authoring image">${labels.map(l=>`<div class="diagram-author-label" data-diagram-box="${esc(l.id)}" style="left:${Number(l.x)||50}%;top:${Number(l.y)||50}%;width:${Number(l.w)||20}%">${esc(l.text||"label text")}</div>`).join("")}${fields.map((f,i)=>`<div class="diagram-author-field" data-diagram-box="${esc(f.id)}" style="left:${Number(f.x)||50}%;top:${Number(f.y)||50}%;width:${Number(f.w)||18}%">${esc(f.answer||"input answer here")}</div>`).join("")}</div>`;
   list.innerHTML=fields.length?fields.map((f,i)=>`<div class="diagram-field-row" data-diagram-row="${esc(f.id)}"><div class="diagram-field-grid"><div class="field" style="margin:0"><label>CORRECT ANSWER ${i+1}</label><input type="text" data-diagram-answer value="${esc(f.answer||"")}" placeholder="Example: 6.3 GHz"></div><div class="field" style="margin:0"><label>ALSO ACCEPT (COMMA SEPARATED)</label><input type="text" data-diagram-accept value="${esc(f.accept||"")}" placeholder="6300 MHz"></div><div class="field" style="margin:0"><label>BOX WIDTH %</label><input type="text" data-diagram-width value="${Number(f.w)||18}" inputmode="decimal"></div><button type="button" class="btn bad diagram-remove" data-diagram-remove>Remove</button></div></div>`).join(""):`<div class="small muted">No answer boxes yet. Click “+ Add Answer Box”.</div>`;
+
+  if(labelList){
+    labelList.innerHTML=labels.length?labels.map((l,i)=>`<div class="diagram-field-row" data-diagram-label-row="${esc(l.id)}"><div class="diagram-field-grid"><div class="field" style="margin:0"><label>LABEL TEXT ${i+1}</label><input type="text" data-diagram-label-text value="${esc(l.text||"")}" placeholder="Example: Output freq range:"></div><div class="field" style="margin:0"><label>&nbsp;</label><div class="small muted">Static text drawn on the image. Never graded.</div></div><div class="field" style="margin:0"><label>WIDTH %</label><input type="text" data-diagram-label-width value="${Number(l.w)||20}" inputmode="decimal"></div><button type="button" class="btn bad diagram-remove" data-diagram-label-remove>Remove</button></div></div>`).join(""):"";
+
+    labelList.querySelectorAll("[data-diagram-label-row]").forEach(row=>{
+      const l=labels.find(x=>x.id===row.dataset.diagramLabelRow); if(!l)return;
+      row.querySelector("[data-diagram-label-text]").oninput=e=>{
+        l.text=e.target.value;
+        const b=wrap.querySelector(`[data-diagram-box="${CSS.escape(l.id)}"]`);
+        if(b)b.textContent=l.text||"label text";
+      };
+      row.querySelector("[data-diagram-label-width]").oninput=e=>{
+        const n=Math.max(6,Math.min(80,Number(e.target.value)||20)); l.w=n;
+        const b=wrap.querySelector(`[data-diagram-box="${CSS.escape(l.id)}"]`);
+        if(b)b.style.width=n+"%";
+      };
+      row.querySelector("[data-diagram-label-remove]").onclick=()=>{
+        draft.diagramLabels=labels.filter(x=>x.id!==l.id); renderDiagramEditor();
+      };
+    });
+  }
 
   list.querySelectorAll("[data-diagram-row]").forEach(row=>{
     const f=fields.find(x=>x.id===row.dataset.diagramRow); if(!f)return;
@@ -1409,8 +1458,9 @@ function renderDiagramEditor(){
 
   const stage=document.getElementById("diagramAuthorStage");
   if(!stage)return;
+  const draggable=fields.concat(labels);
   stage.querySelectorAll("[data-diagram-box]").forEach(box=>{
-    const f=fields.find(x=>x.id===box.dataset.diagramBox); if(!f)return;
+    const f=draggable.find(x=>x.id===box.dataset.diagramBox); if(!f)return;
     const start=(ev)=>{
       ev.preventDefault(); box.classList.add("active");
       const move=(e)=>{
@@ -1507,6 +1557,10 @@ function saveCurrentQuestion(){
     numericTolerance:draft.type==="numeric"?String(draft.numericTolerance||"").trim():null,
     numericUnit:draft.type==="numeric"?String(draft.numericUnit||"").trim():null,
     numericAccept:draft.type==="numeric"?String(draft.numericAccept||"").trim():null,
+    diagramLabels:draft.type==="image-entry"?(draft.diagramLabels||[]).map(l=>({
+      id:l.id, x:Number(l.x)||50, y:Number(l.y)||50, w:Number(l.w)||20,
+      text:String(l.text||"").trim()
+    })).filter(l=>l.text):null,
     diagramFields:draft.type==="image-entry"?(draft.diagramFields||[]).map(f=>({id:f.id,x:Number(f.x),y:Number(f.y),w:Number(f.w)||18,answer:String(f.answer||"").trim(),accept:String(f.accept||"").trim()})):null,
     pairs:draft.type==="matching"
       ? draft.pairs.map(p=>({id:p.id,leftText:p.leftText.trim(),leftImage:p.leftImage,leftImagePath:p.leftImagePath||null,rightText:p.rightText.trim(),rightImage:p.rightImage,rightImagePath:p.rightImagePath||null}))
@@ -1565,6 +1619,7 @@ function editQuestion(id){
     visual:q.visual||"",
     numericValue:q.numericValue||"",numericTolerance:q.numericTolerance||"",numericUnit:q.numericUnit||"",numericAccept:q.numericAccept||"",
     diagramFields:q.diagramFields?JSON.parse(JSON.stringify(q.diagramFields)):[],
+    diagramLabels:q.diagramLabels?JSON.parse(JSON.stringify(q.diagramLabels)):[],
     choices:q.choices?JSON.parse(JSON.stringify(q.choices)):emptyDraft().choices,
     shuffleChoices:q.shuffleChoices!==false,
     pairs:q.pairs?JSON.parse(JSON.stringify(q.pairs)):emptyDraft().pairs
@@ -1840,7 +1895,8 @@ function normalizedBank(bankVersion=1){
         }
       }:{}),
       ...(q.type==="image-entry"?{
-        diagram:{fields:(q.diagramFields||[]).map(f=>({id:f.id,x:Number(f.x),y:Number(f.y),w:Number(f.w)||18,answer:f.answer||"",accept:String(f.accept||"").split(",").map(x=>x.trim()).filter(Boolean) }))}
+        diagram:{labels:(q.diagramLabels||[]).map(l=>({id:l.id,x:Number(l.x),y:Number(l.y),w:Number(l.w)||20,text:l.text||""})),
+        fields:(q.diagramFields||[]).map(f=>({id:f.id,x:Number(f.x),y:Number(f.y),w:Number(f.w)||18,answer:f.answer||"",accept:String(f.accept||"").split(",").map(x=>x.trim()).filter(Boolean) }))}
       }:{}),
       ...(q.type==="matching"?{
         pairs:q.pairs.map(p=>({id:p.id,left:{text:p.leftText,image:p.leftImage},right:{text:p.rightText,image:p.rightImage}}))
@@ -2134,7 +2190,7 @@ function previewQuestion(q=null){
     syncDraftFromForm();
     q={
       groupId:draft.groupId,type:draft.type,questionText:draft.questionText,questionImage:draft.questionImage,
-      answerText:draft.answerText,answerImage:draft.answerImage,choices:draft.choices,pairs:draft.pairs,diagramFields:draft.diagramFields
+      answerText:draft.answerText,answerImage:draft.answerImage,choices:draft.choices,pairs:draft.pairs,diagramFields:draft.diagramFields,diagramLabels:draft.diagramLabels
     };
   }
   if(!q)return;
@@ -2309,6 +2365,7 @@ document.getElementById("removeFlashAnswerImageBtn").onclick=()=>{draft.answerIm
 
 document.getElementById("addChoiceBtn").onclick=()=>{syncDraftFromForm();draft.choices.push({id:uid("choice"),text:"",image:null,correct:false});renderChoiceEditor();};
 document.getElementById("addDiagramFieldBtn").onclick=addDiagramField;
+document.getElementById("addDiagramLabelBtn").onclick=addDiagramLabel;
 document.getElementById("addPairBtn").onclick=()=>{syncDraftFromForm();draft.pairs.push({id:uid("pair"),leftText:"",leftImage:null,rightText:"",rightImage:null});renderPairEditor();};
 
 document.getElementById("exportProjectBtn").onclick=()=>{

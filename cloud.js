@@ -217,6 +217,15 @@
     if (row.question_type === "numeric" && ad.mode === "image-entry") {
       card.type = "image-entry";
       card.diagram = {
+        labels: (ad.labels || []).map(function (l, i) {
+          return {
+            id: l.id || row.id + "-label-" + (i + 1),
+            x: Number(l.x) || 50,
+            y: Number(l.y) || 50,
+            w: Number(l.w) || 20,
+            text: l.text || ""
+          };
+        }),
         fields: (ad.fields || []).map(function (f, i) {
           return {
             id: f.id || row.id + "-field-" + (i + 1),
