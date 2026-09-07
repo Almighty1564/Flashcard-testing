@@ -127,12 +127,22 @@ input:focus,textarea:focus,select:focus{border-color:var(--accent)}
 .diagram-author-stage img{display:block;max-width:100%;max-height:620px;width:auto;height:auto;margin:0;border-radius:0}
 .diagram-author-field{position:absolute;transform:translate(-50%,-50%);height:34px;min-width:70px;background:#fff;color:#111;border:2px solid #2f81f7;border-radius:5px;padding:4px 7px;font-size:12px;font-weight:700;box-shadow:0 2px 8px rgba(0,0,0,.35);cursor:move;user-select:none;display:flex;align-items:center;justify-content:center;white-space:nowrap;overflow:hidden}
 .diagram-author-field.active{border-color:#d29922;outline:2px solid rgba(210,153,34,.35)}
-.diagram-author-label,.diagram-study-label{position:absolute;transform:translate(-50%,-50%);
-  background:rgba(255,255,255,.94);color:#0d1117;border:1px solid #8b949e;border-radius:4px;
-  padding:4px 7px;font-size:13px;font-weight:700;line-height:1.25;text-align:center;
-  box-shadow:0 1px 5px rgba(0,0,0,.3)}
-.diagram-author-label{cursor:move;user-select:none;border-style:dashed;border-color:#3fb950}
-.diagram-author-label.active{border-color:#d29922;outline:2px solid rgba(210,153,34,.35)}
+.diagram-author-label,.diagram-study-label{
+  position:absolute!important;transform:translate(-50%,-50%)!important;
+  background:#fff8e1!important;color:#1a1a1a!important;
+  border:2px solid #d29922!important;border-radius:5px!important;
+  padding:5px 8px!important;font-size:13px!important;font-weight:800!important;
+  line-height:1.25!important;text-align:center!important;
+  min-height:26px!important;min-width:48px!important;
+  display:flex!important;align-items:center;justify-content:center;
+  box-shadow:0 2px 8px rgba(0,0,0,.5)!important;
+  z-index:5!important;white-space:pre-wrap;overflow-wrap:anywhere;
+  -webkit-text-fill-color:#1a1a1a!important;
+}
+.diagram-author-label{cursor:move;user-select:none}
+.diagram-author-label.active{border-color:#3fb950!important;
+  outline:2px solid rgba(63,185,80,.4)}
+.diagram-study-label{pointer-events:none}
 .diagram-fields-list{display:grid;gap:9px;margin-top:14px}
 .diagram-field-row{border:1px solid var(--line);background:var(--panel2);border-radius:9px;padding:10px}
 .diagram-field-grid{display:grid;grid-template-columns:minmax(160px,1fr) minmax(180px,1.2fr) 88px auto;gap:8px;align-items:end}
@@ -818,8 +828,8 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="./supabase-config.js"></script>
-<script src="./cloud.js"></script>
+<script src="./supabase-config.js?v=9"></script>
+<script src="./cloud.js?v=9"></script>
 <script>
 const PROJECT_FORMAT="flashcard-question-builder-v1";
 
@@ -2632,7 +2642,7 @@ window.__startBuilder=async function(profile){
 })();
 </script>
 
-<script src="./ai-distractors.js"></script>
+<script src="./ai-distractors.js?v=9"></script>
 
 
 <script>

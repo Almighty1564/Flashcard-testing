@@ -206,10 +206,22 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
    need their own colours. The generic input[type=text] rule is an attribute
    selector and outranks a plain class, so these selectors are deliberately
    more specific rather than relying on source order. */
-.diagram-study-label{position:absolute;transform:translate(-50%,-50%);
-  background:rgba(255,255,255,.94);color:#0d1117;border:1px solid #8b949e;border-radius:4px;
-  padding:4px 7px;font-size:13px;font-weight:700;line-height:1.25;text-align:center;
-  box-shadow:0 1px 5px rgba(0,0,0,.3);pointer-events:none;white-space:pre-wrap}
+.diagram-author-label,.diagram-study-label{
+  position:absolute!important;transform:translate(-50%,-50%)!important;
+  background:#fff8e1!important;color:#1a1a1a!important;
+  border:2px solid #d29922!important;border-radius:5px!important;
+  padding:5px 8px!important;font-size:13px!important;font-weight:800!important;
+  line-height:1.25!important;text-align:center!important;
+  min-height:26px!important;min-width:48px!important;
+  display:flex!important;align-items:center;justify-content:center;
+  box-shadow:0 2px 8px rgba(0,0,0,.5)!important;
+  z-index:5!important;white-space:pre-wrap;overflow-wrap:anywhere;
+  -webkit-text-fill-color:#1a1a1a!important;
+}
+.diagram-author-label{cursor:move;user-select:none}
+.diagram-author-label.active{border-color:#3fb950!important;
+  outline:2px solid rgba(63,185,80,.4)}
+.diagram-study-label{pointer-events:none}
 .diagram-study-stage input.diagram-study-input,
 .diagram-author-stage input.diagram-author-field{
   background:#ffffff;
@@ -522,8 +534,8 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="./supabase-config.js"></script>
-<script src="./cloud.js"></script>
+<script src="./supabase-config.js?v=9"></script>
+<script src="./cloud.js?v=9"></script>
 <script src="./mod1-calc.js?v=8"></script>
 <script>
 const MODULE_SLUG=new URLSearchParams(location.search).get("module")||"mod1";
