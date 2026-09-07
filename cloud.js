@@ -214,7 +214,21 @@
 
     if (ad.visual) card.visual = ad.visual;
 
-    if (row.question_type === "numeric") {
+    if (row.question_type === "numeric" && ad.mode === "image-entry") {
+      card.type = "image-entry";
+      card.diagram = {
+        fields: (ad.fields || []).map(function (f, i) {
+          return {
+            id: f.id || row.id + "-field-" + (i + 1),
+            x: Number(f.x) || 50,
+            y: Number(f.y) || 50,
+            w: Number(f.w) || 18,
+            answer: f.answer || "",
+            accept: Array.isArray(f.accept) ? f.accept : []
+          };
+        })
+      };
+    } else if (row.question_type === "numeric") {
       card.entry = {
         value: ad.value || "",
         tolerance: (ad.tolerance === null || ad.tolerance === undefined) ? null : Number(ad.tolerance),

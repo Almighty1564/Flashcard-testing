@@ -38,6 +38,7 @@ input[type=text],input[type=password],select{width:100%;background:#0d1117;color
 .badge{border:1px solid var(--line);border-radius:999px;padding:3px 7px}
 .question-text{font-size:24px;line-height:1.35;font-weight:800;white-space:pre-wrap}
 .question-image,.answer-image,.choice-image,.match-image{max-width:100%;max-height:380px;object-fit:contain;border-radius:10px;margin-top:13px;border:1px solid var(--line)}
+.diagram-study-stage{position:relative;display:inline-block;max-width:100%;margin-top:13px;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:#0d1117}.diagram-study-stage img{display:block;max-width:100%;max-height:620px;width:auto;height:auto}.diagram-study-input{position:absolute;transform:translate(-50%,-50%);height:36px;background:#fff;color:#111;border:2px solid #2f81f7;border-radius:5px;padding:5px 7px;font-size:13px;font-weight:700;text-align:center;min-width:68px}.diagram-study-input:disabled{opacity:1}.diagram-study-input.correct{border-color:var(--good);background:#eaffef}.diagram-study-input.wrong{border-color:var(--bad);background:#ffecec}
 .answer-box{border-top:1px solid var(--line);margin-top:20px;padding-top:18px;font-size:19px;line-height:1.45;white-space:pre-wrap}
 .rating-row{display:flex;gap:8px;flex-wrap:wrap;margin-top:18px}
 .choice-list{display:grid;gap:9px;margin-top:18px}
@@ -530,7 +531,7 @@ function cards(){return (bank?.cards||[]).filter(c=>c.status!=="incomplete")}
 function cardsForGroup(id){return cards().filter(c=>c.groupId===id)}
 function groupName(id){return groups().find(g=>g.id===id)?.name||"Unknown Group"}
 function typeLabel(t){
-  return {"flashcard":"Flash Card","multiple-choice":"Multiple Choice","multiple-select":"Pick Multiple","matching":"Matching","numeric":"Type-In Answer"}[t]||t;
+  return {"flashcard":"Flash Card","multiple-choice":"Multiple Choice","multiple-select":"Pick Multiple","matching":"Matching","numeric":"Type-In Answer","image-entry":"Diagram Fill-In"}[t]||t;
 }
 function pstate(id){
   if(!state.progress[id]){
@@ -752,7 +753,7 @@ function renderCard(){
   `;
   document.getElementById("questionText").textContent=currentCard.question?.text||"";
   const qi=currentCard.question?.image;
-  document.getElementById("questionImageWrap").innerHTML=qi?`<img class="question-image" src="${qi}" alt="Question image">`:"";
+  document.getElementById("questionImageWrap").innerHTML=(qi && currentCard.type!=="image-entry")?`<img class="question-image" src="${qi}" alt="Question image">`:"";
   renderVisual();
   renderInteraction();
 }
@@ -784,6 +785,7 @@ function renderInteraction(){
   else if(currentCard.type==="multiple-select")renderChoices(el,true);
   else if(currentCard.type==="matching")renderMatching(el);
   else if(currentCard.type==="numeric")renderEntry(el);
+  else if(currentCard.type==="image-entry")renderDiagramEntry(el);
   else el.innerHTML='<div class="feedback bad">Unsupported question type.</div>';
 }
 function imageHtml(src,cls="answer-image",alt="Image"){
@@ -884,6 +886,43 @@ function renderEntry(el){
   });
   submitBtn.onclick=submit;
   setTimeout(()=>input.focus(),40);
+}
+function renderDiagramEntry(el){
+  const fields=(currentCard.diagram&&currentCard.diagram.fields)||[];
+  const img=currentCard.question&&currentCard.question.image;
+  if(!img||!fields.length){el.innerHTML='<div class="feedback bad">Diagram question is missing its image or answer boxes.</div>';return;}
+
+  el.innerHTML=`<div class="diagram-study-stage" id="diagramStudyStage"><img src="${img}" alt="Diagram question">${fields.map(f=>`<input class="diagram-study-input" data-diagram-input="${esc(f.id)}" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="input answer here" style="left:${Number(f.x)||50}%;top:${Number(f.y)||50}%;width:${Number(f.w)||18}%">`).join("")}</div><div class="rating-row"><button type="button" id="submitDiagramBtn" class="btn primary">Check Answers</button></div>`;
+
+  const submit=document.getElementById("submitDiagramBtn");
+  function accepted(raw,f){
+    const given=normalizeAnswer(raw);
+    if(!given)return false;
+    return [f.answer].concat(Array.isArray(f.accept)?f.accept:[]).some(v=>normalizeAnswer(v)===given);
+  }
+  function grade(){
+    const inputs=[...el.querySelectorAll("[data-diagram-input]")];
+    if(inputs.some(i=>!String(i.value).trim())){const blank=inputs.find(i=>!String(i.value).trim());blank.focus();return;}
+    let all=true;
+    inputs.forEach(inp=>{
+      const f=fields.find(x=>x.id===inp.dataset.diagramInput);
+      const ok=f&&accepted(inp.value,f);
+      all=all&&ok;inp.disabled=true;inp.classList.add(ok?"correct":"wrong");
+    });
+    submit.remove();
+    const fb=document.createElement("div");
+    if(all){
+      fb.innerHTML=`<div class="feedback good"><strong>Correct.</strong> All diagram fields are correct.</div>${ratingButtons(false)}`;
+      el.appendChild(fb);wireRatings(fb,["guessed","correct","confident"]);
+    }else{
+      const answers=fields.map((f,i)=>`${i+1}. ${esc(f.answer||"")}`).join("<br>");
+      fb.innerHTML=`<div class="feedback bad"><strong>Incorrect.</strong><br>${answers}</div><div class="rating-row"><button type="button" id="continueDiagramWrong" class="btn bad">Continue &mdash; Wrong</button></div>`;
+      el.appendChild(fb);fb.querySelector("#continueDiagramWrong").onclick=()=>recordAndNext("wrong");
+    }
+  }
+  submit.onclick=grade;
+  el.querySelectorAll("[data-diagram-input]").forEach((inp,idx)=>inp.addEventListener("keydown",e=>{if(e.key==="Enter"){e.preventDefault();const arr=[...el.querySelectorAll("[data-diagram-input]")];if(idx<arr.length-1)arr[idx+1].focus();else grade();}}));
+  setTimeout(()=>el.querySelector("[data-diagram-input]")?.focus(),40);
 }
 function renderFlashcard(el){
   el.innerHTML=`<div class="rating-row"><button id="showAnswerBtn" class="btn primary">Show Answer</button></div>`;
