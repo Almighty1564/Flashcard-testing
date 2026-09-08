@@ -222,6 +222,15 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
 .diagram-author-label.active{border-color:#3fb950!important;
   outline:2px solid rgba(63,185,80,.4)}
 .diagram-study-label{pointer-events:none}
+
+/* The stage takes its size from the diagram image. Until that image is there the
+   boxes have nothing to sit on, so keep them hidden rather than piled in a corner. */
+.diagram-study-stage{min-height:200px;width:100%}
+.diagram-study-stage img{width:100%;height:auto}
+.diagram-study-stage:not(.ready) .diagram-study-input,
+.diagram-study-stage:not(.ready) .diagram-study-label{visibility:hidden}
+.diagram-stage-msg{position:absolute;inset:0;display:flex;align-items:center;
+  justify-content:center;text-align:center;padding:22px;color:var(--muted);font-size:14px}
 .diagram-study-stage input.diagram-study-input,
 .diagram-author-stage input.diagram-author-field{
   background:#ffffff;
@@ -945,6 +954,22 @@ function renderDiagramEntry(el){
   if(!img||!fields.length){el.innerHTML='<div class="feedback bad">Diagram question is missing its image or answer boxes.</div>';return;}
 
   el.innerHTML=`<div class="diagram-study-stage" id="diagramStudyStage"><img src="${img}" alt="Diagram question">${labels.map(l=>`<div class="diagram-study-label" style="left:${Number(l.x)||50}%;top:${Number(l.y)||50}%;width:${Number(l.w)||20}%">${esc(l.text||"")}</div>`).join("")}${fields.map(f=>`<input class="diagram-study-input" data-diagram-input="${esc(f.id)}" type="text" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="input answer here" style="left:${Number(f.x)||50}%;top:${Number(f.y)||50}%;width:${Number(f.w)||18}%">`).join("")}</div><div class="rating-row"><button type="button" id="submitDiagramBtn" class="btn primary">Check Answers</button></div>`;
+
+  /* Only reveal the boxes once the image has real dimensions to position against. */
+  const stageEl=document.getElementById("diagramStudyStage");
+  const imgEl=stageEl&&stageEl.querySelector("img");
+  if(imgEl){
+    const ready=()=>stageEl.classList.add("ready");
+    if(imgEl.complete&&imgEl.naturalWidth>0) ready();
+    else{
+      imgEl.addEventListener("load",ready);
+      imgEl.addEventListener("error",()=>{
+        stageEl.insertAdjacentHTML("beforeend",
+          '<div class="diagram-stage-msg">The diagram image could not be loaded.'+
+          '<br>Leave the test and open it again to refresh the image link.</div>');
+      });
+    }
+  }
 
   const submit=document.getElementById("submitDiagramBtn");
   function accepted(raw,f){

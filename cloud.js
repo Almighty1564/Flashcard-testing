@@ -117,7 +117,7 @@
        that a leaked URL expires on its own. */
     var res = await client.storage
       .from(cfg.imageBucket)
-      .createSignedUrls(wanted, 3600);
+      .createSignedUrls(wanted, 28800);   // 8 hours, so a long session does not go stale
 
     if (res.error) {
       console.warn("Could not sign image URLs:", res.error.message);
