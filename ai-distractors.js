@@ -21,13 +21,13 @@
 
   /* Supabase session token, so the function can reject anonymous callers. */
   async function accessToken() {
-    try {
-      if (window.sb && window.sb.auth) {
-        var r = await window.sb.auth.getSession();
-        if (r && r.data && r.data.session) return r.data.session.access_token;
-      }
-    } catch (_) {}
-    return (window.FC_CONFIG && window.FC_CONFIG.publishableKey) || "";
+    var client = window.FC && window.FC.client;
+    if (!client || !client.auth) throw new Error("Sign in to the question studio first.");
+    var r = await client.auth.getSession();
+    if (r.error) throw r.error;
+    var token = r.data && r.data.session && r.data.session.access_token;
+    if (!token) throw new Error("Your session has ended. Sign in again to generate answers.");
+    return token;
   }
 
   /* ---- API call ---------------------------------------------------- */
@@ -103,19 +103,15 @@
     var rightText = right ? String(right.text || "").trim() : "";
     if (!rightText) { alert("Type the correct answer and mark it correct first."); return; }
 
-    /* Replace mode clears every non-correct slot before filling. */
-    if (replaceAll) {
-      draft.choices.forEach(function (c) {
-        if (!c.correct) { c.text = ""; c.image = null; c.imagePath = null; }
-      });
-    }
-
-    var slots = emptySlots();
+    /* Keep existing answers intact until generation succeeds. */
+    var slots = replaceAll ? draft.choices.filter(function (c) { return !c.correct; }) : emptySlots();
     if (!slots.length) {
       alert("No empty answer slots. Use Replace, or add more with + Add Answer.");
       return;
     }
 
+    var requestedDraft = draft;
+    var requestedState = JSON.stringify(draft);
     var btn = document.getElementById("aiDistractorBtn");
     var btnReplace = document.getElementById("aiDistractorReplaceBtn");
     var note = document.getElementById("aiDistractorNote");
@@ -126,7 +122,7 @@
     if (note) { note.textContent = "Asking the model for " + slots.length + " distractor(s)…"; }
 
     try {
-      var existing = draft.choices
+      var existing = draft.choices.filter(function (c) { return !replaceAll || c.correct; })
         .map(function (c) { return String(c.text || "").trim(); })
         .filter(Boolean);
 
@@ -135,8 +131,16 @@
 
       if (!clean.length) throw new Error("Model returned nothing usable. Try again.");
 
+      syncDraftFromForm();
+      if (draft !== requestedDraft || JSON.stringify(draft) !== requestedState) {
+        throw new Error("The question changed while answers were being generated. Your edits were kept; generate again when ready.");
+      }
+
       slots.forEach(function (slot, i) {
-        if (clean[i]) slot.text = clean[i];
+        if (clean[i]) {
+          slot.text = clean[i];
+          if (replaceAll) { slot.image = null; slot.imagePath = null; }
+        }
       });
 
       renderChoiceEditor();

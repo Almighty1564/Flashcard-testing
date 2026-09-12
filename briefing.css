@@ -1,0 +1,206 @@
+/* Daily briefing — shares the Atelier palette; no animation or external assets. */
+body[data-atelier] .b-briefing {
+  --b-text: #f4f2ef;
+  --b-muted: #b9b8c1;
+  --b-line: #393b43;
+  --b-accent: #ffab96;
+  margin: 0 0 30px;
+  overflow: hidden;
+  border: 1px solid var(--b-line);
+  border-radius: 12px;
+  background: #1d1e23;
+  color: var(--b-text);
+  font: 16px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+.b-briefing *, .b-location-dialog * { box-sizing: border-box; }
+.b-briefing button, .b-location-dialog button { font-family: inherit; cursor: pointer; }
+.b-briefing button:disabled, .b-location-dialog button:disabled { cursor: wait; opacity: .55; }
+.b-briefing button:focus-visible, .b-briefing a:focus-visible, .b-location-dialog button:focus-visible, .b-location-dialog input:focus-visible { outline: 2px solid #ffd0bc; outline-offset: 3px; }
+.b-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px 24px; padding: 22px 28px 20px; background: linear-gradient(105deg, #292528, #202126 70%); }
+.b-heading { min-width: 0; }
+.b-kicker { display: flex; align-items: center; gap: 9px; color: #c2bbc0; font: 500 14px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; letter-spacing: .1em; }
+.b-live-dot { display: inline-block; height: 6px; width: 6px; flex-shrink: 0; border-radius: 50%; background: #ff967f; }
+.b-header h2 { margin: 7px 0 0; font: 34px/1.14 Georgia, "Times New Roman", serif; letter-spacing: -.035em; color: #f4f2ef; }
+.b-location-button { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 44px; max-width: 100%; padding: 9px 13px; color: #e9e1df; background: #302c30; border: 1px solid #55434a; border-radius: 7px; font-size: 14px; font-weight: 500; line-height: 1.5; }
+.b-location-button:hover { background: #3b3033; border-color: #8b6462; }
+.b-location-button span:nth-child(2) { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.b-location-pin { font-size: 24px; line-height: 1; color: #ffad97; }
+.b-navigation { display: flex; align-items: stretch; justify-content: space-between; gap: 8px; padding: 0 22px; border-top: 1px solid #36333b; border-bottom: 1px solid var(--b-line); background: #1a1b20; }
+.b-tabs { display: flex; align-items: stretch; gap: 7px; overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin; min-width: 0; }
+.b-tab { position: relative; flex-shrink: 0; border: 0; border-bottom: 2px solid transparent; margin: 0; border-radius: 0; padding: 13px 12px 11px; min-height: 48px; color: #c1bfca; background: transparent; font-size: 14px; font-weight: 500; line-height: 1.4; white-space: nowrap; }
+.b-tab:hover { color: #fff1ed; background: #27252b; }
+.b-tab[aria-selected="true"] { border-bottom-color: #ff967f; color: #ffb4a0; background: #2c2529; }
+.b-units { align-self: center; flex: 0 0 auto; min-height: 44px; padding: 9px; border: 0; border-radius: 4px; background: transparent; color: #f4f2ef; font-size: 14px; font-weight: 600; white-space: nowrap; }
+.b-units span { color: #aaa8b3; font-weight: 400; }
+.b-units:hover { background: #30292b; }
+.b-panel { min-height: 256px; padding: 24px 28px; background: radial-gradient(ellipse at 2% 0%, #30282b 0, transparent 58%), #1d1e23; }
+.b-panel:focus { outline-offset: -4px; }
+.b-weather { display: grid; grid-template-columns: minmax(205px, .9fr) minmax(0, 1.7fr); align-items: start; gap: 18px 32px; }
+.b-weather-main { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 20px; min-width: 0; }
+.b-weather-main > .b-kicker { flex: 1 0 100%; margin-bottom: 8px; }
+.b-temperature { color: #f4f2ef; font: 76px/1 Georgia, "Times New Roman", serif; letter-spacing: -.065em; white-space: nowrap; }
+.b-temperature small, .b-temperature sup { color: #c0b9be; font: 30px/1 Georgia, serif; letter-spacing: -.02em; vertical-align: super; }
+.b-weather-icon { color: #e8ba76; font-size: 44px; line-height: 1; }
+.b-weather-condition { color: #eeebe9; font-size: 16px; line-height: 1.55; margin: 4px 0; }
+.b-weather-condition small, .b-weather-secondary { display: block; color: #bcb8c2; font-size: 14px; font-weight: 400; }
+.b-weather-advice { padding: 13px 16px; border: 1px solid #57453d; border-radius: 7px; background: #312825; color: #f0d6ca; font-size: 16px; line-height: 1.5; }
+.b-weather > .b-weather-advice { grid-column: 1 / -1; }
+.b-weather-advice strong { color: #ffb6a0; font-weight: 600; }
+.b-weather-advice p { margin: 0; }
+.b-weather-advice span[aria-hidden] { color: #ffb6a0; margin-right: 7px; }
+.b-weather-details { min-width: 0; }
+.b-weather-metrics { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 13px 18px; margin: 0; }
+.b-metric { min-width: 0; margin: 0; padding: 1px 0 2px 14px; border-left: 1px solid #48434a; }
+.b-metric dt, .b-metric > span:first-child, .b-metric small { display: block; color: #bcb8c2; font-size: 14px; font-weight: 400; line-height: 1.4; }
+.b-metric dd, .b-metric strong { display: block; color: #eae7e5; font-size: 19px; font-weight: 500; line-height: 1.45; margin: 3px 0 0; font-variant-numeric: tabular-nums; }
+.b-metric dd small, .b-metric strong small { display: inline; font-size: 14px; }
+.b-hourly { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; padding-top: 15px; margin-top: 16px; border-top: 1px solid #403c43; }
+.b-weather > .b-hourly { grid-column: 1 / -1; }
+.b-hour { display: grid; justify-items: center; gap: 4px; color: #bdb9c3; font-size: 14px; font-variant-numeric: tabular-nums; }
+.b-hour strong { color: #ede8e5; font-size: 16px; font-weight: 500; }
+.b-hour > span[aria-hidden] { font-size: 22px; line-height: 1.15; color: #e8bf85; }
+.b-hour small { color: #a6bdf7; font-size: 14px; }
+.b-weather-attribution { color: #b4b1bd; font-size: 14px; line-height: 1.5; margin: 16px 0 0; }
+.b-weather > .b-weather-attribution { grid-column: 1 / -1; margin: 0; }
+.b-briefing a { color: #e7c6bc; text-underline-offset: 3px; }
+.b-briefing a:hover { color: #ffd2c4; }
+.b-news-intro { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 16px; }
+.b-news-intro p { color: #bcb8c2; font-size: 14px; margin: 0; }
+.b-news-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 17px; }
+.b-news-card { display: flex; flex-direction: column; min-width: 0; min-height: 200px; border-left: 1px solid #47414a; padding: 0 0 0 19px; }
+.b-news-card:first-child { border-left: 0; padding-left: 0; }
+.b-news-source { color: #ffb29e; font-size: 14px; font-weight: 500; line-height: 1.45; overflow-wrap: anywhere; }
+.b-news-title { font: 23px/1.23 Georgia, "Times New Roman", serif; letter-spacing: -.02em; margin: 11px 0 17px; overflow-wrap: anywhere; }
+.b-news-title a, a.b-news-title { color: #f1ece9; text-decoration: none; }
+.b-news-title a:hover, a.b-news-title:hover { color: #ffc2ad; text-decoration: underline; }
+.b-news-card > p { color: #bfbbc4; font-size: 16px; margin: 0 0 15px; }
+.b-news-time { display: flex; align-items: center; flex-wrap: wrap; justify-content: space-between; gap: 8px; margin-top: auto; color: #b2aebc; font-size: 14px; line-height: 1.5; }
+.b-news-time a { display: inline-flex; align-items: center; gap: 7px; min-height: 44px; }
+.b-news-category { display: inline-block; border: 1px solid #50434c; border-radius: 5px; padding: 4px 8px; font-size: 14px; color: #d8c6c9; }
+.b-empty { display: flex; flex-direction: column; align-items: flex-start; justify-content: center; min-height: 205px; max-width: 650px; }
+.b-empty h3 { color: #f2eeeb; font: 30px/1.2 Georgia, serif; letter-spacing: -.025em; margin: 15px 0 10px; }
+.b-empty p { color: #c1bdc7; font-size: 16px; margin: 0 0 14px; line-height: 1.6; }
+.b-empty a, .b-empty button { display: inline-flex; align-items: center; min-height: 44px; }
+.b-sports-toolbar { display: flex; flex-wrap: wrap; gap: 8px 14px; align-items: center; margin: 0 0 17px; }
+.b-sports-toolbar > span, .b-sports-toolbar label { color: #c1bcc7; font-size: 14px; margin: 0; }
+.b-sports-region { display: flex; gap: 7px; align-items: center; flex-wrap: wrap; }
+.b-sports-region + .b-sports-region { padding-left: 14px; border-left: 1px solid #4b434d; }
+.b-sport-chip { min-height: 44px; padding: 8px 11px; font-size: 14px; line-height: 1.5; color: #d1c7ce; border: 1px solid #4e434d; background: #29252c; border-radius: 6px; }
+.b-sport-chip[aria-pressed="true"], .b-sport-chip[aria-selected="true"], .b-sport-chip.is-active { color: #ffc1ad; border-color: #a8776b; background: #3c2b29; }
+.b-sport-chip:hover { border-color: #b08175; background: #3c2d2e; color: #f5e6e1; }
+.b-sports-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; }
+.b-score-card { display: flex; flex-direction: column; min-width: 0; padding: 15px; background: #24232a; border: 1px solid #46404a; border-radius: 7px; }
+.b-score-card > header, .b-score-status { display: flex; align-items: center; gap: 7px; justify-content: space-between; color: #bbb4c1; font-size: 14px; margin: 0 0 13px; }
+.b-score-card h3 { font-size: 16px; color: #f1e8e6; font-weight: 500; margin: 0 0 9px; }
+.b-score-line { display: flex; align-items: center; justify-content: space-between; gap: 14px; color: #eee7e5; font-size: 16px; margin: 5px 0; }
+.b-score-line > span { min-width: 0; overflow-wrap: anywhere; }
+.b-score-line strong { flex-shrink: 0; font-size: 21px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.b-score-line.is-winner { color: #ffb5a0; }
+.b-score-card > footer, .b-score-note { color: #bbb4c1; font-size: 14px; margin: 10px 0 0; }
+.b-score-card a { display: inline-flex; align-items: center; min-height: 44px; font-size: 14px; margin-top: auto; }
+.b-sport-note { color: #b9b2c0; font-size: 14px; margin: 16px 0 0; }
+.b-footer { display: flex; align-items: center; justify-content: space-between; gap: 8px 22px; min-height: 57px; border-top: 1px solid #3b363e; padding: 5px 17px 5px 28px; background: #1a1b20; }
+.b-footnote { display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 10px; min-width: 0; color: #b2aebc; font-size: 14px; line-height: 1.5; }
+.b-status { color: #d7b4a8; }
+.b-status:empty { display: none; }
+.b-footer-controls { display: flex; align-items: center; gap: 2px; flex-shrink: 0; }
+.b-icon-button { display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; min-width: 44px; min-height: 44px; padding: 6px; border: 1px solid transparent; border-radius: 6px; background: transparent; color: #c4becb; font: 22px/1 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.b-icon-button:hover { border-color: #68514f; background: #312629; color: #ffbba4; }
+.b-control-divider { width: 1px; height: 20px; margin: 0 4px; background: #413b45; }
+body[data-atelier] dialog.b-location-dialog { width: min(540px, calc(100vw - 32px)); max-height: calc(100dvh - 40px); overflow-y: auto; padding: 28px; margin: auto; border: 1px solid #665050; border-radius: 12px; background: #242228; color: #f4f2ef; box-shadow: 0 20px 100px #0009; font: 16px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.b-location-dialog::backdrop { background: #0b0b10c9; }
+.b-dialog-heading { display: flex; justify-content: space-between; align-items: flex-start; gap: 18px; }
+.b-dialog-heading h2 { font: 36px/1.15 Georgia, serif; letter-spacing: -.03em; margin: 8px 0 0; color: #f3eeea; }
+.b-dialog-heading .b-icon-button { margin: -9px -9px 0 0; }
+.b-dialog-help { color: #c0b8c4; margin: 18px 0 22px; font-size: 16px; }
+.b-location-dialog .b-location-form label { display: block; color: #e1d9dd; font-size: 14px; margin: 0 0 7px; }
+.b-search-row { display: flex; align-items: stretch; gap: 8px; }
+body[data-atelier] .b-location-dialog input { min-width: 0; width: 100%; min-height: 48px; padding: 10px 12px; border: 1px solid #65545f; border-radius: 6px; color: #f4eeee; background: #1b191f; font: 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+.b-location-dialog input::placeholder { color: #afa4b1; }
+.b-button { display: inline-flex; align-items: center; justify-content: center; gap: 9px; min-height: 44px; padding: 10px 16px; border: 1px solid #ff967f; border-radius: 6px; background: #ff967f; color: #281b18; font: 600 16px/1.4 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; text-decoration: none; white-space: nowrap; }
+.b-button:hover { background: #ffb09a; border-color: #ffb09a; }
+.b-location-status { color: #e8bdac; font-size: 14px; margin: 12px 0; min-height: 21px; }
+.b-location-results { display: grid; gap: 7px; padding: 0; margin: 0; list-style: none; }
+.b-location-results button { display: block; width: 100%; padding: 12px 14px; min-height: 48px; border: 1px solid #584754; border-radius: 6px; background: #302831; color: #eee6e9; text-align: left; font-size: 16px; line-height: 1.5; }
+.b-location-results button:hover { background: #41313a; border-color: #b7897c; }
+.b-location-results small { display: block; font-size: 14px; color: #c3b7c5; }
+.b-location-alternative { display: flex; align-items: center; gap: 12px; color: #b6aab9; font-size: 14px; margin: 20px 0; }
+.b-location-alternative:before, .b-location-alternative:after { content: ""; height: 1px; flex: 1; background: #51404d; }
+.b-location-dialog .b-geolocation { width: 100%; background: #322a31; border: 1px solid #6b515a; color: #f1dfda; }
+.b-location-dialog .b-geolocation:hover { background: #413038; border-color: #a47772; }
+.b-geolocation span { font-size: 22px; line-height: 1; color: #ffb39b; }
+.b-privacy-note { color: #baafbf; font-size: 14px; line-height: 1.55; margin: 14px 0 0; }
+@media (max-width: 1120px) {
+  .b-header { padding: 20px 22px; }
+  .b-panel { padding: 22px; }
+  .b-weather { gap: 18px 20px; grid-template-columns: minmax(185px, .8fr) minmax(0, 1.4fr); }
+  .b-weather-metrics { gap: 12px 10px; }
+  .b-metric { padding-left: 10px; }
+  .b-news-title { font-size: 21px; }
+  .b-news-card { padding-left: 15px; }
+  .b-navigation { padding: 0 14px; }
+  .b-tabs { gap: 0; }
+  .b-tab { padding-left: 11px; padding-right: 11px; }
+  .b-footer { padding-left: 22px; }
+}
+@media (max-width: 850px) and (min-width: 761px), (max-width: 610px) {
+  .b-weather { grid-template-columns: 1fr; gap: 19px; }
+  .b-weather-main { flex-wrap: nowrap; gap: 15px; }
+  .b-weather-main > .b-kicker { display: none; }
+  .b-temperature { font-size: 66px; }
+  .b-weather-details { padding-top: 17px; border-top: 1px solid #443c44; }
+  .b-news-grid { grid-template-columns: 1fr; gap: 20px; }
+  .b-news-card { min-height: 0; border-left: 0; border-top: 1px solid #49404a; padding: 18px 0 0; }
+  .b-news-card:first-child { border-top: 0; padding-top: 0; }
+  .b-news-title { font-size: 25px; margin: 8px 0 9px; }
+  .b-news-time { justify-content: flex-start; gap: 18px; }
+  .b-sports-grid { grid-template-columns: 1fr; }
+  .b-sports-region + .b-sports-region { padding-left: 0; border: 0; }
+  .b-sports-region { width: 100%; }
+}
+@media (max-width: 610px) {
+  .b-header { padding: 20px 19px 17px; }
+  .b-header h2 { font-size: 32px; }
+  .b-kicker { font-size: 14px; letter-spacing: .055em; }
+  .b-location-button { margin-top: 2px; }
+  .b-navigation { padding: 0 8px; }
+  .b-tab { padding: 12px 10px 10px; }
+  .b-units { padding: 8px 7px; }
+  .b-panel { padding: 20px 19px; }
+  .b-weather-metrics { gap: 15px 8px; }
+  .b-metric dd, .b-metric strong { font-size: 18px; }
+  .b-hourly { gap: 3px; }
+  .b-news-intro { align-items: flex-start; flex-wrap: wrap; }
+  .b-footer { align-items: flex-start; padding: 7px 8px 7px 18px; gap: 8px; }
+  .b-footnote { font-size: 14px; padding: 8px 0; }
+  .b-footer-controls { gap: 0; }
+  .b-control-divider { margin: 0 1px; }
+  .b-empty { min-height: 195px; }
+  .b-empty h3 { font-size: 28px; }
+  body[data-atelier] dialog.b-location-dialog { padding: 23px 20px; }
+  .b-dialog-heading h2 { font-size: 32px; }
+}
+@media (forced-colors: active) {
+  .b-tab[aria-selected="true"] { border-bottom-color: Highlight; }
+  .b-live-dot { background: CanvasText; }
+  .b-location-dialog::backdrop { background: Canvas; opacity: .8; }
+}
+.b-weather-main { display: block; }
+.b-temperature-row { display: flex; align-items: center; gap: 24px; margin: 14px 0 12px; }
+.b-weather-range { color: #bcb8c2; font-size: 14px; line-height: 1.7; margin: 4px 0 0; }
+.b-weather-advice { display: flex; align-items: flex-start; gap: 12px; }
+.b-advice-icon { font-size: 23px; line-height: 1.2; }
+.b-weather-advice .b-kicker { font-size: 12px; margin-bottom: 6px; }
+.b-weather-attribution { display: flex; justify-content: space-between; gap: 10px 20px; flex-wrap: wrap; }
+.b-slide-heading { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px 20px; margin: 0 0 23px; }
+.b-slide-heading h3 { font: 29px/1.18 Georgia,serif; letter-spacing: -.025em; margin: 7px 0 0; color: #f4f2ef; }
+.b-slide-heading .b-kicker { font-size: 12px; }
+.b-news-source { display: flex; justify-content: space-between; gap: 12px; }
+.b-news-source>span:last-child { color: #b9b8c1; font-size: 12px; }
+.b-location-result strong,.b-location-result span { display: block; }
+.b-location-result span { color: #c3b7c5; font-size: 14px; }
+.b-privacy-note a { color: #f0c4b4; text-underline-offset: 3px; }
+.b-reset-location { min-height: 44px; margin-top: 16px; color: #e2c3b8; background: transparent; border: 0; padding: 10px 0; font-size: 14px; text-decoration: underline; text-underline-offset: 3px; }
+.b-start-learning { margin-top: 12px; }
+.b-briefing a.b-button { color: #281b18; }
+@media(max-width:610px){.b-temperature-row{margin-top:2px}.b-weather-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.b-hourly{overflow-x:auto;grid-template-columns:repeat(6,minmax(48px,1fr));padding-bottom:7px}.b-hour small{font-size:12px}.b-slide-heading h3{font-size:26px}.b-news-source>span:last-child{display:none}}

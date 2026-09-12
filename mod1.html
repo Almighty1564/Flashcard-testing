@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>MOD 1 • Tester</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Study space · Atelier</title>
 <style>
 :root{
  --bg:#0d1117;--panel:#161b22;--panel2:#0f141b;--line:#30363d;--text:#e6edf3;
@@ -263,18 +263,23 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
 }
 </style>
 <link rel="stylesheet" href="./theme.css?v=4">
+<meta name="theme-color" content="#191a1e">
+<link rel="stylesheet" href="./atelier.css?v=1">
+<script src="./atelier-shell.js?v=1" defer></script>
 </head>
-<body>
+<body data-atelier="" data-page="study">
+<noscript><p class="atelier-noscript">JavaScript is needed for this interactive workspace. Enable JavaScript, then reload this page.</p></noscript>
 <div class="shell">
 <aside class="sidebar" id="fcSidebar">
   <div class="brand">
+    <div class="atelier-eyebrow">t08 / Atelier</div>
     <div class="brand-mark">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
         <path d="M22 8.5 12 3 2 8.5l10 5.5 10-5.5Z"/><path d="M6 11v5.5c0 1.4 2.7 2.5 6 2.5s6-1.1 6-2.5V11"/>
       </svg>
-      <h1 id="brandName">Stud--</h1>
+      <h1 id="brandName">Study space</h1>
     </div>
-    <div class="build"><span id="sideModule">MOD 1</span> • TESTER MODE</div>
+    <div class="build"><span id="sideModule">MOD 1</span> · LEARNING</div>
   </div>
 
   <div class="ring-card">
@@ -397,23 +402,23 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
   </details>
 </aside>
 <button id="sidebarToggle" class="side-toggle" type="button"
-        aria-controls="fcSidebar" aria-expanded="true" title="Hide panel">
+        aria-controls="fcSidebar" aria-expanded="true" aria-label="Toggle study panel" title="Hide panel">
   <span class="chev">&#10094;</span>
 </button>
 
 
-<main class="main">
+<main class="main" id="atelierMain" tabindex="-1">
 <a class="back-modules" href="./tester.html?v=8">← Back to Modules</a>
   <div class="topbar">
     <div>
-      <h2 id="pageTitle">Question Bank Study Program</h2>
-      <div id="pageSub" class="muted">Loading your module…</div>
+      <h2 id="pageTitle">Your study session</h2>
+      <div id="pageSub" class="muted" role="status">Loading your module…</div>
     </div>
   </div>
 
   <section id="lockedView" class="panel">
     <h3>Loading your module</h3>
-    <p class="muted" id="lockedText">
+    <p class="muted" id="lockedText" role="status">
       Questions and progress are being read from your account. Use
       <strong>Refresh From Cloud</strong> to reload them at any time.
     </p>
@@ -440,6 +445,7 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
       <div id="reportBox" class="report-box hidden">
         <h4>Report a problem</h4>
         <div class="muted small">Goes straight to the developer with the question attached.</div>
+        <label class="atelier-sr-only" for="reportReason">Report reason</label>
         <select id="reportReason">
           <option value="">What is wrong with it?</option>
           <option value="wrong-answer">The marked answer is wrong</option>
@@ -449,12 +455,13 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
           <option value="unclear">Question is unclear or ambiguous</option>
           <option value="other">Something else</option>
         </select>
+        <label class="atelier-sr-only" for="reportDetails">Additional details (optional)</label>
         <textarea id="reportDetails" placeholder="Optional — what should it say instead?"></textarea>
         <div class="rating-row">
           <button id="reportCancelBtn" class="btn">Cancel</button>
           <button id="reportSendBtn" class="btn warn">Send Report</button>
         </div>
-        <div id="reportStatus" class="small muted" style="margin-top:8px"></div>
+        <div role="status" id="reportStatus" class="small muted" style="margin-top:8px"></div>
       </div>
       <div class="rating-row">
         <button id="exitSessionBtn" class="btn">← Exit test</button>

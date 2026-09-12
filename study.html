@@ -1,6 +1,6 @@
-<!doctype html><html><head><title>Study</title>
+<!doctype html><html lang="en"><head><title>Classic study · Atelier</title>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <style>
 :root{--bg:#0d1117;--panel:#161b22;--panel2:#0f141b;--line:#30363d;--text:#e6edf3;--muted:#8b949e;--blue:#2f81f7;--green:#238636;--red:#da3633;--yellow:#9e6a03}
 *{box-sizing:border-box}
@@ -19,11 +19,12 @@ button,.btn{border:1px solid var(--line);background:#21262d;color:var(--text);bo
 code{background:#0d1117;border:1px solid var(--line);padding:2px 5px;border-radius:5px}
 </style>
 <link rel="stylesheet" href="./theme.css?v=4">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4"></script>
+<script src="./supabase-config.js?v=9"></script>
+<script src="./cloud.js?v=9"></script>
 <script>
-const SUPABASE_URL = "https://semtnzdzpluhnkzxkquk.supabase.co";
-const SUPABASE_KEY = "sb_publishable__iTA6kUw3yTS1f2W0kfOig_alnmzLcz";
-const sb = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// Share the portal session and project configuration with every other page.
+const sb = FC.client;
 
 function internalEmail(username){
   return String(username||"").trim().toLowerCase()+"@flashcard.invalid";
@@ -43,12 +44,16 @@ async function logout(){
   location.href="./index.html";
 }
 </script>
-</head><body><main>
-<div class="top"><div><h1 id="title">Study</h1><div id="status" class="muted"></div></div><div class="row"><a class="btn" href="./tester.html">← Modules</a><button onclick="logout()">Sign Out</button></div></div>
-<div id="loading" class="card">Loading...</div>
+<meta name="theme-color" content="#191a1e">
+<link rel="stylesheet" href="./atelier.css?v=1">
+<script src="./atelier-shell.js?v=1" defer></script>
+</head><body data-atelier="" data-page="legacy-study">
+<noscript><p class="atelier-noscript">JavaScript is needed for this interactive workspace. Enable JavaScript, then reload this page.</p></noscript><main id="atelierMain" tabindex="-1">
+<div class="top"><div><h1 id="title">Study</h1><div id="status" class="muted" role="status"></div></div><div class="row"><a class="btn" href="./tester.html">← Modules</a><button onclick="logout()">Sign Out</button></div></div>
+<div id="loading" class="card" role="status">Opening your study space…</div>
 <div id="app" class="hidden">
  <div class="card">
-  <div class="field"><label>GROUP</label><select id="groupSelect"></select></div>
+  <div class="field"><label for="groupSelect">GROUP</label><select id="groupSelect"></select></div>
   <div class="row">
    <button class="primary" id="startDue">Study Due Cards</button>
    <button id="startAll">Study All</button>
@@ -125,7 +130,7 @@ function start(mode){
  r=await sb.from("question_groups").select("id,name,sort_order").eq("module_id",moduleRow.id).order("sort_order"); if(r.error) throw r.error; groups=r.data||[];
  r=await sb.from("questions").select("id,group_id,question_type,question_text,answer_data,sort_order").eq("module_id",moduleRow.id).eq("is_active",true).order("sort_order"); if(r.error) throw r.error; questions=r.data||[];
  r=await sb.from("card_progress").select("*").eq("user_id",user.id); if(r.error) throw r.error; (r.data||[]).forEach(p=>progress[p.question_id]=p);
- document.getElementById("groupSelect").innerHTML='<option value="">All Groups</option>'+groups.map(g=>`<option value="${g.id}">${g.name}</option>`).join("");
+ document.getElementById("groupSelect").replaceChildren(new Option("All Groups", ""), ...groups.map(g=>new Option(g.name, g.id)));
  document.getElementById("status").textContent=`${groups.length} groups • ${questions.length} questions • progress saved to cloud`;
  document.getElementById("loading").classList.add("hidden"); document.getElementById("app").classList.remove("hidden");
  document.getElementById("startDue").onclick=()=>start("due"); document.getElementById("startAll").onclick=()=>start("all");

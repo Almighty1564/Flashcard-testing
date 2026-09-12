@@ -1,210 +1,64 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Choose Module</title>
-<style>
-:root{--bg:#0d1117;--panel:#161b22;--line:#30363d;--text:#e6edf3;--muted:#8b949e;--blue:#2f81f7}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
-main{max-width:1000px;margin:55px auto;padding:20px}
-.top{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:22px}
-h1{margin:0}
-.back{color:var(--text);text-decoration:none;background:#21262d;border:1px solid var(--line);padding:9px 12px;border-radius:9px;font-weight:800}
-.mods{display:flex;flex-wrap:wrap;justify-content:center;align-content:flex-start;gap:16px}
-.mod{
-  flex:1 1 210px;max-width:300px;min-width:190px;
-  min-height:150px;padding:16px;background:var(--panel);border:2px solid var(--line);border-radius:14px;
-  text-decoration:none;color:var(--text);display:flex;align-items:center;justify-content:center;
-  flex-direction:column;font-size:24px;font-weight:900;
-  text-align:center;line-height:1.2;overflow-wrap:anywhere;hyphens:auto
-}
-.mods-empty{
-  flex:1 1 100%;max-width:520px;margin:0 auto;padding:34px 22px;text-align:center;
-  background:var(--panel);border:1px dashed var(--line);border-radius:14px
-}
-.mods-empty strong{display:block;font-size:18px;margin-bottom:6px}
-.mods-empty span{color:var(--muted);font-size:14px}
-.mod:hover{border-color:var(--blue);background:#142033}
-.mod small{font-size:12px;color:var(--muted);margin-top:7px;font-weight:600}
-
-.access-lock{
-  max-width:430px;margin:90px auto;padding:24px;background:#161b22;
-  border:1px solid #30363d;border-radius:14px;color:#e6edf3;
-  font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif
-}
-.access-lock h1{margin:0 0 8px;font-size:24px}
-.access-lock p{color:#8b949e;margin:0 0 16px}
-.access-lock input{
-  width:100%;box-sizing:border-box;padding:11px;background:#0d1117;color:#e6edf3;
-  border:1px solid #30363d;border-radius:9px;font:inherit;margin-bottom:10px
-}
-.access-lock button{
-  width:100%;padding:11px;background:#2f81f7;color:white;border:1px solid #388bfd;
-  border-radius:9px;font:inherit;font-weight:800;cursor:pointer
-}
-.access-lock-error{color:#f85149;font-size:12px;margin-top:10px;min-height:17px}
-.access-locked{display:none!important}
-.mod-user{color:var(--muted);font-size:12px;font-weight:700}
-
-
-[hidden]{display:none!important}
-.mod.disabled{opacity:.45;cursor:not-allowed;pointer-events:none}
-.access-lock{max-width:430px;margin:90px auto;padding:24px;background:#161b22;border:1px solid #30363d;border-radius:14px;color:#e6edf3;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
-.access-lock h1{margin:0 0 8px;font-size:24px}.access-lock p{color:#8b949e;margin:0 0 16px}.access-lock input{width:100%;box-sizing:border-box;padding:11px;background:#0d1117;color:#e6edf3;border:1px solid #30363d;border-radius:9px;font:inherit;margin-bottom:10px}.access-lock button{width:100%;padding:11px;background:#2f81f7;color:white;border:1px solid #388bfd;border-radius:9px;font:inherit;font-weight:800;cursor:pointer}.access-lock-error{color:#f85149;font-size:12px;margin-top:10px;min-height:17px}
-</style>
-<link rel="stylesheet" href="./theme.css?v=4">
-</head>
-<body>
-<div id="testerLock" class="access-lock" hidden>
-  <h1>Tester Access</h1>
-  <div style="color:#2f81f7;font-size:11px;font-weight:800;margin-bottom:8px">CLOUD BUILD V8</div>
-  <p>Sign in with your tester username and password.</p>
-  <input id="testerUsernameInput" type="text" autocomplete="username" placeholder="Username">
-  <input id="testerPasswordInput" type="password" autocomplete="current-password" placeholder="Password">
-  <button id="testerUnlockBtn" type="button">Sign In</button>
-  <div id="testerLockError" class="access-lock-error"></div>
-</div>
-
-
-<div id="testerApp" hidden>
-<main>
-  <div class="top">
-    <h1>Choose Module</h1>
-    <div style="display:flex;gap:10px;align-items:center">
-      <span id="whoami" class="mod-user"></span>
-      <button id="signOutBtn" type="button" class="back" style="cursor:pointer">Sign out</button>
-      <a id="backToModes" class="back" href="./index.html" hidden>&#8592; Back</a>
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#101115"><meta name="description" content="Your Tomato08 learning modules, flashcards, and practice tests."><title>Learning / Atelier</title><link rel="stylesheet" href="atelier.css?v=1"><link rel="stylesheet" href="portal.css?v=1"><link rel="stylesheet" href="briefing.css?v=1"></head>
+<body data-atelier data-page="modules">
+<a class="p-skip" href="#content">Skip to content</a>
+<div class="p-shell">
+ <aside class="p-sidebar" id="workspaceNav" aria-label="Workspace navigation"><a class="p-brand" href="./index.html"><span class="p-monogram">t<span>08</span></span><span>ATELIER<small>BY TOMATO08</small></span></a><div class="p-space"><span class="p-avatar" data-avatar>08</span><span>Your space<small>Learning workspace</small></span></div><div class="p-nav-label">WORKSPACE</div><nav><a class="p-nav" href="./index.html"><span aria-hidden="true">⌂</span>Overview</a><a class="p-nav active" href="./tester.html" aria-current="page"><span aria-hidden="true">▤</span>Learning</a><a class="p-nav" href="./developer.html" data-developer hidden><span aria-hidden="true">◇</span>Question studio</a></nav><div class="p-sidebar-foot"><span class="p-small-label">TOMATO08 / ATELIER</span><p>Small steps.<br>Lasting knowledge.</p><span class="p-muted" id="sidebarAccount">Your learning workspace</span></div></aside>
+ <div class="p-main-shell"><header class="p-topbar"><button class="p-menu" id="menuButton" aria-label="Toggle navigation" aria-controls="workspaceNav" aria-expanded="false">☰</button><div class="p-breadcrumb">Your space <span>/</span> <strong>Learning</strong></div><div class="p-top-actions"><span class="p-account" id="whoami"></span><button class="p-button" id="signOutBtn" type="button" hidden>Sign out</button></div></header>
+ <main class="p-content" id="content" tabindex="-1">
+  <section id="testerLock" class="p-standalone-lock" aria-labelledby="accessTitle"><span class="p-eyebrow">YOUR LEARNING SPACE</span><h1 id="accessTitle">Welcome back.</h1><p class="p-muted">Sign in to open your modules and saved progress.</p><form id="signInForm"><label for="testerUsernameInput">Username</label><input id="testerUsernameInput" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required><label for="testerPasswordInput">Password</label><input id="testerPasswordInput" name="password" type="password" autocomplete="current-password" required><button id="testerUnlockBtn" class="p-button primary" type="submit">Enter your workspace <span aria-hidden="true">↗</span></button><p id="testerLockError" class="p-error" role="alert"></p></form><p id="sessionStatus" class="p-checking" role="status">Checking your session…</p></section>
+  <section id="testerApp" hidden aria-labelledby="learningTitle"><div class="p-page-heading"><div><span class="p-eyebrow">LEARNING / YOUR COLLECTION</span><h1 id="learningTitle">A little further, every day.</h1></div><a id="backToModes" class="p-subtle-link" href="./index.html" hidden>Back to overview ↗</a></div>
+<section class="b-briefing" id="dailyBriefing" aria-labelledby="briefingTitle">
+  <header class="b-header">
+    <div class="b-heading">
+      <span class="b-kicker">A MOMENT OUTSIDE</span>
+      <h2 id="briefingTitle">Your daily briefing.</h2>
     </div>
+    <button class="b-location-button" id="briefingLocationButton" type="button" aria-haspopup="dialog" aria-controls="briefingLocationDialog"><span class="b-location-pin" aria-hidden="true">⌖</span><span id="briefingLocationLabel">Fayetteville, NC</span><span aria-hidden="true">⌄</span></button>
+  </header>
+  <div class="b-navigation">
+    <div class="b-tabs" role="tablist" aria-label="Daily briefing sections">
+      <button class="b-tab" id="briefingTabWeather" type="button" role="tab" data-briefing-tab="weather" aria-controls="briefingPanel" aria-selected="true" tabindex="0">Weather</button>
+      <button class="b-tab" id="briefingTabLocal" type="button" role="tab" data-briefing-tab="local" aria-controls="briefingPanel" aria-selected="false" tabindex="-1">Local</button>
+      <button class="b-tab" id="briefingTabUs" type="button" role="tab" data-briefing-tab="us" aria-controls="briefingPanel" aria-selected="false" tabindex="-1">United States</button>
+      <button class="b-tab" id="briefingTabWorld" type="button" role="tab" data-briefing-tab="world" aria-controls="briefingPanel" aria-selected="false" tabindex="-1">World</button>
+      <button class="b-tab" id="briefingTabSports" type="button" role="tab" data-briefing-tab="sports" aria-controls="briefingPanel" aria-selected="false" tabindex="-1">Sports</button>
+    </div>
+    <button class="b-units" id="briefingUnits" type="button" aria-label="Weather units, currently Fahrenheit. Switch to Celsius.">°F <span aria-hidden="true">/ °C</span></button>
   </div>
-
-  <div class="mods" id="modList">
-    <div class="mod disabled">Loading<small>Reading your modules</small></div>
+  <div class="b-panel" id="briefingPanel" role="tabpanel" tabindex="0" aria-labelledby="briefingTabWeather" aria-busy="true">
+    <div class="b-empty"><span class="b-kicker">WEATHER / FAYETTEVILLE</span><h3>A look at the day ahead.</h3><p>Loading current conditions and your forecast…</p></div>
   </div>
-</main>
+  <footer class="b-footer">
+    <div class="b-footnote"><span id="briefingUpdated">Waiting for an update</span><span class="b-status" id="briefingStatus" role="status" aria-live="polite"></span></div>
+    <div class="b-footer-controls">
+      <button class="b-icon-button" id="briefingRefresh" type="button" aria-label="Refresh current briefing"><span aria-hidden="true">↻</span></button>
+      <span class="b-control-divider" aria-hidden="true"></span>
+      <button class="b-icon-button" id="briefingPrevious" type="button" aria-label="Previous briefing section"><span aria-hidden="true">←</span></button>
+      <button class="b-icon-button" id="briefingNext" type="button" aria-label="Next briefing section"><span aria-hidden="true">→</span></button>
+    </div>
+  </footer>
+</section>
+<dialog class="b-location-dialog" id="briefingLocationDialog" aria-labelledby="briefingLocationTitle" aria-describedby="briefingLocationHelp">
+  <div class="b-dialog-heading"><div><span class="b-kicker">MAKE IT LOCAL</span><h2 id="briefingLocationTitle">Where are you?</h2></div><button class="b-icon-button" id="briefingLocationClose" type="button" aria-label="Close location settings">×</button></div>
+  <p class="b-dialog-help" id="briefingLocationHelp">Choose a city for your weather and local headlines.</p>
+  <form id="briefingLocationForm" class="b-location-form">
+    <label for="briefingCitySearch">City or town</label>
+    <div class="b-search-row"><input id="briefingCitySearch" name="city" type="search" autocomplete="off" placeholder="Fayetteville, North Carolina" minlength="2" maxlength="100" required><button class="b-button" type="submit">Search</button></div>
+  </form>
+  <p class="b-location-status" id="briefingLocationStatus" role="status" aria-live="polite"></p>
+  <ul class="b-location-results" id="briefingLocationResults" aria-label="Matching locations"></ul>
+  <div class="b-location-alternative"><span>or</span></div>
+  <button class="b-button b-geolocation" id="briefingUseLocation" type="button"><span aria-hidden="true">⌖</span>Use my location</button>
+  <p class="b-privacy-note">Your browser asks permission first. Rounded coordinates go to <a href="https://www.bigdatacloud.com/docs/article/why-is-reverse-geocoding-api-free" target="_blank" rel="noopener noreferrer">BigDataCloud</a> to find your city and to Open-Meteo for weather. BigDataCloud uses location/IP pairs to improve geolocation. Only this browser remembers your selected area.</p><p class="b-privacy-note">City search: <a href="https://open-meteo.com/en/docs/geocoding-api" target="_blank" rel="noopener noreferrer">Open-Meteo / GeoNames</a>. News services receive your city name, never your coordinates or account details.</p><button type="button" class="b-reset-location" id="briefingResetLocation">Forget saved area · reset to Fayetteville</button>
+</dialog>
 
-</div>
-
-
-
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="./supabase-config.js?v=9"></script>
-<script src="./cloud.js?v=9"></script>
-<script>
-(function(){
-  const lock=document.getElementById("testerLock");
-  const app=document.getElementById("testerApp");
-  const user=document.getElementById("testerUsernameInput");
-  const pass=document.getElementById("testerPasswordInput");
-  const error=document.getElementById("testerLockError");
-  const list=document.getElementById("modList");
-
-  function esc(v){
-    return String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
-  }
-  function showLock(msg){
-    app.hidden=true;
-    lock.hidden=false;
-    error.textContent=msg||"";
-    user.focus();
-  }
-  function showApp(){
-    lock.hidden=true;
-    app.hidden=false;
-  }
-
-  async function renderModules(){
-    list.innerHTML='<div class="mod disabled">Loading<small>Reading your modules</small></div>';
-    let modules=[];
-    try{
-      modules=(await FC.listModules()).filter(m=>m.is_published);
-    }catch(e){
-      list.innerHTML='<div class="mod disabled">Unavailable<small>'+esc(e.message||"Could not load modules")+'</small></div>';
-      return;
-    }
-
-    if(!modules.length){
-      list.innerHTML='<div class="mods-empty"><strong>No modules published yet</strong>'+
-        '<span>Publish a module in the developer builder and it will appear here.</span></div>';
-      return;
-    }
-
-    list.innerHTML=modules.map(m=>
-      '<a class="mod" href="./mod1.html?module='+encodeURIComponent(m.slug)+'">'+esc(m.name)+'<small>Open Test</small></a>'
-    ).join("");
-  }
-
-  async function enter(profile){
-    document.getElementById("whoami").textContent=profile.username?("Signed in as "+profile.username):"Signed in";
-    /* Only developers get a route back to the mode picker. */
-    document.getElementById("backToModes").hidden = (profile.role !== "developer");
-    showApp();
-    await renderModules();
-  }
-
-  async function signIn(){
-    error.textContent="";
-    try{
-      await FC.signIn(user.value,pass.value);
-      const profile=await FC.getProfile();
-      pass.value="";
-      await enter(profile);
-    }catch(e){
-      await FC.signOut();
-      showLock(e.message||"Sign in failed.");
-      pass.select();
-    }
-  }
-
-  document.getElementById("testerUnlockBtn").addEventListener("click",signIn);
-  [user,pass].forEach(el=>el.addEventListener("keydown",e=>{if(e.key==="Enter")signIn()}));
-  document.getElementById("signOutBtn").addEventListener("click",async()=>{
-    await FC.signOut();
-    user.value="";pass.value="";
-    showLock("");
-  });
-
-  (async function boot(){
-    let profile=null;
-    try{ profile=await FC.requireUser(); }catch(_){ profile=null; }
-    if(profile) await enter(profile); else showLock("");
-  })();
-
-  /* Safari restores this page from the back/forward cache without re-running
-     boot(). Re-check the role so the Back link cannot linger for a tester. */
-  window.addEventListener("pageshow", async function(e){
-    if(!e.persisted) return;
-    try{
-      const p = await FC.requireUser();
-      document.getElementById("backToModes").hidden = !p || p.role !== "developer";
-    }catch(_){
-      document.getElementById("backToModes").hidden = true;
-    }
-  });
-})();
-</script>
-
-<script>
-(function(){
-  const HEARTBEAT_MS = 30000;
-  let timer = null;
-  async function beat(){
-    try{
-      if(!window.FC || !FC.client) return;
-      const { data:{ user } } = await FC.client.auth.getUser();
-      if(!user) return;
-      await FC.client.from("presence").upsert(
-        { user_id: user.id, last_seen_at: new Date().toISOString() },
-        { onConflict: "user_id" }
-      );
-    }catch(_){}
-  }
-  function start(){ if(timer) return; beat(); timer=setInterval(beat,HEARTBEAT_MS); }
-  function stop(){ clearInterval(timer); timer=null; }
-  document.addEventListener("visibilitychange",()=>{ document.hidden ? stop() : start(); });
-  start();
-})();
-</script>
-</body>
-</html>
+   <section id="moduleCollection" aria-labelledby="modulesTitle"><div class="p-section-heading"><div><h2 id="modulesTitle">Your modules <span class="p-count" id="moduleCount">—</span></h2><p class="p-muted">Find your next focus.</p><a class="p-button primary b-start-learning" id="firstModuleLink" href="#moduleCollection" hidden>Start learning ↗</a></div><label class="p-filter"><span aria-hidden="true">⌕</span><span class="p-sr-only">Find a module</span><input id="moduleSearch" type="search" placeholder="Find a module…" autocomplete="off"></label></div><p class="p-sr-only" id="moduleStatus" role="status" aria-live="polite"></p><div class="p-modules" id="modList" aria-busy="true"><div class="p-empty"><h3>Opening your collection…</h3><p>Loading your published modules.</p></div></div></section>
+   <div class="p-study-notes"><div><span>01</span><h3>Study with intention</h3><p>Review flashcards and choose the groups you want to work on.</p></div><div><span>02</span><h3>Put it into practice</h3><p>Build a custom test and see where your understanding stands.</p></div><div><span>03</span><h3>Keep moving forward</h3><p>Your study history and card progress follow your account.</p></div></div>
+  </section>
+ </main><footer class="p-footer"><span>A place to think. A place to learn.</span><span>Tomato08 / Atelier</span></footer></div>
+</div><noscript><p class="p-no-script">JavaScript is required to sign in and study.</p></noscript>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script><script src="./supabase-config.js?v=9"></script><script src="./cloud.js?v=9"></script><script src="./atelier-portal.js?v=1"></script>
+<script src="./briefing-data.js?v=1"></script><script src="./briefing.js?v=1"></script>
+</body></html>

@@ -2,144 +2,42 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Flashcard Portal • V8</title>
-<style>
-:root{--bg:#0d1117;--panel:#161b22;--line:#30363d;--text:#e6edf3;--muted:#8b949e;--blue:#2f81f7;--green:#238636}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
-[hidden]{display:none!important}
-
-/* --- sign in --- */
-.gate{max-width:430px;margin:90px auto;padding:24px;background:var(--panel);
-  border:1px solid var(--line);border-radius:14px}
-.gate h1{margin:0 0 8px;font-size:24px}
-.gate .build{color:var(--blue);font-size:11px;font-weight:800;margin-bottom:8px;letter-spacing:.06em}
-.gate p{color:var(--muted);margin:0 0 16px}
-.gate input{width:100%;padding:11px;background:var(--bg);color:var(--text);
-  border:1px solid var(--line);border-radius:9px;font:inherit;margin-bottom:10px}
-.gate button{width:100%;padding:11px;background:var(--blue);color:#fff;border:1px solid #388bfd;
-  border-radius:9px;font:inherit;font-weight:800;cursor:pointer}
-.gate button[disabled]{opacity:.6;cursor:default}
-.gate-error{color:#f85149;font-size:12px;margin-top:10px;min-height:17px}
-
-/* --- choose mode (developer only) --- */
-main{max-width:850px;margin:80px auto;padding:20px}
-.top{display:flex;align-items:center;justify-content:center;gap:12px;
-  flex-wrap:wrap;margin-bottom:28px}
-h2.title{text-align:center;margin:0;font-size:30px;flex:1 1 100%}
-.who{color:var(--muted);font-size:12px;font-weight:700}
-.signout{background:#21262d;border:1px solid var(--line);color:var(--text);
-  padding:8px 12px;border-radius:9px;font:inherit;font-weight:700;cursor:pointer}
-.choices{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-.choice{min-height:260px;border-radius:18px;text-decoration:none;color:#fff;
-  display:flex;align-items:center;justify-content:center;flex-direction:column;
-  font-weight:900;font-size:34px;border:1px solid rgba(255,255,255,.15)}
-.choice span{font-size:58px;margin-bottom:12px}
-.tester{background:var(--blue)}
-.developer{background:var(--green)}
-.choice:hover{filter:brightness(1.08)}
-@media(max-width:650px){.choices{grid-template-columns:1fr}.choice{min-height:190px}}
-</style>
-<link rel="stylesheet" href="./theme.css?v=4">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#101115">
+<meta name="description" content="Tomato08 Atelier. Your learning workspace for flashcards, practice tests, and question building.">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>Atelier / Tomato08</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23101115'/%3E%3Ctext x='10' y='44' font-size='34' font-family='Georgia' fill='%23ff806a'%3E08%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="atelier.css?v=1"><link rel="stylesheet" href="portal.css?v=1">
 </head>
-<body>
-
-<!-- Everyone lands here first. -->
-<div id="gate" class="gate" hidden>
-  <h1>Sign In</h1>
-  <div class="build">CLOUD BUILD V8</div>
-  <p>Enter your username and password.</p>
-  <input id="userInput" type="text" autocomplete="username" placeholder="Username">
-  <input id="passInput" type="password" autocomplete="current-password" placeholder="Password">
-  <button id="signInBtn" type="button">Sign In</button>
-  <div id="gateError" class="gate-error"></div>
+<body data-atelier data-page="portal">
+<a class="p-skip" href="#content">Skip to content</a>
+<div class="p-shell">
+ <aside class="p-sidebar" id="workspaceNav" aria-label="Workspace navigation">
+  <a class="p-brand" href="./index.html"><span class="p-monogram">t<span>08</span></span><span>ATELIER<small>BY TOMATO08</small></span></a>
+  <div class="p-space"><span class="p-avatar" data-avatar>08</span><span>Your space<small>Learning workspace</small></span></div>
+  <div class="p-nav-label">WORKSPACE</div>
+  <nav><a class="p-nav active" href="./index.html" aria-current="page"><span aria-hidden="true">⌂</span>Overview</a><a class="p-nav" href="./tester.html"><span aria-hidden="true">▤</span>Learning</a><a class="p-nav" href="./developer.html" data-developer hidden><span aria-hidden="true">◇</span>Question studio</a></nav>
+  <div class="p-sidebar-foot"><span class="p-small-label">TOMATO08 / ATELIER</span><p>A place to think.<br>A place to learn.</p><span class="p-muted">Your progress. Your pace.</span></div>
+ </aside>
+ <div class="p-main-shell">
+  <header class="p-topbar"><button class="p-menu" id="menuButton" aria-label="Toggle navigation" aria-controls="workspaceNav" aria-expanded="false">☰</button><div class="p-breadcrumb">Your space <span>/</span> <strong>Overview</strong></div><span class="p-top-caption">LEARN SOMETHING WELL.</span></header>
+  <main class="p-content" id="content" tabindex="-1">
+   <section id="gate" class="p-welcome-grid" aria-labelledby="welcomeTitle">
+    <div class="p-welcome-art"><img src="assets/atelier.png" alt="Sculptural red and blue folded forms in a dark architectural gallery" width="1536" height="1024" fetchpriority="high"><div class="p-art-copy"><span class="p-eyebrow">THE LEARNING ATELIER</span><h1 id="welcomeTitle">Make room<br>for discovery.</h1><p>A little curiosity.<br>A deeper understanding.</p></div><span class="p-art-number" aria-hidden="true">01 / A SPACE TO GROW</span></div>
+    <div class="p-signin-panel"><span class="p-eyebrow">WELCOME BACK</span><h2>Pick up where<br>you left off.</h2><p class="p-muted">Sign in to your learning workspace.</p><form id="signInForm"><label for="userInput">Username</label><input id="userInput" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Your username" required><label for="passInput">Password</label><input id="passInput" name="password" autocomplete="current-password" type="password" placeholder="Your password" required><button id="signInBtn" class="p-button primary" type="submit">Enter your workspace <span aria-hidden="true">↗</span></button><p id="gateError" class="p-error" role="alert"></p></form><div class="p-signin-note"><span aria-hidden="true">⌘</span><p>Use your existing Tomato08 account.<br>Your modules and saved progress are waiting.</p></div><div class="p-checking" id="sessionStatus" role="status">Checking your session…</div></div>
+   </section>
+   <section id="modePicker" hidden aria-labelledby="workspaceTitle">
+    <div class="p-page-heading"><div><span class="p-eyebrow">YOUR WORKSPACE</span><h1 id="workspaceTitle">Good to have you here.</h1></div><button id="signOutBtn" class="p-button" type="button">Sign out</button></div>
+    <div class="p-dashboard-hero"><div><span class="p-eyebrow" id="whoami"></span><h2>A place to learn.<br>A place to make.</h2><p>Explore your modules or build what comes next.</p></div><img src="assets/atelier.png" alt="Folded architectural sculpture" width="1536" height="1024"></div>
+    <div class="p-section-heading"><h2>Choose your focus</h2><span>Two ways into your workspace</span></div>
+    <div class="p-mode-grid"><a class="p-mode-card" href="./tester.html"><span class="p-card-index">01 / LEARNER</span><span class="p-card-symbol" aria-hidden="true">▤</span><h3>Your learning space</h3><p>Study flashcards, take practice tests, and pick up your progress.</p><span class="p-card-link">Open your modules <span>↗</span></span></a><a class="p-mode-card studio" href="./developer.html"><span class="p-card-index">02 / DEVELOPER</span><span class="p-card-symbol" aria-hidden="true">◇</span><h3>The question studio</h3><p>Build question banks, publish modules, and review learner activity.</p><span class="p-card-link">Enter the studio <span>↗</span></span></a></div>
+   </section>
+  </main>
+  <footer class="p-footer"><span>A place to think. A place to learn.</span><span>Tomato08 / Atelier</span></footer>
+ </div>
 </div>
-
-<!-- Developers only. Testers never see this. -->
-<main id="modePicker" hidden>
-  <div class="top">
-    <h2 class="title">Choose Mode</h2>
-    <span id="whoami" class="who"></span>
-    <button id="signOutBtn" type="button" class="signout">Sign out</button>
-  </div>
-  <div class="choices">
-    <a class="choice tester" href="./tester.html?v=8"><span>&#128272;</span>TESTER</a>
-    <a class="choice developer" href="./developer.html?v=8"><span>&#128272;</span>DEVELOPER</a>
-  </div>
-</main>
-
+<noscript><p class="p-no-script">JavaScript is required to sign in and study.</p></noscript>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
-<script src="./supabase-config.js?v=9"></script>
-<script src="./cloud.js?v=9"></script>
-<script>
-(function () {
-  var gate     = document.getElementById("gate");
-  var picker   = document.getElementById("modePicker");
-  var user     = document.getElementById("userInput");
-  var pass     = document.getElementById("passInput");
-  var btn      = document.getElementById("signInBtn");
-  var errorEl  = document.getElementById("gateError");
-
-  function showGate(msg) {
-    picker.hidden = true;
-    gate.hidden = false;
-    errorEl.textContent = msg || "";
-    user.focus();
-  }
-
-  function showPicker(profile) {
-    gate.hidden = true;
-    picker.hidden = false;
-    document.getElementById("whoami").textContent =
-      profile && profile.username ? "Signed in as " + profile.username : "Signed in";
-  }
-
-  /* Testers go straight to their modules. Developers get the mode picker. */
-  function route(profile) {
-    if (!profile) { showGate(""); return; }
-    if (profile.role === "developer") { showPicker(profile); return; }
-    location.replace("./tester.html?v=8");
-  }
-
-  async function signIn() {
-    errorEl.textContent = "";
-    btn.disabled = true;
-    var original = btn.textContent;
-    btn.textContent = "Signing in…";
-
-    try {
-      await FC.signIn(user.value, pass.value);
-      var profile = await FC.getProfile();
-      pass.value = "";
-      route(profile);
-    } catch (e) {
-      await FC.signOut();
-      showGate(e.message || "Sign in failed.");
-      pass.select();
-    } finally {
-      btn.disabled = false;
-      btn.textContent = original;
-    }
-  }
-
-  btn.addEventListener("click", signIn);
-  [user, pass].forEach(function (el) {
-    el.addEventListener("keydown", function (e) { if (e.key === "Enter") signIn(); });
-  });
-
-  document.getElementById("signOutBtn").addEventListener("click", async function () {
-    await FC.signOut();
-    user.value = ""; pass.value = "";
-    showGate("");
-  });
-
-  (async function boot() {
-    var profile = null;
-    try { profile = await FC.requireUser(); } catch (_) { profile = null; }
-    route(profile);
-  })();
-})();
-</script>
-</body>
-</html>
+<script src="./supabase-config.js?v=9"></script><script src="./cloud.js?v=9"></script><script src="./atelier-portal.js?v=1"></script>
+</body></html>

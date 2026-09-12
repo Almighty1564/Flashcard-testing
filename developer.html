@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Developer • Question Bank Builder • V8</title>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Authoring studio · Atelier</title>
 <style>
 :root{
   --bg:#0d1117; --panel:#161b22; --panel2:#0f141b; --line:#30363d;
@@ -312,16 +312,24 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
 }
 </style>
 <link rel="stylesheet" href="./theme.css?v=4">
+<meta name="theme-color" content="#191a1e">
+<link rel="stylesheet" href="./atelier.css?v=1">
+<script src="./atelier-shell.js?v=1" defer></script>
 </head>
-<body>
-<div id="developerLock" hidden>
-  <h1>Developer Access</h1>
-  <div class="buildmark">CLOUD BUILD V8</div>
-  <p>Sign in with your developer username and password.</p>
+<body data-atelier="" data-page="developer">
+<noscript><p class="atelier-noscript">JavaScript is needed for this interactive workspace. Enable JavaScript, then reload this page.</p></noscript>
+<div id="developerLock" hidden aria-labelledby="developerAccessTitle">
+  <a class="atelier-lock-brand" href="./index.html">t08 <span>Atelier</span></a>
+  <div class="buildmark">THE AUTHORING STUDIO</div>
+  <h1 id="developerAccessTitle">Make knowledge<br>worth keeping.</h1>
+  <p>Sign in with your developer account to create questions, organize modules, and guide your learners.</p>
+  <label for="developerUsernameInput">Username</label>
   <input id="developerUsernameInput" type="text" autocomplete="username" placeholder="Username">
+  <label for="developerPasswordInput">Password</label>
   <input id="developerPasswordInput" type="password" autocomplete="current-password" placeholder="Password">
   <button id="developerUnlockBtn" type="button">Sign In</button>
-  <div id="developerError"></div>
+  <div id="developerError" role="alert" aria-live="polite"></div>
+  <a class="atelier-lock-back" href="./index.html">Back to your workspace</a>
 </div>
 
 <div id="developerApp" hidden>
@@ -329,13 +337,14 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
 <div class="shell">
   <aside class="sidebar" id="fcSidebar">
     <div class="brand">
-      <h1>Question Bank Builder</h1>
-      <div class="version">BUILD v2.0 • CLOUD</div>
+      <div class="atelier-eyebrow">t08 / Atelier</div>
+      <h1>Authoring studio</h1>
+      <div class="version">QUESTION BANK · DEVELOPER</div>
       <div class="small muted" id="devWhoami">Signed in</div>
     </div>
 
     <div class="field">
-      <label>CLOUD MODULE</label>
+      <label for="cloudModuleSelect">CLOUD MODULE</label>
       <select id="cloudModuleSelect"></select>
     </div>
     <div class="row" style="gap:8px">
@@ -344,11 +353,11 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
     </div>
 
     <div class="field" style="margin-top:10px">
-      <label>MODULE / COURSE NAME</label>
+      <label for="moduleName">MODULE / COURSE NAME</label>
       <input id="moduleName" type="text" placeholder="Example: WMOD 2">
     </div>
 
-    <div class="small" id="syncStatus" style="color:#8b949e;margin-bottom:10px">Ready</div>
+    <div class="small" role="status" id="syncStatus" style="color:#8b949e;margin-bottom:10px">Ready</div>
 
     <div class="stats">
       <div class="stat"><span>Groups</span><strong id="statGroups">0</strong></div>
@@ -401,17 +410,17 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
     </details>
 
     <div class="footer-note">
-      Every change saves to Supabase automatically. Sign in anywhere to keep working.
+      Your question bank, connected. Use Save Question to keep the current edit.
       <button id="devSignOutBtn" class="btn full" type="button" style="margin-top:10px">Sign out</button>
     </div>
   </aside>
 <button id="sidebarToggle" class="side-toggle" type="button"
-        aria-controls="fcSidebar" aria-expanded="true" title="Hide panel">
+        aria-controls="fcSidebar" aria-expanded="true" aria-label="Toggle authoring panel" title="Hide panel">
   <span class="chev">&#10094;</span>
 </button>
 
 
-  <main class="main">
+  <main class="main" id="atelierMain" tabindex="-1">
 <a class="portal-home-btn" href="./index.html">← Back to Home</a>
     <div class="topbar">
       <div>
@@ -429,11 +438,11 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
       <div class="panel">
         <div class="grid2">
           <div class="field">
-            <label>GROUP</label>
+            <label for="questionGroup">GROUP</label>
             <select id="questionGroup"></select>
           </div>
           <div class="field">
-            <label>QUESTION TYPE</label>
+            <label for="questionType">QUESTION TYPE</label>
             <select id="questionType">
               <option value="flashcard">Flash Card</option>
               <option value="multiple-choice">Multiple Choice</option>
@@ -446,11 +455,11 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
         </div>
 
         <div class="field">
-          <label>QUESTION</label>
+          <label for="questionText">QUESTION</label>
           <textarea id="questionText" placeholder="Type the question..."></textarea>
         </div>
         <div class="field">
-          <label>INTERACTIVE VISUAL (OPTIONAL)</label>
+          <label for="questionVisual">INTERACTIVE VISUAL (OPTIONAL)</label>
           <input id="questionVisual" type="text"
                  placeholder="Example: antenna-pattern.html">
           <div class="small muted" style="margin-top:6px">
@@ -472,7 +481,7 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
       <div id="flashcardEditor" class="panel">
         <div class="section-title">Answer</div>
         <div class="field">
-          <label>ANSWER</label>
+          <label for="flashAnswerText">ANSWER</label>
           <textarea id="flashAnswerText" placeholder="Type the answer..."></textarea>
         </div>
         <div class="image-box">
@@ -488,21 +497,21 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
       <div id="numericEditor" class="panel hidden">
         <div class="section-title">Type-In Answer</div>
         <div class="field">
-          <label>CORRECT VALUE</label>
+          <label for="numericValue">CORRECT VALUE</label>
           <input id="numericValue" type="text" placeholder="Example: 50 or 3.14 or coaxial">
         </div>
         <div class="grid2">
           <div class="field">
-            <label>TOLERANCE &plusmn; (OPTIONAL)</label>
+            <label for="numericTolerance">TOLERANCE &plusmn; (OPTIONAL)</label>
             <input id="numericTolerance" type="text" inputmode="decimal" placeholder="Example: 0.5">
           </div>
           <div class="field">
-            <label>UNIT (OPTIONAL, DISPLAY ONLY)</label>
+            <label for="numericUnit">UNIT (OPTIONAL, DISPLAY ONLY)</label>
             <input id="numericUnit" type="text" placeholder="Example: ohms">
           </div>
         </div>
         <div class="field">
-          <label>ALSO ACCEPT (OPTIONAL, COMMA SEPARATED)</label>
+          <label for="numericAccept">ALSO ACCEPT (OPTIONAL, COMMA SEPARATED)</label>
           <input id="numericAccept" type="text" placeholder="Example: 50 ohm, fifty">
         </div>
         <div class="small muted">
@@ -564,9 +573,9 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
     <section id="bankView" class="hidden">
       <div class="panel">
         <div class="list-toolbar">
-          <input id="bankSearch" type="search" placeholder="Search questions...">
-          <select id="bankGroupFilter"></select>
-          <select id="bankTypeFilter">
+          <input id="bankSearch" aria-label="Search questions" type="search" placeholder="Search questions...">
+          <select id="bankGroupFilter" aria-label="Filter questions by group"></select>
+          <select id="bankTypeFilter" aria-label="Filter questions by type">
             <option value="">All Types</option>
             <option value="flashcard">Flash Card</option>
             <option value="multiple-choice">Multiple Choice</option>
@@ -584,7 +593,7 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
       <div class="panel">
         <div class="section-title">Create Group</div>
         <div class="row">
-          <input id="newGroupName" type="text" placeholder="Example: Radio Theory" style="flex:1">
+          <input id="newGroupName" aria-label="New group name" type="text" placeholder="Example: Radio Theory" style="flex:1">
           <button type="button" id="addGroupBtn" class="btn primary">+ Create Group</button>
         </div>
       </div>
@@ -640,7 +649,7 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
 
         <div class="grid2">
           <div class="field">
-            <label>BANK VERSION
+            <label for="bankVersionInput">BANK VERSION
               <span class="help" tabindex="0" data-tip="First publish: use 1. Each time you publish an updated bank, increase it: 2, 3, 4...">?</span>
             </label>
             <input id="bankVersionInput" type="text" value="1" inputmode="numeric">
@@ -650,13 +659,13 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
 
         <div class="grid2">
           <div class="field">
-            <label>SHARED BANK PASSWORD
+            <label for="bankPassphrase">SHARED BANK PASSWORD
               <span class="help" tabindex="0" data-tip="This is the password users enter to unlock the encrypted question bank. Keep it private and remember it.">?</span>
             </label>
             <input id="bankPassphrase" type="password" placeholder="Enter the password users will use">
           </div>
           <div class="field">
-            <label>TYPE IT AGAIN
+            <label for="bankPassphraseConfirm">TYPE IT AGAIN
               <span class="help" tabindex="0" data-tip="This prevents you from accidentally encrypting the bank with a mistyped password. Both boxes must match.">?</span>
             </label>
             <input id="bankPassphraseConfirm" type="password" placeholder="Enter the same password again">
@@ -668,7 +677,7 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
         <details class="advanced">
           <summary>Advanced security setting — normally leave this alone</summary>
           <div class="field" style="margin-top:12px;max-width:400px">
-            <label>PBKDF2 ITERATIONS
+            <label for="iterationInput">PBKDF2 ITERATIONS
               <span class="help" tabindex="0" data-tip="Controls how much work is used to derive the encryption key from the password. Leave this at 600000 unless you intentionally change the encryption design.">?</span>
             </label>
             <input id="iterationInput" type="text" value="600000" inputmode="numeric">
@@ -692,19 +701,19 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
 
           <div class="repo-grid">
             <div class="field">
-              <label>GITHUB USERNAME
+              <label for="deployGithubUser">GITHUB USERNAME
                 <span class="help" tabindex="0" data-tip="Your GitHub account name. Leave Almighty1564 if you are publishing from that account.">?</span>
               </label>
               <input id="deployGithubUser" type="text" value="Almighty1564">
             </div>
             <div class="field">
-              <label>QUESTION BANK REPO
+              <label for="deployBackendRepo">QUESTION BANK REPO
                 <span class="help" tabindex="0" data-tip="The backend repository that stores manifest.json and the encrypted master.enc.json. Current repo: flashcard-bank.">?</span>
               </label>
               <input id="deployBackendRepo" type="text" value="flashcard-bank">
             </div>
             <div class="field">
-              <label>STUDY WEBSITE REPO
+              <label for="deployFrontendRepo">STUDY WEBSITE REPO
                 <span class="help" tabindex="0" data-tip="The frontend repository students open to study. Current repo: flashcard-srs.">?</span>
               </label>
               <input id="deployFrontendRepo" type="text" value="flashcard-srs">
@@ -786,7 +795,7 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
 
       <div class="panel">
         <div class="field">
-          <label>TESTER PROGRESS</label>
+          <label for="testerSelect">TESTER PROGRESS</label>
           <select id="testerSelect"></select>
         </div>
         <div class="small muted">Counts cover the module currently loaded in the builder.</div>
@@ -803,7 +812,7 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
             <div class="small muted">Filed by testers from the study screen.</div>
           </div>
           <div class="row" style="gap:8px">
-            <select id="reportsFilter" style="width:auto">
+            <select id="reportsFilter" aria-label="Filter reports by status" style="width:auto">
               <option value="open">Open only</option>
               <option value="all">All reports</option>
               <option value="resolved">Resolved</option>
@@ -2644,7 +2653,7 @@ window.__startBuilder=async function(profile){
 })();
 </script>
 
-<script src="./ai-distractors.js?v=9"></script>
+<script src="./ai-distractors.js?v=atelier-1"></script>
 
 
 <script>
