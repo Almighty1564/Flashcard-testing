@@ -1,0 +1,257 @@
+/* Inner workspaces: the material lives in navigation, with opaque reading and
+   editing surfaces. Existing page grids, drawer behavior, IDs, and technical
+   diagram coordinate systems remain owned by the original application. */
+
+body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"], [data-page="antenna"]) {
+  --lg-sheet: #f8fafd;
+  --lg-input: #ffffff;
+  --lg-subtle: #eaf0f7;
+  --lg-good-fill: #e8f2eb;
+  --lg-bad-fill: #fbecef;
+  --lg-warn-fill: #f8f0de;
+  --lg-chrome: rgba(var(--lg-surface), var(--lg-opacity));
+  --lg-chrome-filter: blur(var(--lg-blur)) saturate(1.4);
+  --lg-chrome-shadow: var(--lg-shadow), inset 0 1px 0 var(--lg-edge);
+  --lg-sheet-shadow: 0 8px 26px rgba(30, 49, 77, .06);
+}
+
+html:is([data-lg-palette="dusk"], [data-lg-palette="atelier"]) body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"], [data-page="antenna"]) {
+  --lg-sheet: #243348;
+  --lg-input: #1a283a;
+  --lg-subtle: #2b3c52;
+  --lg-good-fill: #233e34;
+  --lg-bad-fill: #472d39;
+  --lg-warn-fill: #443b2d;
+  --lg-sheet-shadow: 0 8px 26px rgba(4, 11, 24, .14);
+}
+
+html[data-lg-palette="atelier"] body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"], [data-page="antenna"]) {
+  --lg-sheet: #26272e;
+  --lg-input: #1c1d23;
+  --lg-subtle: #30313a;
+}
+
+/* Only these two shell surfaces ask the compositor for backdrop blur. */
+body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"], [data-page="antenna"]) .atelier-bar,
+body[data-atelier]:is([data-page="study"], [data-page="developer"]) #fcSidebar {
+  background: var(--lg-chrome);
+  color: var(--lg-ink);
+  border-color: var(--lg-edge);
+  box-shadow: var(--lg-chrome-shadow);
+  -webkit-backdrop-filter: var(--lg-chrome-filter);
+  backdrop-filter: var(--lg-chrome-filter);
+}
+
+body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"], [data-page="antenna"]) .atelier-bar {
+  min-height: 76px;
+  border: 1px solid var(--lg-edge);
+  border-radius: 22px;
+  padding: 14px 20px;
+  margin-top: 22px;
+  flex-wrap: wrap;
+}
+
+body[data-atelier]:is([data-page="study"], [data-page="developer"]) #fcSidebar {
+  border-radius: 0 28px 28px 0;
+  scrollbar-color: var(--lg-muted) transparent;
+}
+
+body[data-atelier]:is([data-page="study"], [data-page="developer"]) .side-toggle {
+  background: var(--lg-solid);
+  color: var(--lg-muted);
+  border-color: var(--lg-line);
+  border-radius: 0;
+  padding: 0;
+  box-shadow: none;
+}
+
+body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"], [data-page="antenna"]) :is(.atelier-bar-label, .atelier-bar-nav a, .atelier-drawer-close) { color: var(--lg-muted); border-color: var(--lg-line); }
+body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"], [data-page="antenna"]) .atelier-bar-nav a { border-radius: 14px; }
+body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"], [data-page="antenna"]) .atelier-bar-nav a:hover { background: var(--lg-subtle); color: var(--lg-ink); }
+
+/* Reading surfaces are intentionally opaque, including lengthy question and
+   report lists. Do not add backdrop-filter to descendants of these panels. */
+body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"], [data-page="antenna"]) :is(.panel, .card, .question-card, .access-lock, #developerLock, .ring-card, .simple-step, .preview-card, .report-card, .m1c-card) {
+  background: var(--lg-sheet);
+  color: var(--lg-ink);
+  border-color: var(--lg-line);
+  border-radius: 24px;
+  box-shadow: var(--lg-sheet-shadow);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"], [data-page="antenna"]) :is(.stat, .summary-box, .choice-option, .match-row, .match-pair, .qrow, .priority, .check-item, .image-box, .group-pill, .diagram-field-row, .disclosure, .dev-fold, details.advanced, .report-note, .m1c-ref, .empty, .rank-card, .match-source) {
+  background: var(--lg-subtle);
+  color: var(--lg-ink);
+  border-color: var(--lg-line);
+  border-radius: 15px;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+body[data-atelier][data-page="developer"] :is(.qrow, .report-card) { box-shadow: none; }
+body[data-atelier][data-page="developer"] .choice {
+  min-height: 0;
+  background: var(--lg-subtle);
+  color: var(--lg-ink);
+  border-color: var(--lg-line);
+  border-radius: 15px;
+  font-size: inherit;
+  letter-spacing: normal;
+  box-shadow: none;
+  transform: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"], [data-page="antenna"]) :is(.badge, .bar, .feedback, .group-btn, .match-source, .drop-zone) {
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"], [data-page="antenna"]) .badge { background: var(--lg-subtle); color: var(--lg-muted); border-color: var(--lg-line); border-radius: 999px; }
+body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"], [data-page="antenna"]) :is(.field label, .group-meta, .ring-sub, .ring-hint, .rank, .stat span, .score span, .summary-box span) { color: var(--lg-muted); }
+body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"], [data-page="antenna"]) :is(.answer-box, .answer, .preview-answer) { color: var(--lg-ink); border-color: var(--lg-line); }
+body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"], [data-page="antenna"]) :is(.ring-legend span, .ring-sub, .progress-row, .m1c-steps) { border-color: var(--lg-line); }
+body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"], [data-page="antenna"]) :is(.disclosure, .dev-fold, details.advanced) > summary { color: var(--lg-ink); }
+
+/* Forms retain their original width and layout. Diagram fields are explicitly
+   excluded: their dimensions and white paper contrast carry answer geometry. */
+body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"], [data-page="antenna"]) :is(button, .btn, .back, .back-modules, .portal-home-btn, .visual-btn):where(:not(.ring-wrap):not(.side-toggle):not([data-lg-material]):not([data-lg-palette])) {
+  background: var(--lg-solid);
+  color: var(--lg-ink);
+  border-color: var(--lg-line);
+  border-radius: 15px;
+  box-shadow: inset 0 1px 0 var(--lg-edge);
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"], [data-page="antenna"]) :is(button, .btn, .back, .back-modules, .portal-home-btn, .visual-btn):where(:not(.ring-wrap):not(.side-toggle):not([data-lg-material]):not([data-lg-palette])):hover:not(:disabled) {
+  background: var(--lg-subtle);
+  border-color: var(--lg-muted);
+}
+
+body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"], [data-page="antenna"]) :is(.btn.primary, button.primary, .access-lock button, #developerLock button, .m1c-btns button.m1c-go) {
+  background: var(--lg-primary);
+  color: var(--lg-on-primary);
+  border-color: var(--lg-primary);
+}
+
+body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"], [data-page="antenna"]) :is(.btn.primary, button.primary, .access-lock button, #developerLock button, .m1c-btns button.m1c-go):hover:not(:disabled) {
+  background: var(--lg-primary);
+  color: var(--lg-on-primary);
+  border-color: var(--lg-ink);
+}
+
+body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"], [data-page="antenna"]) :is(.group-btn.active, .navbtn.active, .match-source.selected, .check-item:has(input:checked), .choice-option:has(input:checked), .m1c-tab[aria-selected="true"]) {
+  background: var(--lg-selected);
+  color: var(--lg-ink);
+  border-color: var(--lg-accent);
+}
+
+body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"], [data-page="antenna"]) :is(input[type="text"], input[type="search"], input[type="password"], input[type="number"], input[type="email"], textarea, select):where(:not(.diagram-study-input):not(.diagram-author-field)) {
+  background-color: var(--lg-input);
+  color: var(--lg-ink);
+  border-color: var(--lg-line);
+  border-radius: 13px;
+  box-shadow: none;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"], [data-page="antenna"]) :is(input, textarea):where(:not(.diagram-study-input):not(.diagram-author-field))::placeholder { color: var(--lg-muted); opacity: 1; }
+body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"], [data-page="antenna"]) :is(select, select option, select optgroup) { background-color: var(--lg-input); color: var(--lg-ink); color-scheme: inherit; }
+body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"], [data-page="antenna"]) :is(input[type="text"], input[type="search"], input[type="password"], input[type="number"], input[type="email"], textarea, select):where(:not(.diagram-study-input):not(.diagram-author-field)):focus { border-color: var(--lg-blue); }
+
+/* Correctness, warning and report status keep separate visual meanings. */
+body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"]) :is(button.good, .btn.good, .feedback.good, .ok, .ready-box, .choice-option.correct-reveal) { background: var(--lg-good-fill); color: var(--good); border-color: var(--good); }
+body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"]) :is(button.bad, .btn.bad, .feedback.bad, .choice-option.wrong-selected) { background: var(--lg-bad-fill); color: var(--bad); border-color: var(--bad); }
+body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"]) :is(button.warn, .btn.warn, .issue, .report-box) { background: var(--lg-warn-fill); color: var(--warn); border-color: var(--warn); }
+body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"]) :is(button.good, .btn.good):hover:not(:disabled) { background: var(--lg-good-fill); border-color: var(--good); }
+body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"]) :is(button.bad, .btn.bad):hover:not(:disabled) { background: var(--lg-bad-fill); border-color: var(--bad); }
+body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"]) :is(button.warn, .btn.warn):hover:not(:disabled) { background: var(--lg-warn-fill); border-color: var(--warn); }
+body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"]) .drop-zone.correct-reveal { border-color: var(--good); }
+body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"]) .drop-zone.wrong-reveal { border-color: var(--bad); }
+body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"]) .danger-zone { border-color: var(--bad); }
+body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"]) .action-note { background: var(--lg-selected); color: var(--lg-ink); border-color: var(--lg-blue); }
+
+body[data-atelier][data-page="study"] button.ring-wrap { background: transparent; padding: 0; border: 1px solid transparent; border-radius: 50%; box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+body[data-atelier][data-page="study"] button.ring-wrap:hover:not(:disabled) { background: var(--lg-subtle); border-color: var(--lg-line); }
+body[data-atelier][data-page="study"] .ring-track { stroke: var(--lg-line); }
+body[data-atelier][data-page="study"] #segSkipped { stroke: var(--gray); }
+body[data-atelier][data-page="study"] :is(.k-skipped, .seg.unanswered) { background: var(--gray); }
+body[data-atelier][data-page="study"] :is(.bar, .rank-bar) { background: var(--lg-subtle); border-color: var(--lg-line); box-shadow: none; }
+body[data-atelier][data-page="study"] .ring-center strong i { color: var(--lg-muted); }
+body[data-atelier][data-page="study"] .disclosure .body .icon-btn.sub { background: var(--lg-solid); border-color: var(--lg-line); border-radius: 13px; }
+body[data-atelier][data-page="study"] .disclosure .body .icon-btn.sub:hover:not(:disabled) { background: var(--lg-subtle); border-color: var(--lg-muted); }
+body[data-atelier][data-page="study"].tool-open #toolView .builder-toolbar { background: var(--lg-solid); color: var(--lg-ink); border-color: var(--lg-line); }
+
+body[data-atelier][data-page="developer"] .step-num { background: var(--lg-selected); color: var(--lg-accent); border-color: var(--lg-line); }
+body[data-atelier][data-page="developer"] .help { background: var(--lg-solid); color: var(--lg-muted); border-color: var(--lg-line); }
+body[data-atelier][data-page="developer"] #developerLock input { background: var(--lg-input); color: var(--lg-ink); border-color: var(--lg-line); border-radius: 13px; }
+body[data-atelier][data-page="developer"] #developerLock input:focus { border-color: var(--lg-blue); }
+/* This existing username is rendered with an inline dark-theme text color. */
+body[data-atelier][data-page="developer"] #onlineList strong { color: var(--lg-ink) !important; }
+body[data-atelier][data-page="developer"] .report-card { border-left: 3px solid var(--warn); }
+body[data-atelier][data-page="developer"] .report-card.resolved { border-left-color: var(--good); opacity: 1; }
+body[data-atelier][data-page="developer"] .report-card.dismissed { border-left-color: var(--gray); opacity: 1; }
+body[data-atelier][data-page="developer"] .report-head > .badge { color: var(--warn) !important; border-color: var(--warn) !important; }
+body[data-atelier][data-page="developer"] .report-card.resolved .report-head > .badge { color: var(--good) !important; border-color: var(--good) !important; }
+body[data-atelier][data-page="developer"] .report-card.dismissed .report-head > .badge { color: var(--lg-muted) !important; border-color: var(--lg-line) !important; }
+body[data-atelier][data-page="legacy-study"] code { background: var(--lg-subtle); color: var(--lg-ink); }
+
+body[data-atelier]:is([data-page="calculator"], [data-page="study"]) #calcHost { --m1-go-fg: var(--lg-on-primary); }
+body[data-atelier][data-page="calculator"] > header:not(.atelier-bar) p { color: var(--lg-muted); }
+body[data-atelier]:is([data-page="calculator"], [data-page="study"]) .m1c-f:is(.good, .bad) { color: inherit; background: transparent; border: 0; box-shadow: none; }
+body[data-atelier]:is([data-page="calculator"], [data-page="study"]) .m1c-f.good :is(input, select) { border-color: var(--good); }
+body[data-atelier]:is([data-page="calculator"], [data-page="study"]) .m1c-f.bad :is(input, select) { border-color: var(--bad); }
+body[data-atelier]:is([data-page="calculator"], [data-page="study"]) .m1c-verdict.bad { background: var(--lg-bad-fill); color: var(--bad); }
+
+/* The antenna's plotted data has a fixed dark plotting convention. Its canvas
+   pixels, sizes, slider geometry and color legend are never theme-remapped. */
+body[data-atelier][data-page="antenna"] { --edge: var(--lg-line); --grid-key: #657388; --dim: var(--lg-muted); }
+body[data-atelier][data-page="antenna"] :is(.scope-box, .readouts) { color-scheme: dark; }
+body[data-atelier][data-page="antenna"] canvas { background: #080d13; border-color: #414b5b; border-radius: 20px; }
+body[data-atelier][data-page="antenna"] .readouts { background: #414b5b; border-color: #414b5b; border-radius: 18px; }
+body[data-atelier][data-page="antenna"] .cell { background: #172333; color: #e4edf5; }
+body[data-atelier][data-page="antenna"] :is(.cell dt, .cell dd small) { color: #bdc9d7; }
+body[data-atelier][data-page="antenna"] .cell.hi dd { color: var(--beam); }
+body[data-atelier][data-page="antenna"] :is(.viewtabs, .zoomtabs) button { background: #172333; color: #e4edf5; border-color: #657388; border-radius: 12px; box-shadow: none; }
+body[data-atelier][data-page="antenna"] :is(.viewtabs, .zoomtabs) button:hover:not(:disabled) { background: #263950; border-color: #9ab2ce; }
+body[data-atelier][data-page="antenna"] :is(.viewtabs, .segmented) button[aria-pressed="true"],
+body[data-atelier][data-page="antenna"] :is(.viewtabs, .segmented) button[aria-pressed="true"]:hover { background: var(--beam); color: #241a0e; border-color: var(--beam); }
+body[data-atelier][data-page="antenna"] .field-head span:last-child { color: var(--lg-accent); }
+body[data-atelier][data-page="antenna"] .src a { color: var(--lg-blue); }
+
+/* Palette/material changes do not alter the original responsive navigation. */
+@media (max-width: 900px) {
+  body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"], [data-page="antenna"]) .atelier-bar { border-radius: 20px; padding: 11px 14px; margin-top: 16px; }
+  body[data-atelier]:is([data-page="study"], [data-page="developer"]).atelier-nav-open #fcSidebar { border-radius: 0 24px 24px 0; border-color: var(--lg-edge); }
+  body[data-atelier]:is([data-page="study"], [data-page="developer"]).atelier-nav-open .atelier-drawer-shade { background: rgba(13, 24, 42, .48); }
+}
+
+@media (max-width: 540px) {
+  body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"], [data-page="antenna"]) .atelier-bar { gap: 6px; padding: 10px 12px; }
+  body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"], [data-page="antenna"]) :is(.panel, .card, .question-card, .simple-step, .preview-card, .m1c-card) { border-radius: 20px; }
+  body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"], [data-page="antenna"]) .atelier-bar-start { gap: 8px; }
+}
+
+html:is([data-lg-material="solid"], [data-lg-opaque="true"]) body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"], [data-page="antenna"]) {
+  --lg-chrome: var(--lg-solid);
+  --lg-chrome-filter: none;
+}
+html[data-lg-material="solid"] body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"], [data-page="antenna"]) { --lg-chrome-shadow: none; --lg-sheet-shadow: none; }
+
+@supports not ((backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))) {
+  body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"], [data-page="antenna"]) { --lg-chrome: var(--lg-solid); --lg-chrome-filter: none; }
+}
+@media (prefers-reduced-transparency: reduce) {
+  body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"], [data-page="antenna"]) { --lg-chrome: var(--lg-solid); --lg-chrome-filter: none; }
+}
+@media (prefers-contrast: more) {
+  body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"], [data-page="antenna"]) { --lg-chrome: var(--lg-solid); --lg-chrome-filter: none; --lg-chrome-shadow: none; --lg-sheet-shadow: none; }
+  body[data-atelier]:is([data-page="study"], [data-page="developer"], [data-page="legacy-study"], [data-page="calculator"], [data-page="antenna"]) :is(.atelier-bar, #fcSidebar, .panel, .card, .question-card, .m1c-card) { border: 2px solid var(--lg-ink); }
+}

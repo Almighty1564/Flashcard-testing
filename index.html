@@ -3,12 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<meta name="theme-color" content="#101115">
+<meta name="theme-color" content="#191a1e">
 <meta name="description" content="Tomato08 Atelier. Your learning workspace for flashcards, practice tests, and question building.">
 <meta name="referrer" content="strict-origin-when-cross-origin">
 <title>Atelier / Tomato08</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%23101115'/%3E%3Ctext x='10' y='44' font-size='34' font-family='Georgia' fill='%23ff806a'%3E08%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="atelier.css?v=1"><link rel="stylesheet" href="portal.css?v=1">
+
+<link data-lg-stylesheet rel="stylesheet" href="./liquid-glass.css?v=20260912-1">
+<link data-lg-stylesheet rel="stylesheet" href="./liquid-glass-inner.css?v=20260912-1">
+<script src="./liquid-glass.js?v=20260912-1"></script>
 </head>
 <body data-atelier data-page="portal">
 <a class="p-skip" href="#content">Skip to content</a>
@@ -24,12 +28,12 @@
   <header class="p-topbar"><button class="p-menu" id="menuButton" aria-label="Toggle navigation" aria-controls="workspaceNav" aria-expanded="false">☰</button><div class="p-breadcrumb">Your space <span>/</span> <strong>Overview</strong></div><span class="p-top-caption">LEARN SOMETHING WELL.</span></header>
   <main class="p-content" id="content" tabindex="-1">
    <section id="gate" class="p-welcome-grid" aria-labelledby="welcomeTitle">
-    <div class="p-welcome-art"><img src="assets/atelier.png" alt="Sculptural red and blue folded forms in a dark architectural gallery" width="1536" height="1024" fetchpriority="high"><div class="p-art-copy"><span class="p-eyebrow">THE LEARNING ATELIER</span><h1 id="welcomeTitle">Make room<br>for discovery.</h1><p>A little curiosity.<br>A deeper understanding.</p></div><span class="p-art-number" aria-hidden="true">01 / A SPACE TO GROW</span></div>
+    <div class="p-welcome-art"><img src="./atelier.png?v=20260912-1" alt="Sculptural red and blue folded forms in a dark architectural gallery" width="1536" height="1024" fetchpriority="high"><div class="p-art-copy"><span class="p-eyebrow">THE LEARNING ATELIER</span><h1 id="welcomeTitle">Make room<br>for discovery.</h1><p>A little curiosity.<br>A deeper understanding.</p></div><span class="p-art-number" aria-hidden="true">01 / A SPACE TO GROW</span></div>
     <div class="p-signin-panel"><span class="p-eyebrow">WELCOME BACK</span><h2>Pick up where<br>you left off.</h2><p class="p-muted">Sign in to your learning workspace.</p><form id="signInForm"><label for="userInput">Username</label><input id="userInput" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" placeholder="Your username" required><label for="passInput">Password</label><input id="passInput" name="password" autocomplete="current-password" type="password" placeholder="Your password" required><button id="signInBtn" class="p-button primary" type="submit">Enter your workspace <span aria-hidden="true">↗</span></button><p id="gateError" class="p-error" role="alert"></p></form><div class="p-signin-note"><span aria-hidden="true">⌘</span><p>Use your existing Tomato08 account.<br>Your modules and saved progress are waiting.</p></div><div class="p-checking" id="sessionStatus" role="status">Checking your session…</div></div>
    </section>
    <section id="modePicker" hidden aria-labelledby="workspaceTitle">
     <div class="p-page-heading"><div><span class="p-eyebrow">YOUR WORKSPACE</span><h1 id="workspaceTitle">Good to have you here.</h1></div><button id="signOutBtn" class="p-button" type="button">Sign out</button></div>
-    <div class="p-dashboard-hero"><div><span class="p-eyebrow" id="whoami"></span><h2>A place to learn.<br>A place to make.</h2><p>Explore your modules or build what comes next.</p></div><img src="assets/atelier.png" alt="Folded architectural sculpture" width="1536" height="1024"></div>
+    <div class="p-dashboard-hero"><div><span class="p-eyebrow" id="whoami"></span><h2>A place to learn.<br>A place to make.</h2><p>Explore your modules or build what comes next.</p></div><img src="./atelier.png?v=20260912-1" alt="Folded architectural sculpture" width="1536" height="1024"></div>
     <div class="p-section-heading"><h2>Choose your focus</h2><span>Two ways into your workspace</span></div>
     <div class="p-mode-grid"><a class="p-mode-card" href="./tester.html"><span class="p-card-index">01 / LEARNER</span><span class="p-card-symbol" aria-hidden="true">▤</span><h3>Your learning space</h3><p>Study flashcards, take practice tests, and pick up your progress.</p><span class="p-card-link">Open your modules <span>↗</span></span></a><a class="p-mode-card studio" href="./developer.html"><span class="p-card-index">02 / DEVELOPER</span><span class="p-card-symbol" aria-hidden="true">◇</span><h3>The question studio</h3><p>Build question banks, publish modules, and review learner activity.</p><span class="p-card-link">Enter the studio <span>↗</span></span></a></div>
    </section>
