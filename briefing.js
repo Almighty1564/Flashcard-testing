@@ -26,6 +26,7 @@
   };
   let location = {...D.defaultLocation}, units = 'f', tab = 'weather', region = 'us', sport = 'nfl';
   let generation = 0, request = null, cityRequest = null, geoGeneration = 0, lastGeo = 0, lastRefresh = 0;
+  let weatherAttempt = 0;
   let currentWeather = null, worldItems = [], worldOffset = 0, active = false;
   const cache = new Map();
   try {
@@ -61,23 +62,64 @@
   }
   async function cached(key, ttl, force, load, signal) {
     const prior = cache.get(key);
-    if (prior && !force && Date.now() - prior.checked < ttl) return {...prior,stale:false};
+    if (prior && !force && Date.now() - prior.checked < ttl) return {...prior,stale:Boolean(prior.failed)};
     try { return {...remember(key,await load()),stale:false}; }
-    catch (error) { if (signal.aborted) throw error; if (prior) return {...prior,stale:true}; throw error; }
+    catch (error) { if (signal.aborted) throw error; if (prior) { prior.failed=true; return {...prior,stale:true}; } throw error; }
   }
   function clock(seconds, timezone, options) {
-    if (!Number.isFinite(seconds)) return '—';
+    if (!Number.isFinite(seconds)) return 'Unavailable';
     try { return new Intl.DateTimeFormat('en-US',{timeZone:timezone || undefined,hour:'numeric',minute:'2-digit',...options}).format(new Date(seconds * 1000)); }
-    catch (_) { return '—'; }
+    catch (_) { return 'Unavailable'; }
   }
-  function temp(value) { return Number.isFinite(value) ? Math.round(units === 'f' ? D.fahrenheit(value) : value) + '°' : '—'; }
-  function wind(value) { return Number.isFinite(value) ? Math.round(units === 'f' ? D.mph(value) : value) + (units === 'f' ? ' mph' : ' km/h') : '—'; }
-  function percent(value) { return Number.isFinite(value) ? Math.round(value) + '%' : '—'; }
+  function temp(value) { return Number.isFinite(value) ? Math.round(units === 'f' ? D.fahrenheit(value) : value) + '°' : 'Unavailable'; }
+  function wind(value) { return Number.isFinite(value) ? Math.round(units === 'f' ? D.mph(value) : value) + (units === 'f' ? ' mph' : ' km/h') : 'Unavailable'; }
+  function percent(value) { return Number.isFinite(value) ? Math.round(value) + '%' : 'Unavailable'; }
   function metric(label, value) { return '<div class="b-metric"><dt>' + e(label) + '</dt><dd>' + e(value) + '</dd></div>'; }
-  function weatherView(w, stale) {
+  function dateLabel(date, options) {
+    try { return new Intl.DateTimeFormat('en-US', { timeZone: 'UTC', ...options }).format(new Date(date + 'T12:00:00Z')); }
+    catch (_) { return 'Unavailable'; }
+  }
+  function uvBadge(value) {
+    const risk = D.uvRisk(value);
+    return '<span class="b-uv-badge b-uv-' + risk.level + '">' + (risk.value === null ? 'Unavailable' : e(risk.value.toFixed(1)) + ' · ' + e(risk.label)) + '</span>';
+  }
+  function weatherAge(checked) {
+    const minutes = Math.max(0, Math.floor((Date.now() - checked) / 60000));
+    return minutes < 1 ? 'just now' : minutes < 60 ? minutes + ' min ago' : Math.floor(minutes / 60) + ' h ' + (minutes % 60) + ' min ago';
+  }
+  function weatherView(raw, stale, checked) {
+    // Re-evaluate cached forecasts at render time, including city-local midnight and hour changes.
+    const w = D.normalizeWeather(raw);
+    if (!w) return '<p class="b-weather-warning">Weather unavailable. Please refresh.</p>';
     const c = w.current, d = w.daily, conditions = D.description(c.code,c.isDay);
-    const advice = stale ? 'This forecast could not be refreshed. Check the observation time before planning what to wear.' : D.advice(w);
-    return '<div class="b-weather"><div class="b-weather-main"><span class="b-kicker">' + e(labelCity(location)) + '</span><div class="b-temperature-row"><strong class="b-temperature">' + temp(c.temp) + '<small>' + (units === 'f' ? 'F' : 'C') + '</small></strong><span class="b-weather-icon" aria-hidden="true">' + e(conditions.icon) + '</span></div><div class="b-weather-condition">' + e(conditions.label) + '</div><p class="b-weather-range">Feels like ' + temp(c.feels) + ' · High ' + temp(d.high) + ' / Low ' + temp(d.low) + '</p></div><div class="b-weather-details"><dl class="b-weather-metrics">' + metric('Rain today',percent(d.rainChance)) + metric('Wind / gusts',wind(c.wind) + ' / ' + wind(c.gust)) + metric('Humidity',percent(c.humidity)) + metric('UV peak',Number.isFinite(d.uv) ? String(Math.round(d.uv * 10) / 10) : '—') + metric('Sunrise',clock(d.sunrise,w.timezone)) + metric('Sunset',clock(d.sunset,w.timezone)) + '</dl><div class="b-hourly" aria-label="Next six forecast hours">' + w.hours.map(h => '<div class="b-hour"><span>' + e(clock(h.time,w.timezone,{minute:undefined})) + '</span><span class="b-hour-icon" aria-hidden="true">' + e(D.description(h.code,h.isDay).icon) + '</span><strong>' + temp(h.temp) + '</strong><small>' + percent(h.rainChance) + ' rain</small></div>').join('') + '</div></div><div class="b-weather-advice"><span class="b-advice-icon" aria-hidden="true">↗</span><div><span class="b-kicker">BEFORE YOU HEAD OUT</span><p>' + e(advice || 'Weather advice is unavailable until the forecast is complete.') + '</p></div></div></div><div class="b-weather-attribution"><span>Conditions at ' + e(clock(c.time,w.timezone)) + ' · ' + e(w.timezone || 'Local time') + '</span><a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Weather by Open-Meteo</a></div>';
+    const saved = stale || Date.now() - checked >= WEATHER_TTL;
+    const warning = saved ? '<p class="b-weather-warning" role="status">Saved forecast · fetched ' + e(weatherAge(checked)) + '. Refresh failed or this data has expired; values may be outdated.</p>' : '';
+    const advice = saved ? 'Check the forecast timestamp before planning outdoor activity.' : D.advice(w);
+    const date = dateLabel(w.today, { weekday:'long',month:'short',day:'numeric' });
+    const uvTime = Number.isFinite(c.uvTime) ? clock(c.uvTime,w.timezone,{month:'short',day:'numeric'}) : 'Unavailable';
+    const sunCard = (label, value) => '<div class="b-sun-card"><dt>' + e(label) + '</dt><dd>' + e(clock(value,w.timezone)) + '</dd><small>Today · city local time</small></div>';
+    const uvCard = (label, value, note) => '<div class="b-uv-card"><dt>' + e(label) + '</dt><dd>' + uvBadge(value) + '</dd><small>' + e(note) + '</small></div>';
+    const week = w.days.map((day,index) => {
+      const condition = D.description(day.code,true);
+      return '<li class="b-forecast-day"' + (index === 0 ? ' aria-current="date"' : '') + '>' +
+        '<div class="b-day-date"><strong>' + e(index === 0 ? 'Today' : dateLabel(day.date,{weekday:'short'})) + '</strong><time datetime="' + e(day.date) + '">' + e(dateLabel(day.date,{month:'short',day:'numeric'})) + '</time></div>' +
+        '<div class="b-day-condition"><span aria-hidden="true">' + e(condition.icon) + '</span><span>' + e(day.available ? condition.label : 'Forecast unavailable') + '</span></div>' +
+        '<div class="b-day-temperature"><span>High <strong>' + temp(day.high) + '</strong></span><span>Low <strong>' + temp(day.low) + '</strong></span></div>' +
+        '<div class="b-day-rain"><span>Rain chance</span><strong>' + percent(day.rainChance) + '</strong></div>' +
+        '<div class="b-day-uv"><span>Peak UV</span>' + uvBadge(day.uv) + '</div></li>';
+    }).join('');
+    return warning + '<div class="b-weather b-weather-expanded"><div class="b-weather-main"><span class="b-kicker">' + e(labelCity(location)) + '</span><div class="b-temperature-row"><strong class="b-temperature' + (Number.isFinite(c.temp) ? '' : ' b-reading-missing') + '">' + temp(c.temp) + (Number.isFinite(c.temp) ? '<small>' + (units === 'f' ? 'F' : 'C') + '</small>' : '') + '</strong><span class="b-weather-icon" aria-hidden="true">' + e(conditions.icon) + '</span></div><div class="b-weather-condition">' + e(conditions.label) + '</div><p class="b-weather-range">Feels like ' + temp(c.feels) + ' · High ' + temp(d.high) + ' / Low ' + temp(d.low) + '</p></div>' +
+      '<div class="b-weather-details"><dl class="b-weather-metrics">' + metric('Rain today',percent(d.rainChance)) + metric('Wind / gusts',wind(c.wind) + ' / ' + wind(c.gust)) + metric('Humidity',percent(c.humidity)) + '</dl></div>' +
+      '<section class="b-sun-uv" aria-labelledby="briefingSunTitle"><h3 id="briefingSunTitle">Sun &amp; UV <small>' + e(date) + '</small></h3><dl class="b-sun-uv-grid">' +
+      uvCard(saved ? 'UV estimate · saved forecast' : 'UV now · estimated',c.uv,'Hourly model at ' + uvTime) + uvCard('Today’s peak UV',d.uv,'Forecast daily maximum, not current UV') + sunCard('Sunrise',d.sunrise) + sunCard('Sunset',d.sunset) + '</dl><p class="b-weather-note">All times: ' + e(w.timezone) + '. UV is forecast, not a live sensor reading. <a href="https://www.weather.gov/ilx/uv-index" target="_blank" rel="noopener noreferrer">UV scale</a></p></section>' +
+      '<section class="b-hourly-section" aria-labelledby="briefingHourlyTitle"><h3 id="briefingHourlyTitle">Next six forecast hours</h3><div class="b-hourly">' + w.hours.map(h => '<div class="b-hour"><span>' + e(clock(h.time,w.timezone,{minute:undefined})) + '</span><small class="b-hour-date">' + e(dateLabel(D.localDate(h.time,w.timezone),{month:'short',day:'numeric'})) + '</small><span class="b-hour-icon" aria-hidden="true">' + e(D.description(h.code,h.isDay).icon) + '</span><span class="b-hour-condition">' + e(D.description(h.code,h.isDay).label) + '</span><strong>' + temp(h.temp) + '</strong><small>' + percent(h.rainChance) + ' rain</small><span class="b-hour-uv">UV ' + uvBadge(h.uv) + '</span></div>').join('') + (w.hours.length ? '' : '<p>Hourly forecast unavailable.</p>') + '</div></section>' +
+      '<section class="b-week-section" aria-labelledby="briefingWeekTitle"><h3 id="briefingWeekTitle">7-day forecast <small>Today + next six days</small></h3><ol class="b-week-list">' + week + '</ol><p class="b-weather-note">Daily summaries and peak UV are forecasts. Unavailable values are not zero.</p></section>' +
+      '<div class="b-weather-advice"><span class="b-advice-icon" aria-hidden="true">↗</span><div><span class="b-kicker">BEFORE YOU HEAD OUT</span><p>' + e(advice || 'Weather advice is unavailable until the forecast is complete.') + '</p></div></div></div><div class="b-weather-attribution"><span>Conditions forecast at ' + e(clock(c.time,w.timezone,{month:'short',day:'numeric'})) + ' · Fetched ' + e(weatherAge(checked)) + '</span><a href="https://open-meteo.com/" target="_blank" rel="noopener noreferrer">Weather by Open-Meteo</a></div>';
+  }
+  function renderWeather(entry) {
+    panel.innerHTML = weatherView(entry.data,entry.stale,entry.checked);
+    $('briefingUpdated').textContent = 'Weather fetched ' + weatherAge(entry.checked);
+    $('briefingStatus').textContent = entry.stale || Date.now()-entry.checked >= WEATHER_TTL ? 'Could not refresh · showing saved forecast.' : '';
   }
   function publication(item) {
     if (!Number.isFinite(item.time)) return 'Publication time unavailable';
@@ -134,18 +176,21 @@
     try {
       let entry;
       if (tab === 'weather') {
+        weatherAttempt = Date.now();
         const url=D.weatherURL(location);
-        entry=await cached(url,WEATHER_TTL,force,async()=>{ const raw=await getJSON(url,signal); const normalized=D.normalizeWeather(raw); if (!normalized) throw new Error('The weather provider returned an incomplete forecast.'); return normalized; },signal);
+        entry=await cached(url,WEATHER_TTL,force,async()=>{ const raw=await getJSON(url,signal); const normalized=D.normalizeWeather(raw); if (!normalized) throw new Error('The weather provider returned an incomplete forecast.'); return raw; },signal);
       } else entry=await cached(source.url,NEWS_TTL,force,()=>fetchFeed(source,signal),signal);
       if (mine !== generation || signal.aborted || !isActive()) return;
-      if (currentTab === 'weather') { currentWeather=entry; panel.innerHTML=weatherView(entry.data,entry.stale); }
+      if (currentTab === 'weather') { currentWeather=entry; renderWeather(entry); }
       else if (currentTab === 'world') { worldItems=entry.data; worldOffset=worldItems.length ? Math.floor(Math.random()*worldItems.length) : 0; renderWorld(); }
       else if (currentTab === 'sports') {
         const selected=SPORTS[region].find(x=>x.id===sport);
         panel.innerHTML=sportsToolbar()+newsHeading(region === 'us' ? 'US SPORTS' : 'EUROPE / SELECTED SPORTS',selected.label + ' · ' + selected.league)+newsCards(entry.data)+feedCredit(source);
       } else panel.innerHTML=newsHeading(currentTab === 'local' ? 'CLOSE TO HOME' : 'ACROSS THE COUNTRY',currentTab === 'local' ? labelCity(location) : 'United States.')+newsCards(entry.data)+feedCredit(source);
+      if (currentTab !== 'weather') {
       $('briefingUpdated').textContent=(entry.stale ? 'Last successful update ' : 'Checked ') + new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',hour:'numeric',minute:'2-digit'}).format(new Date(entry.checked));
       $('briefingStatus').textContent=entry.stale ? 'Could not refresh · showing saved data.' : '';
+      }
       wirePanel();
       if (focusSelector) panel.querySelector(focusSelector)?.focus();
     } catch (error) {
@@ -175,7 +220,7 @@
   panel.addEventListener('touchstart',event=>{if(event.touches.length!==1 || event.target.closest('a,button,input,.b-hourly')){gesture=null;return;}gesture={x:event.touches[0].clientX,y:event.touches[0].clientY};},{passive:true});
   panel.addEventListener('touchend',event=>{if(!gesture)return;const touch=event.changedTouches[0],dx=touch.clientX-gesture.x,dy=touch.clientY-gesture.y;gesture=null;if(Math.abs(dx)>80&&Math.abs(dx)>Math.abs(dy)*2)step(dx<0?1:-1);},{passive:true});
   $('briefingRefresh').addEventListener('click',()=>{if(Date.now()-lastRefresh<5000)return;lastRefresh=Date.now();load(true);});
-  $('briefingUnits').addEventListener('click',()=>{units=units==='f'?'c':'f';persist();syncUnits();if(tab==='weather'&&currentWeather)panel.innerHTML=weatherView(currentWeather.data,currentWeather.stale);});
+  $('briefingUnits').addEventListener('click',()=>{units=units==='f'?'c':'f';persist();syncUnits();if(tab==='weather'&&currentWeather)renderWeather(currentWeather);});
   $('briefingLocationButton').addEventListener('click',()=>{dialog.showModal();$('briefingCitySearch').value=location.name;$('briefingCitySearch').focus();});
   $('briefingLocationClose').addEventListener('click',()=>dialog.close());
   dialog.addEventListener('close',()=>{geoGeneration++;cityRequest?.abort();$('briefingUseLocation').disabled=false;$('briefingLocationButton').focus();});
@@ -234,5 +279,12 @@
   document.addEventListener('visibilitychange',visibilityChanged);
   window.addEventListener('pagehide',()=>{active=false;generation++;request?.abort();cityRequest?.abort();});
   window.addEventListener('pageshow',visibilityChanged);
+  // Re-project cached hours/dates once a minute. Refresh only while signed in,
+  // visible and on Weather; failed refresh attempts are spaced by the normal TTL.
+  setInterval(() => {
+    if (!isActive() || tab !== 'weather' || !currentWeather || panel.getAttribute('aria-busy') === 'true') return;
+    if (Date.now() - weatherAttempt >= WEATHER_TTL) load(false);
+    else renderWeather(currentWeather);
+  }, 60000);
   visibilityChanged();
 })();

@@ -50,8 +50,8 @@
       latitude: String(city.latitude), longitude: String(city.longitude),
       current: 'temperature_2m,apparent_temperature,relative_humidity_2m,is_day,precipitation,weather_code,wind_speed_10m,wind_direction_10m,wind_gusts_10m',
       hourly: 'temperature_2m,apparent_temperature,precipitation_probability,weather_code,wind_gusts_10m,uv_index,is_day',
-      daily: 'temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset,uv_index_max',
-      forecast_days: '2', timezone: 'auto', timeformat: 'unixtime',
+      daily: 'weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,sunrise,sunset,uv_index_max',
+      forecast_days: '7', timezone: 'auto', timeformat: 'unixtime',
       temperature_unit: 'celsius', wind_speed_unit: 'kmh', precipitation_unit: 'mm'
     });
     return 'https://api.open-meteo.com/v1/forecast?' + params.toString();
@@ -60,6 +60,28 @@
   const at = (record, key, index) => Array.isArray(record[key]) ? finite(record[key][index]) : null;
   const nonnegative = value => bounded(value, 0, Number.MAX_VALUE);
 
+  // Calendar keys are independent of the viewing device's timezone.
+  function localDate(seconds, timezone) {
+    if (finite(seconds) === null) return null;
+    try {
+      const parts = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit'
+      }).formatToParts(new Date(seconds * 1000));
+      const get = type => parts.find(part => part.type === type).value;
+      return get('year') + '-' + get('month') + '-' + get('day');
+    } catch (_) { return null; }
+  }
+
+  function uvRisk(value) {
+    const uv = nonnegative(value);
+    if (uv === null) return { value: null, label: 'Unavailable', level: 'unknown' };
+    // Classify the same one-decimal value we display, including boundary rounding.
+    const rounded = Math.round(uv * 10) / 10;
+    const level = rounded < 3 ? 'low' : rounded < 6 ? 'moderate' : rounded < 8 ? 'high' : rounded < 11 ? 'very-high' : 'extreme';
+    const labels = { low: 'Low', moderate: 'Moderate', high: 'High', 'very-high': 'Very High', extreme: 'Extreme' };
+    return { value: rounded, label: labels[level], level };
+  }
+
   function normalizeWeather(payload, nowMs = Date.now()) {
     if (!payload || typeof payload !== 'object' || Array.isArray(payload) || payload.error) return null;
     const raw = payload.current && typeof payload.current === 'object' ? payload.current : {};
@@ -67,43 +89,61 @@
     const daily = payload.daily && typeof payload.daily === 'object' ? payload.daily : {};
     if (!Object.keys(raw).length && !Array.isArray(hourly.time) && !Array.isArray(daily.time)) return null;
     const now = (finite(nowMs) === null ? Date.now() : nowMs) / 1000;
+    let timezone = 'UTC';
+    if (typeof payload.timezone === 'string') {
+      try { new Intl.DateTimeFormat('en', { timeZone: payload.timezone }); timezone = payload.timezone; } catch (_) { /* Explicit UTC fallback. */ }
+    }
+    const today = localDate(now, timezone);
+    if (!today) return null;
     const current = {
       temp: finite(raw.temperature_2m), feels: finite(raw.apparent_temperature),
       humidity: bounded(raw.relative_humidity_2m, 0, 100),
       wind: nonnegative(raw.wind_speed_10m), gust: nonnegative(raw.wind_gusts_10m),
       direction: bounded(raw.wind_direction_10m, 0, 360), code: finite(raw.weather_code),
       isDay: raw.is_day === 1 ? true : raw.is_day === 0 ? false : null,
-      precip: nonnegative(raw.precipitation), time: finite(raw.time)
+      precip: nonnegative(raw.precipitation), time: finite(raw.time), uv: null, uvTime: null
     };
     const times = Array.isArray(hourly.time) ? hourly.time : [];
-    const hours = times.map((time, index) => ({ time: finite(time), index }))
-      .filter(row => row.time !== null && row.time >= now)
+    const rows = times.map((time, index) => ({ time: finite(time), index }))
+      .filter(row => row.time !== null)
       .sort((a, b) => a.time - b.time)
-      .filter((row, index, rows) => !index || row.time !== rows[index - 1].time)
-      .slice(0, 6).map(({ time, index }) => ({
-        time, temp: at(hourly, 'temperature_2m', index), feels: at(hourly, 'apparent_temperature', index),
-        rainChance: bounded(at(hourly, 'precipitation_probability', index), 0, 100),
-        code: at(hourly, 'weather_code', index), isDay: at(hourly, 'is_day', index) === 1 ? true : at(hourly, 'is_day', index) === 0 ? false : null,
-        gust: nonnegative(at(hourly, 'wind_gusts_10m', index)),
-        uv: nonnegative(at(hourly, 'uv_index', index))
-      }));
-    // Daily epochs identify local midnight; compare the instants rather than the device's date.
+      .filter((row, index, sorted) => !index || row.time !== sorted[index - 1].time);
+    // This hour's model estimate, not today's maximum or a future hour's reading.
+    // Missing hourly UV stays missing; never interpolate across a gap or infer zero at night.
+    const thisHour = rows.find(row => row.time <= now && now < row.time + 3600);
+    if (thisHour) {
+      current.uv = nonnegative(at(hourly, 'uv_index', thisHour.index));
+      current.uvTime = current.uv === null ? null : thisHour.time;
+    }
+    const hours = rows.filter(row => row.time >= now).slice(0, 6).map(({ time, index }) => ({
+      time, temp: at(hourly, 'temperature_2m', index), feels: at(hourly, 'apparent_temperature', index),
+      rainChance: bounded(at(hourly, 'precipitation_probability', index), 0, 100),
+      code: at(hourly, 'weather_code', index), isDay: at(hourly, 'is_day', index) === 1 ? true : at(hourly, 'is_day', index) === 0 ? false : null,
+      gust: nonnegative(at(hourly, 'wind_gusts_10m', index)), uv: nonnegative(at(hourly, 'uv_index', index))
+    }));
     const dailyTimes = Array.isArray(daily.time) ? daily.time : [];
-    let dayIndex = 0;
-    for (let index = 0; index < dailyTimes.length; index++) {
-      if (finite(dailyTimes[index]) !== null && dailyTimes[index] <= now) dayIndex = index;
-    }
-    const day = {
-      high: at(daily, 'temperature_2m_max', dayIndex), low: at(daily, 'temperature_2m_min', dayIndex),
-      rainChance: bounded(at(daily, 'precipitation_probability_max', dayIndex), 0, 100),
-      sunrise: at(daily, 'sunrise', dayIndex), sunset: at(daily, 'sunset', dayIndex),
-      uv: nonnegative(at(daily, 'uv_index_max', dayIndex))
-    };
-    let timezone = 'UTC';
-    if (typeof payload.timezone === 'string') {
-      try { new Intl.DateTimeFormat('en', { timeZone: payload.timezone }); timezone = payload.timezone; } catch (_) { /* UTC fallback. */ }
-    }
-    return { current, daily: day, hours, timezone };
+    const offset = bounded(payload.utc_offset_seconds, -86400, 86400);
+    const byDate = new Map();
+    dailyTimes.forEach((time, index) => {
+      if (finite(time) === null) return;
+      // Open-Meteo daily epochs use the response offset for calendar dates. Do not
+      // apply the IANA DST offset a second time; sunrise/sunset remain real instants.
+      const date = offset === null ? localDate(time, timezone) : localDate(time + offset, 'UTC');
+      if (!date || byDate.has(date)) return;
+      const sunrise = at(daily, 'sunrise', index), sunset = at(daily, 'sunset', index);
+      byDate.set(date, {
+        date, available: true, code: at(daily, 'weather_code', index),
+        high: at(daily, 'temperature_2m_max', index), low: at(daily, 'temperature_2m_min', index),
+        rainChance: bounded(at(daily, 'precipitation_probability_max', index), 0, 100),
+        sunrise: sunrise > 0 ? sunrise : null, sunset: sunset > 0 ? sunset : null,
+        uv: nonnegative(at(daily, 'uv_index_max', index))
+      });
+    });
+    const days = Array.from({ length: 7 }, (_, index) => {
+      const date = new Date(Date.parse(today + 'T12:00:00Z') + index * 86400000).toISOString().slice(0, 10);
+      return byDate.get(date) || { date, available: false, code: null, high: null, low: null, rainChance: null, sunrise: null, sunset: null, uv: null };
+    });
+    return { current, daily: days[0], days, hours, timezone, today };
   }
 
   function description(code, isDay) {
@@ -227,5 +267,5 @@
     return items;
   }
 
-  return Object.freeze({ defaultLocation, validLocation, weatherURL, normalizeWeather, description, advice, fahrenheit, mph, safeURL, normalizeNews });
+  return Object.freeze({ defaultLocation, validLocation, weatherURL, normalizeWeather, localDate, uvRisk, description, advice, fahrenheit, mph, safeURL, normalizeNews });
 });
