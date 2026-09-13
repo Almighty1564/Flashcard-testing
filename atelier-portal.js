@@ -35,7 +35,7 @@
     updateAccount(null); stopHeartbeat(); app.hidden = true; gate.hidden = false;
     errorEl.textContent = message || '';
     byId('sessionStatus').hidden = true;
-    if (isModules) { modules = []; byId('moduleSearch').value = ''; byId('modList').replaceChildren(); }
+    if (isModules) { modules = []; byId('moduleSearch').value = ''; byId('modList').replaceChildren(); if (byId('mod2PodcastLink')) byId('mod2PodcastLink').hidden = true; }
     if (focus) user.focus();
   }
 
@@ -69,6 +69,7 @@
       const result = await FC.listModules();
       if (request !== moduleRequest || !profile) return;
       modules = result.filter(m => m.is_published);
+      if (byId('mod2PodcastLink')) byId('mod2PodcastLink').hidden = !modules.some(m => m.slug === 'mod2');
       renderModules();
       if (modules.length) { const first = byId('firstModuleLink'); first.href = './mod1.html?module=' + encodeURIComponent(modules[0].slug); first.hidden = false; }
     } catch (error) {

@@ -1,0 +1,65 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#191a1e">
+  <meta name="referrer" content="no-referrer">
+  <meta name="description" content="Listen to your Module 2 SATCOM teaching podcast and download its full transcript.">
+  <title>Module 2 Podcast / Tomato08</title>
+  <link rel="stylesheet" href="./podcast.css?v=1">
+</head>
+<body>
+  <a class="skip" href="#content">Skip to content</a>
+  <header class="topbar"><a class="brand" href="./tester.html">t<span>08</span><small>ATELIER</small></a><nav aria-label="Podcast navigation"><a href="./tester.html">All modules</a><a href="./mod1.html?module=mod2">Module 2</a><button id="signOut" type="button" hidden>Sign out</button></nav></header>
+  <main id="content" tabindex="-1">
+    <p class="eyebrow">MODULE 2 / SATCOM AUDIO</p>
+    <h1>Build the picture.<br><span>Remember the numbers.</span></h1>
+    <p class="intro">Connect the concepts, rehearse the frequency ranges, and make the signal flow make sense.</p>
+
+    <section class="card login" id="login" aria-labelledby="loginTitle">
+      <h2 id="loginTitle">Your study session starts here.</h2>
+      <p>Use your Tomato08 account to open the podcast.</p>
+      <form id="signInForm">
+        <label for="username">Username</label><input id="username" name="username" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+        <label for="password">Password</label><input id="password" name="password" type="password" autocomplete="current-password" required>
+        <button class="primary" id="signIn" type="submit">Sign in to listen</button>
+      </form>
+      <p id="loginStatus" role="status" aria-live="polite">Checking your session…</p>
+    </section>
+
+    <section id="workspace" hidden aria-labelledby="episodeTitle">
+      <div class="card episode">
+        <div class="episode-heading"><div><p class="eyebrow">YOUR TEACHING PODCAST</p><h2 id="episodeTitle">Module 2, explained.</h2></div><span class="badge" id="episodeDate">SATCOM</span></div>
+        <p id="episodeStatus" role="status" aria-live="polite">Opening your episode…</p>
+        <div id="player" hidden>
+          <audio id="audio" controls preload="metadata" aria-label="Module 2 SATCOM teaching podcast"></audio>
+          <div class="playback"><button type="button" id="back15" aria-label="Rewind 15 seconds">↶ 15 sec</button><button type="button" id="forward15" aria-label="Forward 15 seconds">15 sec ↷</button><label for="speed">Speed <select id="speed"><option value="0.75">0.75×</option><option value="1" selected>1×</option><option value="1.25">1.25×</option><option value="1.5">1.5×</option><option value="2">2×</option></select></label></div>
+          <div class="downloads"><a class="button primary" id="audioDownload" target="_blank" rel="noopener noreferrer">Download MP3 ↓</a><a class="button" id="transcriptDownload" target="_blank" rel="noopener noreferrer">Full transcript · PDF ↓</a></div>
+          <p class="hint">On iPhone, use Share → Save to Files to keep a download for offline study.</p>
+        </div>
+        <button id="reloadEpisode" type="button">Reload episode</button>
+      </div>
+
+      <div class="study-notes" aria-label="A simple way to study"><div><span>01</span><h3>Get the big picture</h3><p>Follow a signal from the modem to the satellite and back.</p></div><div><span>02</span><h3>Repeat the numbers</h3><p>Pause and say the uplink and downlink ranges out loud.</p></div><div><span>03</span><h3>Check your recall</h3><p>Return to the Module 2 cards and test the connections.</p></div></div>
+
+      <details class="card upload" id="developer" hidden>
+        <summary>Update this episode</summary>
+        <p>Upload a matched MP3 and PDF prepared from the current Module 2 questions. The existing episode stays available until both new files are ready.</p>
+        <form id="uploadForm">
+          <label for="mp3File">Podcast audio · MP3</label><input id="mp3File" type="file" accept="audio/mpeg,.mp3" required>
+          <label for="pdfFile">Full transcript · PDF</label><input id="pdfFile" type="file" accept="application/pdf,.pdf" required>
+          <label class="confirm"><input id="matchesSource" type="checkbox" required> These files match the current Module 2 questions.</label>
+          <button class="primary" type="submit" id="publish">Publish episode</button>
+          <p id="uploadStatus" role="status" aria-live="polite"></p>
+        </form>
+      </details>
+    </section>
+  </main>
+  <footer>Tomato08 / Atelier <span>A little further, every day.</span></footer>
+  <noscript><p>JavaScript is required to sign in and open the podcast.</p></noscript>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+  <script src="./supabase-config.js?v=9"></script><script src="./cloud.js?v=9"></script>
+  <script type="module" src="./podcast.js?v=1"></script>
+</body>
+</html>
