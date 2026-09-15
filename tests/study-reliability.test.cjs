@@ -33,6 +33,7 @@ function loadLayer() {
 }
 
 const {gradeEntry, parseMeasured} = loadLayer();
+const plain = value => JSON.parse(JSON.stringify(value));
 
 test('accepts the deployed numeric answer with omitted or matching displayed unit', () => {
   const entry={value:'480',unit:'ms',tolerance:0,accept:['480 ms']};
@@ -65,6 +66,6 @@ test('text alternatives remain case and whitespace insensitive', () => {
 });
 
 test('parser distinguishes scalar and range measurements', () => {
-  assert.deepEqual(parseMeasured('7.25 GHz',''),{kind:'scalar',values:[7.25],unit:'ghz'});
-  assert.deepEqual(parseMeasured('7.25 to 7.75 GHz',''),{kind:'range',values:[7.25,7.75],unit:'ghz'});
+  assert.deepEqual(plain(parseMeasured('7.25 GHz','')),{kind:'scalar',values:[7.25],unit:'ghz'});
+  assert.deepEqual(plain(parseMeasured('7.25 to 7.75 GHz','')),{kind:'range',values:[7.25,7.75],unit:'ghz'});
 });
