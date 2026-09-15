@@ -19,6 +19,32 @@
   menu.addEventListener('click', () => { const open = nav.classList.toggle('is-open'); menu.setAttribute('aria-expanded', String(open)); if (open) nav.querySelector('nav a').focus(); });
   document.addEventListener('keydown', e => { if (e.key === 'Escape' && nav.classList.contains('is-open')) { closeNav(); menu.focus(); } });
 
+  function currentReturnPath() {
+    return location.pathname + location.search + location.hash;
+  }
+  function loginUrl(returnPath) {
+    const url = new URL('./index.html', location.href);
+    if (returnPath) url.searchParams.set('return', returnPath);
+    return url.pathname + url.search;
+  }
+  function safeReturnDestination() {
+    const raw = new URLSearchParams(location.search).get('return');
+    if (!raw) return null;
+    try {
+      const url = new URL(raw, location.origin);
+      if (url.origin !== location.origin) return null;
+      const name = url.pathname.split('/').pop() || '';
+      const allowed = new Set(['tester.html','mod1.html','study.html','developer.html','podcast.html','mod1-calc.html','antenna-pattern.html']);
+      if (!allowed.has(name)) return null;
+      return url.pathname + url.search + url.hash;
+    } catch (_) { return null; }
+  }
+  function destinationFor(profile) {
+    const requested = safeReturnDestination();
+    if (requested && /\/developer\.html(?:[?#]|$)/.test(requested) && profile?.role !== 'developer') return './tester.html';
+    return requested || './tester.html';
+  }
+
   function updateAccount(next) {
     profile = next;
     document.querySelectorAll('[data-developer]').forEach(el => { el.hidden = !next || next.role !== 'developer'; });
@@ -40,10 +66,17 @@
   }
 
   async function enter(next) {
-    if (!next) { showGate('Please sign in to continue.'); return; }
-    if (!isModules && next.role !== 'developer') { showGate('Opening your modules…'); location.replace('./tester.html'); return; }
+    if (!next) {
+      if (isModules) { location.replace(loginUrl(currentReturnPath())); return; }
+      showGate('Please sign in to continue.');
+      return;
+    }
+    if (!isModules) {
+      location.replace(destinationFor(next));
+      return;
+    }
     updateAccount(next); gate.hidden = true; app.hidden = false; errorEl.textContent = '';
-    if (isModules) { startHeartbeat(); await loadModules(); }
+    startHeartbeat(); await loadModules();
   }
 
   function renderModules() {
@@ -91,7 +124,13 @@
     finally { busy = false; submit.disabled = false; submit.innerHTML = label; }
   }
   byId('signInForm').addEventListener('submit', signIn);
-  signOutBtn.addEventListener('click', async () => { signOutBtn.disabled = true; try { await FC.signOut(); user.value = ''; pass.value = ''; showGate('', true); } finally { signOutBtn.disabled = false; } });
+  signOutBtn.addEventListener('click', async () => {
+    signOutBtn.disabled = true;
+    try {
+      await FC.signOut(); user.value = ''; pass.value = '';
+      if (isModules) location.replace('./index.html'); else showGate('', true);
+    } finally { signOutBtn.disabled = false; }
+  });
   if (isModules) byId('moduleSearch').addEventListener('input', renderModules);
 
   // Preserve the original learner-presence feature; suspend it in hidden tabs.
@@ -103,12 +142,22 @@
   function stopHeartbeat() { if (heartbeat) clearInterval(heartbeat); heartbeat = null; }
   document.addEventListener('visibilitychange', () => { if (document.hidden) stopHeartbeat(); else startHeartbeat(); });
   window.addEventListener('pagehide', stopHeartbeat);
-  window.addEventListener('pageshow', async e => { if (!e.persisted || !window.FC) return; try { const next = await FC.requireUser(); if (next) await enter(next); else showGate('Your session ended. Please sign in again.'); } catch (_) { showGate('Please sign in again.'); } });
+  window.addEventListener('pageshow', async e => {
+    if (!e.persisted || !window.FC) return;
+    try { const next = await FC.requireUser(); if (next) await enter(next); else if (isModules) location.replace(loginUrl(currentReturnPath())); else showGate('Your session ended. Please sign in again.'); }
+    catch (_) { if (isModules) location.replace(loginUrl(currentReturnPath())); else showGate('Please sign in again.'); }
+  });
   (async function boot() {
     if (!window.FC) { showGate('The sign-in service could not load. Check your internet connection and reload this page.'); return; }
     submit.disabled = true;
-    try { const next = await FC.requireUser(); if (next) await enter(next); else showGate(''); }
-    catch (error) { showGate(error.message || 'Your session could not be checked. Please sign in.'); }
-    finally { submit.disabled = false; byId('sessionStatus').hidden = true; }
+    try {
+      const next = await FC.requireUser();
+      if (next) await enter(next);
+      else if (isModules) location.replace(loginUrl(currentReturnPath()));
+      else showGate('');
+    } catch (error) {
+      if (isModules) location.replace(loginUrl(currentReturnPath()));
+      else showGate(error.message || 'Your session could not be checked. Please sign in.');
+    } finally { submit.disabled = false; byId('sessionStatus').hidden = true; }
   })();
 })();
