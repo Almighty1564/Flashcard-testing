@@ -17,6 +17,16 @@
     'legacy-study': 'Flashcard study', calculator: 'Calculation practice', antenna: 'Interactive visual'
   };
   const pageName = names[body.dataset.page] || 'Workspace';
+
+  // Page-specific reliability layers load after the original inline controllers have initialized.
+  const reliability = { study: './study-reliability.js?v=1', developer: './authoring-reliability.js?v=1' }[body.dataset.page];
+  if (reliability) {
+    const script = document.createElement('script');
+    script.src = reliability;
+    script.async = false;
+    document.head.appendChild(script);
+  }
+
   const main = document.querySelector('main.main') || document.querySelector('main') || document.querySelector('.wrap') || document.querySelector('#calcHost');
   const contentTarget = document.getElementById('atelierMain') || main;
   const sidebar = document.querySelector('#fcSidebar');
