@@ -1,3 +1,4 @@
+drop policy if exists ai_usage_no_direct_read on public.ai_usage_daily;
 create policy ai_usage_no_direct_read on public.ai_usage_daily for select to authenticated using (false);
 
 create index if not exists card_progress_question_id_idx on public.card_progress(question_id);
