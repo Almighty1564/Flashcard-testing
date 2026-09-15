@@ -13,32 +13,42 @@ Open the local review at **http://127.0.0.1:5500/** while its preview server is 
 - Original study scheduling, custom tests, card progress, test history, ranking, and question reporting.
 - Original developer module/group/question editor, images, preview, imports/exports, report management, and learner activity.
 - Original calculation practice and embedded visual tool, plus the legacy study page.
-- AI wrong-answer generation through the existing deployed `distractors` function.
+- AI wrong-answer generation through the deployed `distractors` function.
 
-## What changed
+## Reliability and authorization hardening
+
+The current application adds safeguards around the original engines rather than replacing the question bank or learner data:
+
+- Numeric/type-in grading validates the complete value, including both endpoints of a range and the expected unit. A partial numeric prefix is no longer sufficient.
+- Learner writes use a local per-account outbox, visible save state, automatic retries, and ordered/idempotent backend RPCs so a stale retry cannot overwrite a newer answer.
+- The sidebar distinguishes reviewed questions from strong recall; ranking counts the latest `correct`/`confident` result instead of any repetition.
+- Question Studio saves are atomic and revision checked. A stale browser tab is rejected instead of deleting or overwriting newer module work.
+- Signed-out protected pages return through the single branded login page and then return to the requested Tomato08 route.
+- Matching interactions support keyboard activation, and authoring Save/New controls retain normal keyboard operation.
+- AI distractor generation validates developer authorization server-side, has a daily request limit, and times out failed provider calls.
+
+The database changes are versioned under `supabase/migrations/`. The canonical deployed Edge Function source is `supabase/functions/distractors/index.ts`; the root `index.ts` is only a compatibility pointer so there is no second deployable copy to drift.
+
+## What changed in the visual layer
 
 `index.html` and `tester.html` are rebuilt around the Atelier design and the original `FC` APIs. `atelier-portal.js` connects those screens to the existing account and module workflows. `portal.css` styles the entry and collection screens.
 
 `atelier.css` and `atelier-shell.js` apply the same design to the original inner pages. Existing study/developer controls and embedded export templates are preserved. Mobile navigation, keyboard focus, static form labels, error states, and reduced-motion support are included. The visual layer adds no continuous animation loop. Existing study/presence timers are retained; collection presence pauses when the tab is hidden.
 
-Two compatibility repairs are included: the legacy study page shares `FC.client` and its session; AI generation uses the signed-in user's session instead of falling back to a publishable key. Failed or stale AI requests leave drafted answers and images intact. The original Supabase configuration and shared cloud API are preserved.
+`study-reliability.js` and `authoring-reliability.js` are deliberately small adapters around the existing study and authoring engines. They own recoverable progress writes, strict entry grading, keyboard matching, revision-aware authoring saves, and conflict messaging.
 
-## Validation and limits
+## Validation
 
-Checked all seven page entrypoints, local asset references, duplicate IDs, external JavaScript syntax, and 11 inline script blocks. Confirmed 253 original inner-page control IDs remain present and the main study/developer engines and export templates are unchanged. Fifteen account/module scenarios and five AI helper scenarios pass using local service stubs. These tests made no calls to real accounts or paid models.
+The repository regression workflow runs the Node test suite and JavaScript syntax checks on pushes and pull requests. Current tests cover weather normalization, podcast media behavior, strict numeric/range grading, unit mismatches, partial-range rejection, and tolerance handling.
 
-Read-only Supabase inspection confirms the core tables, columns, role constraints, reporting/ranking RPCs, and private image bucket match the application. See [backend-verification.md](backend-verification.md) for the precise scope and pre-existing limitations.
+Read-only Supabase inspection confirms the core tables and private media bucket remain present. RLS is enabled on exposed application tables. The reliability migrations add revision tracking, idempotent save keys, ordered progress writes, AI quota tracking, policy cleanup, and missing foreign-key indexes without modifying question content.
 
-Authenticated browser flows, visual rendering on physical iPhone/iPad devices, real progress writes, image uploads, and model responses have **not** been exercised. Before publication, review with existing tester/developer accounts: sign in, open a module, study a card, reload progress, take a test, report a question, edit a draft, upload an image, and generate wrong answers. These actions use the real backend.
-
-Stud-number editing is present in the original UI but its database column/RPC is not installed; the existing application reports that missing capability. AI server authorization and other pre-existing backend review items remain described in the verification report. No database migrations, live function changes, GitHub pushes, or public deployment were made.
+Authenticated end-to-end browser flows still require an existing tester/developer account. Before a release that substantially changes study or authoring behavior, exercise: sign in, open a module, answer and reload a card, finish a test, report a question, edit and save a draft, upload an image, and generate AI distractors.
 
 ## GitHub Pages handoff
 
-There is no build step or new frontend dependency. Publish the **complete folder contents**, including the new CSS/JavaScript and `assets` directory, at the same level as the repository's current `index.html`. Keep `CNAME` and `supabase-config.js` with the site. The existing Supabase library remains pinned to version 2.45.4 on jsDelivr. Never add a service-role key or secret key to these browser files.
+There is no frontend build step. Publish the **complete repository contents**, including the CSS/JavaScript files, at the same level as `index.html`. Keep `CNAME` and `supabase-config.js` with the site. The Supabase browser library is pinned to version 2.45.4 on jsDelivr. Never add a service-role key or secret key to browser files.
 
-The local origin `http://127.0.0.1:5500` is already allowed by the deployed AI function; arbitrary local ports may be blocked by its CORS policy. Opening the HTML via `file://` is unsuitable for the complete connected experience.
+The local origin `http://127.0.0.1:5500` is allowed by the deployed AI function; arbitrary local ports are intentionally blocked by its CORS allowlist. Opening the HTML via `file://` is unsuitable for the complete connected experience.
 
-`index.ts` is retained from the user's repository as supplied. It is not a synchronized copy of the currently deployed Edge Function and should not be redeployed as part of this visual update. The historical platform assessment and architecture illustration describe future options, not deployed services.
-
-The earlier interactive design prototype was preserved separately in the workspace's `work/atelier-reference` folder before replacement.
+The historical platform assessment and architecture illustration describe future options, not deployed services.
