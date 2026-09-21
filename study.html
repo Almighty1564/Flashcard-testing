@@ -121,6 +121,11 @@ function start(mode){
  currentGroup=document.getElementById("groupSelect").value;
  queue=questions.filter(q=>!currentGroup||q.group_id===currentGroup);
  if(mode==="due") queue=queue.filter(q=>dueNow(progress[q.id]));
+ // Shuffle after filtering so every selected question appears once.
+ for(let i=queue.length-1;i>0;i--){
+   const j=Math.floor(Math.random()*(i+1));
+   [queue[i],queue[j]]=[queue[j],queue[i]];
+ }
  index=0; document.getElementById("done").classList.add("hidden");
  if(!queue.length){document.getElementById("studyCard").classList.add("hidden");document.getElementById("done").classList.remove("hidden");document.getElementById("done").innerHTML='<h2>No cards in this selection.</h2><button id="again" class="primary">Back</button>';document.getElementById("again").onclick=()=>document.getElementById("done").classList.add("hidden");return;}
  renderCard();
