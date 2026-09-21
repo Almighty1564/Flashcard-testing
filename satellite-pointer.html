@@ -1,21 +1,58 @@
 <!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><meta name="theme-color" content="#000"><meta name="referrer" content="no-referrer"><title>Satellite Pointer / Atelier</title><link rel="stylesheet" href="./satellite-pointer.css?v=20260921-3"></head>
-<body data-page="satellite-pointer"><header class="sp-nav"><a class="sp-brand" href="./index.html"><b>t08</b><span>ATELIER<small>BY TOMATO08</small></span></a><nav><a href="./index.html">⌂ Overview</a><a href="./tester.html">▣ Learning</a><a class="active" href="./satellite-pointer.html">◒ Satellite Pointer</a></nav></header>
-<main class="sp-main" id="content">
-<header class="sp-title"><h1>SATELLITE POINTER</h1><p>FIND&nbsp;&nbsp; / &nbsp;&nbsp;POINT&nbsp;&nbsp; / &nbsp;&nbsp;LOCK</p></header>
-<section class="sp-controls">
-<label><span>1. CHOOSE SATELLITE</span><select id="satelliteSelect"><option value="">Choose a satellite…</option></select></label>
-<div id="customSatellite" hidden><div class="sp-custom"><input id="customName" maxlength="60" placeholder="Satellite name"><input id="customLongitude" type="number" min="0" max="180" step="any" placeholder="Longitude"><select id="customHemisphere"><option value="-1">°W</option><option value="1">°E</option></select><button id="addSatellite">Add</button></div><p id="customStatus"></p></div><p id="satelliteInfo" hidden></p>
-<div class="sp-gps"><div><span class="sp-label">2. ENABLE GPS (YOUR LOCATION)</span><strong id="positionStatus">Location not set</strong><small id="positionDetail">Tap Enable GPS.</small></div><button id="useGPS" type="button">Enable GPS</button></div>
-<details id="manualLocation"><summary>Manual coordinates</summary><form id="locationForm"><input id="latitude" type="number" min="0" max="90" step="any" placeholder="Latitude" required><select id="latitudeHemisphere"><option value="1">°N</option><option value="-1">°S</option></select><input id="longitude" type="number" min="0" max="180" step="any" placeholder="Longitude" required><select id="longitudeHemisphere"><option value="-1">°W</option><option value="1">°E</option></select><button>Use coordinates</button><p id="locationError"></p></form></details>
-<div class="sp-reference"><span class="sp-label">3. REFERENCE</span><div class="sp-segment"><button id="magneticReference" class="active" type="button">Magnetic North</button><button id="trueReference" type="button">True North</button></div><select id="northReference" hidden><option value="magnetic">Magnetic north</option><option value="true">True north</option></select></div>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#000000"><meta name="referrer" content="no-referrer">
+<meta name="description" content="A smooth, on-device compass and GEO satellite pointer with true/magnetic north, coordinates and GPS elevation.">
+<title>Compass / Tomato08</title>
+<link rel="stylesheet" href="./satellite-pointer.css?v=20260921-4">
+</head>
+<body data-page="satellite-pointer">
+<a class="skip" href="#instrument">Skip to compass</a>
+<header class="topbar"><a class="brand" href="./index.html">t08 <span>ATELIER</span></a><nav aria-label="Workspace"><a href="./index.html">Overview</a><a href="./tester.html">Learning</a><a href="./satellite-pointer.html" aria-current="page">Compass</a></nav></header>
+<main>
+<section class="controls" id="controls" aria-label="Satellite and sensors">
+<label class="field" for="satelliteSelect"><span>CHOOSE SATELLITE</span><select id="satelliteSelect"><option value="">Choose a satellite…</option></select></label>
+<form id="customSatellite" class="custom" hidden><label>Name<input id="customName" maxlength="60" placeholder="Custom GEO satellite"></label><label>Longitude<input id="customLongitude" type="number" min="0" max="180" step="any" placeholder="0–180" required></label><label>Direction<select id="customHemisphere"><option value="-1">West</option><option value="1">East</option></select></label><button type="submit">Add satellite</button></form>
+<div class="gps-row"><div><span class="label">ENABLE GPS</span><small id="gpsSummary">GPS + compass access</small></div><button type="button" id="gpsToggle" role="switch" aria-checked="false" aria-label="Enable GPS and compass"><span></span></button></div>
+<div class="reference" role="group" aria-label="North reference"><button type="button" id="magneticReference" aria-pressed="true">Magnetic</button><button type="button" id="trueReference" aria-pressed="false">True north</button></div>
 </section>
-<section class="sp-instrument" id="instrument" data-state="idle">
-<div class="sp-az"><span id="azimuthLabel">AZIMUTH (MAG)</span><strong id="dialAzimuth">—</strong></div>
-<div class="sp-dial-wrap"><svg class="sp-dial" viewBox="0 0 300 300" aria-label="Compass"><circle cx="150" cy="150" r="130"/><g class="ticks"><path d="M150 20v20M280 150h-20M150 280v-20M20 150h20M58 58l14 14M242 58l-14 14M58 242l14-14M242 242l-14-14"/></g><text x="150" y="15">N</text><text x="292" y="155">E</text><text x="150" y="298">S</text><text x="8" y="155">W</text><g id="targetNeedle" visibility="hidden"><path class="target-line" d="M150 150V45"/><circle cx="150" cy="42" r="7"/></g><g id="phoneNeedle" visibility="hidden"><path class="phone-arrow" d="M150 48l-13 31h26zM150 75v88"/></g><circle class="hub" cx="150" cy="150" r="9"/></svg><div class="sp-lock" aria-hidden="true"><span>🛰</span><b>ON TARGET</b></div></div>
-<div class="sp-bottom"><div><span>ELEVATION</span><strong id="targetElevation">—</strong></div><div class="sp-error"><span>Δ AZIMUTH</span><strong id="azError">—</strong><small id="turnInstruction">Enable sensors</small></div></div>
-<button id="startSensors" class="sp-start" type="button">Enable sensors</button><button id="stopSensors" type="button" hidden>Stop</button>
-<p id="alignmentStatus" class="sp-status" role="status" aria-live="polite">Choose a satellite and enable GPS</p><p id="sensorStatus" class="sp-note">Sensors off.</p>
+<section class="instrument" id="instrument" aria-label="Compass and pointing" tabindex="-1" data-state="idle">
+<div class="instrument-top"><span id="referenceLabel">MAGNETIC NORTH</span><button type="button" id="fieldView" aria-pressed="false">Expand ⛶</button></div>
+<button class="compass-face" id="compassFace" type="button" aria-label="Hold this bearing. Tap again to release." aria-pressed="false" disabled>
+<svg class="dial" viewBox="0 0 400 400" aria-hidden="true">
+<g id="rose"><path id="ticksFine" class="ticks fine"/><path id="ticksMajor" class="ticks major"/><g id="dialLabels"></g><path class="north" d="M193 34h14l-7 12z"/></g>
+<path id="bearingArc" class="bearing-arc" d=""/>
+<g id="targetMarker" visibility="hidden"><circle cx="200" cy="34" r="6" class="target-dot"/><path d="M200 46v12" class="target-line"/></g>
+<path class="lubber" d="M200 19V70"/>
+<g id="levelBubble"><circle cx="200" cy="200" r="45" class="bubble"/><path class="bubble-cross" d="M187 200h26M200 187v26"/></g>
+<path class="crosshair" d="M125 200h150M200 125v150"/>
+</svg>
+<svg class="satellite-lock" viewBox="0 0 64 64" aria-hidden="true"><g transform="rotate(-35 32 32)"><rect x="23" y="23" width="18" height="18" rx="3"/><path d="M19 24H5v16h14zm26 0h14v16H45zM12 24v16M52 24v16M5 32h14m26 0h14M32 23v-9m-5 0h10"/><path d="M43 13q8 0 8 8m-8-15q15 0 15 15"/></g></svg>
+</button>
+<p id="holdHint" class="hold-hint">Tap the dial to hold a bearing</p>
+<div class="bearing" aria-hidden="true"><span id="headingValue">—°</span><span id="headingCardinal"></span></div>
+<p class="sr-only" id="bearingAccessible" role="status" aria-live="polite">Heading unavailable</p>
+<div class="position"><button id="coordinates" class="coordinates" type="button" disabled title="Open this position in Apple Maps (shares coordinates with Apple)">Coordinates unavailable</button><button class="place" id="placeName" type="button" aria-haspopup="dialog">Show place name</button><button class="altitude" id="altitude" type="button" title="Switch between feet and meters">GPS elevation unavailable</button></div>
+<div class="target-strip" id="targetStrip" hidden><div><span>TARGET AZIMUTH</span><strong id="targetBearing">—</strong></div><div><span>DISH ELEVATION</span><strong id="targetElevation">—</strong></div><div><span>TURN</span><strong id="turnInstruction">—</strong></div></div>
+<label class="check mount-check" id="mountCheck" hidden><input id="mountConfirmed" type="checkbox"><span id="mountLabel">Phone top edge aligned with antenna.</span></label>
+<p class="alignment-status" id="alignmentStatus" role="status" aria-live="polite">Enable GPS to begin</p>
+<p class="small-note" id="modeNote">Keep the phone flat. Its top edge is your pointing direction.</p>
+<p class="small-note signal-note" id="signalNote" hidden>Green = estimated pointing zone, not satellite lock. Verify with your receiver.</p>
 </section>
-<details class="sp-advanced"><summary>Advanced / calibration</summary><select id="pointMode"><option value="azimuth">Azimuth</option></select><input id="azOffset" type="number" value="0"><input id="elOffset" type="number" value="0"><select id="tolerance"><option value="2">2°</option><option value="5">5°</option><option value="10" selected>10°</option><option value="15">15°</option></select><label><input id="mountConfirmed" type="checkbox" checked> Phone top edge aligned with antenna</label><label><input id="keepAwake" type="checkbox" checked> Keep screen awake</label><span id="wakeStatus"></span><span id="solutionNote"></span><span id="targetTrue"></span><span id="targetMagnetic"></span><span id="liveMagnetic"></span><span id="liveTrue"></span><span id="liveElevation"></span><span id="dialReference"></span><span id="tiltInstruction"></span><span id="modeWarning"></span><span id="mountHelp"></span><span id="liveTiltLarge"></span><span id="tiltMarker"></span><span id="tiltDisplay"></span><span id="dialLegend"></span><button id="fieldView" type="button">Field view</button></details>
-</main><script type="module" src="./satellite-pointer.mjs?v=20260921-3"></script></body></html>
+<details class="settings" id="settings"><summary>Settings &amp; sensor details</summary>
+<p id="sensorStatus">Sensors off.</p><p id="positionDetail">No location received.</p><p id="modelStatus">True north uses on-device WMM2025.</p><p id="frameStats">Animation starts with the sensors.</p>
+<div class="settings-grid"><label>Pointing mode<select id="pointMode"><option value="azimuth">Base · azimuth only</option><option value="both">Mounted · both axes</option></select></label><label>Green zone<select id="tolerance"><option value="2">±2°</option><option value="5">±5°</option><option value="10" selected>±10° · coarse</option><option value="15">±15° · coarse</option></select></label><label>Azimuth offset (°)<input id="azOffset" type="number" min="-180" max="180" step="0.1" value="0"></label><label>Elevation offset (°)<input id="elOffset" type="number" min="-90" max="90" step="0.1" value="0"></label></div>
+
+<label class="check"><input id="keepAwake" type="checkbox" checked>Keep the screen awake</label><p id="wakeStatus"></p>
+<label class="check"><input id="placeConsent" type="checkbox">Look up my place name using BigDataCloud</label><p>Optional: sends current GPS coordinates rounded to 3 decimal places and your IP address to BigDataCloud, which uses location/IP pairs to improve geolocation. Never used for manual positions. Nothing is stored by this page.</p>
+<form id="manualPosition"><h2>Manual position</h2><div class="settings-grid"><label>Latitude (−90 to 90)<input id="latitude" type="number" min="-90" max="90" step="any" placeholder="North + / South −" required></label><label>Longitude (−180 to 180)<input id="longitude" type="number" min="-180" max="180" step="any" placeholder="East + / West −" required></label></div><button type="submit">Use position + enable compass</button></form>
+<button id="retrySensors" type="button">Restart GPS + compass</button>
+<p>The level crosshair uses phone tilt, not ground slope. Nearby metal can distort a steady compass. Unknown or excessive compass uncertainty never turns green.</p><p>GPS elevation is WGS84 ellipsoid height, not terrain height or guaranteed mean sea level. Missing altitude is shown as unavailable. Dish elevation is a separate angle. Feet/meters switch: tap the elevation.</p><p>GEO satellites use nominal equatorial slots, not live tracking or coverage predictions. Verify the assigned orbital position. The magnetic model is valid in 2025–2029.</p>
+<p class="sources"><a href="https://support.apple.com/guide/iphone/compass-iph1ac0b663/ios" target="_blank" rel="noopener noreferrer">Apple compass guide</a> · <a href="https://www.ncei.noaa.gov/products/world-magnetic-model" target="_blank" rel="noopener noreferrer">WMM2025</a> · <a href="https://www.bigdatacloud.com/docs/article/why-is-reverse-geocoding-api-free" target="_blank" rel="noopener noreferrer">Place lookup privacy</a></p><p>Compass v4 · 21 September 2026</p>
+</details>
+</main>
+<dialog id="placeDialog" aria-labelledby="placeTitle"><h2 id="placeTitle">Show your place name?</h2><p>This sends your current GPS coordinates, rounded to 3 decimal places, and IP address to BigDataCloud. It uses location/IP pairs to improve geolocation. The compass works without this.</p><div><button id="denyPlace" type="button">Not now</button><button id="allowPlace" type="button">Allow for this tab</button></div></dialog>
+<noscript>Enable JavaScript to use the compass.</noscript>
+<script type="module" src="./satellite-pointer.mjs?v=20260921-4"></script>
+</body></html>

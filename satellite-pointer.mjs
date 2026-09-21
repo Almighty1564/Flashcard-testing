@@ -1,7 +1,10 @@
-import { wrap, angleError, numberIn, geoLookAngles, magneticField, phoneReading, circularMean, alignment } from './satellite-math.mjs?v=20260921-1';
+/* Native-style compass view. Raw measurements, not animation, decide alignment.
+ * Browser animation: https://developer.mozilla.org/docs/Web/API/Window/requestAnimationFrame
+ * Physical phone top edge (+Y) is the heading axis, independent of UI rotation.
+ */
+import { wrap, angleError, numberIn, geoLookAngles, magneticField, phoneReading, alignment } from './satellite-math.mjs?v=20260921-1';
+import { smoothAngle, cardinal, dms, altitudeLabel, bearingPoint, deviationArc, stableSamples, lookupPlace } from './compass-core.mjs?v=20260921-4';
 
-// Nominal slots verified against SES's July 2026 fleet map and Eutelsat's 10°E page.
-// No ephemeris claim. Custom entries and observer coordinates stay in memory only.
 const PRESETS = [
   ['SES-1',-101],['SES-2',-87],['SES-3',-103],['SES-4',-22],['SES-5',5],['SES-6',-40.5],
   ['SES-9',108.2],['SES-10',-67],['SES-11',-105],['SES-12',95],['SES-14',-47.5],['SES-15',-129],
@@ -9,260 +12,356 @@ const PRESETS = [
   ['Intelsat 22',72],['Intelsat 35e',-34.5],['Intelsat 37e',-18],['Intelsat 39',62],['Intelsat 40e',-91],
   ['Galaxy 19',-97],['GovSat-1',21.5],['NSS-12',57],['EUTELSAT 10B',10]
 ];
-const $ = id => document.getElementById(id);
-const setText = (id, text) => { const el = $(id); if (el.textContent !== text) el.textContent = text; };
-const formatAngle = n => Number.isFinite(n) ? `${n.toFixed(1)}°` : '—';
+const satellites = PRESETS.map(([name, longitude], i) => ({ id: `preset-${i}`, name, longitude }));
+// Resolve DOM references once. No layout reads or rebuilding the dial in the frame loop.
+const ui = Object.fromEntries([...document.querySelectorAll('[id]')].map(el => [el.id, el]));
+const text = (id, value) => { if (ui[id].textContent !== value) ui[id].textContent = value; };
+const attr = (el, key, value) => { if (el.getAttribute(key) !== String(value)) el.setAttribute(key, String(value)); };
+const deg = n => Number.isFinite(n) ? `${n.toFixed(1)}°` : '—';
 const slot = n => `${Math.abs(n)}°${n < 0 ? 'W' : 'E'}`;
-const satellites = PRESETS.map(([name, longitude], i) => ({ id: `preset-${i}`, name, longitude, custom: false }));
-const state = { location: null, solution: null, field: null, modelError: '', satellite: null, running: false, starting: false, run: 0, geoRun: 0, geoID: null, gpsMessage: '', motionMessage: '', phone: null, headingAt: 0, tiltAt: 0, headings: [], tilts: [], inZoneSince: null, wake: null, fieldView: false };
-const mode = () => $('pointMode').value;
-const offsets = () => ({ azOffset: numberIn($('azOffset').value,-180,180), elOffset: numberIn($('elOffset').value,-90,90) });
-
-function populateSatellites() {
-  const selected = $('satelliteSelect').value;
-  const fragment = document.createDocumentFragment();
-  const blank = new Option('Choose a satellite…',''); fragment.append(blank);
-  const group = document.createElement('optgroup'); group.label = 'Nominal GEO positions';
-  const custom = document.createElement('optgroup'); custom.label = 'Added in this tab';
-  for (const sat of satellites) {
-    let label = `${sat.name} · ${slot(sat.longitude)}`;
-    if (state.location) {
-      const look = geoLookAngles(state.location.lat,state.location.lon,sat.longitude,state.location.alt);
-      if (look.elevation <= 0) label += ' · below horizon';
-    }
-    (sat.custom ? custom : group).append(new Option(label,sat.id));
+const now = () => performance.now();
+const state = {
+  running: false, starting: false, generation: 0, geoID: null, raf: null, lastFrame: null,
+  position: null, field: null, target: null, satellite: null, reference: 'magnetic', unit: 'ft',
+  reading: null, beta: null, gamma: null, headingAt: -Infinity, tiltAt: -Infinity, samples: [],
+  shownHeading: null, bubbleX: 0, bubbleY: 0, heldMagnetic: null, alignedSince: null,
+  gpsMessage: '', motionMessage: '', modelError: '', wake: null, focus: false,
+  nextStatus: 0, nextAccessible: 0, statsAt: 0, frameCount: 0, eventCount: 0,
+  place: '', placeCell: '', placeAttempt: -Infinity, placeError: '', placeAbort: null, placeToken: 0,
+  dirty: true, sensorSource: '', lastGeoLabelCell: '', sourceDate: new Date().toISOString().slice(0,10)
+};
+let settings = { mode: 'azimuth', tolerance: 10, azOffset: 0, elOffset: 0, mountOK: false };
+const labels = [];
+const NS = 'http://www.w3.org/2000/svg';
+function buildDial() {
+  let fine = '', major = '';
+  for (let a = 0; a < 360; a += 2) {
+    const long = a % 30 === 0, [x1,y1] = bearingPoint(a, long ? 124 : 127), [x2,y2] = bearingPoint(a,146);
+    const path = `M${x1.toFixed(3)} ${y1.toFixed(3)}L${x2.toFixed(3)} ${y2.toFixed(3)}`;
+    if (long) major += path; else fine += path;
   }
-  fragment.append(group); if (custom.children.length) fragment.append(custom);
-  fragment.append(new Option('＋ Add a satellite / enter longitude','custom'));
-  $('satelliteSelect').replaceChildren(fragment); $('satelliteSelect').value = selected;
+  ui.ticksFine.setAttribute('d',fine); ui.ticksMajor.setAttribute('d',major);
+  for (let a = 0; a < 360; a += 30) addLabel(a,181,String(a),'dial-number');
+  ['N','E','S','W'].forEach((value,i) => addLabel(i*90,100,value,'dial-cardinal'));
+  function addLabel(a,r,value,cls) {
+    const [x,y] = bearingPoint(a,r), label = document.createElementNS(NS,'text');
+    label.setAttribute('x',x); label.setAttribute('y',y); label.setAttribute('class',cls); label.textContent=value;
+    ui.dialLabels.append(label); labels.push({ element:label,x,y });
+  }
 }
-function resetAlignment(clearConfirmation = false) {
-  state.inZoneSince = null;
-  if (clearConfirmation) $('mountConfirmed').checked = false;
+function populateSatellites() {
+  const group = document.createElement('optgroup'); group.label='Nominal GEO slots';
+  for (const sat of satellites) group.append(new Option(`${sat.name} · ${slot(sat.longitude)}`,sat.id));
+  ui.satelliteSelect.replaceChildren(new Option('Compass only / choose satellite',''),group,new Option('＋ Custom satellite','custom'));
+}
+function resetAlignment(clearMount = false) {
+  state.alignedSince=null;
+  if (clearMount) { ui.mountConfirmed.checked=false; settings.mountOK=false; }
+  document.body.classList.remove('is-aligned'); state.dirty=true;
 }
 function calculate() {
-  const before = state.solution, priorDeclination = state.field?.declination;
-  state.solution = null; state.field = null; state.modelError = '';
-  if (state.location) {
-    try { state.field = magneticField(state.location.lat,state.location.lon,state.location.alt); }
-    catch (_) { state.modelError = 'WMM2025 unavailable: check your device date (valid 2025–2029).'; }
-    if (state.satellite) state.solution = geoLookAngles(state.location.lat,state.location.lon,state.satellite.longitude,state.location.alt);
+  state.field=null; state.target=null; state.modelError='';
+  const p=state.position;
+  if (p) {
+    try { state.field=magneticField(p.lat,p.lon,(p.altitude??0)/1000); }
+    catch (_) { state.modelError='WMM2025 unavailable. Check device date (2025–2029).'; }
+    if (state.satellite) state.target=geoLookAngles(p.lat,p.lon,state.satellite.longitude,(p.altitude??0)/1000);
   }
-  const after = state.solution;
-  if (!before || !after || Math.abs(before.elevation-after.elevation)>0.1 || (Number.isFinite(before.azimuth) && Number.isFinite(after.azimuth) && Math.abs(angleError(before.azimuth,after.azimuth))>0.1) || (Number.isFinite(priorDeclination) && Number.isFinite(state.field?.declination) && Math.abs(priorDeclination-state.field.declination)>0.1)) resetAlignment();
-  render();
+  resetAlignment(); state.sourceDate=new Date().toISOString().slice(0,10); refreshPosition(); requestFrame();
 }
 function selectSatellite() {
-  const id = $('satelliteSelect').value;
-  $('customSatellite').hidden = id !== 'custom';
-  state.satellite = satellites.find(s => s.id === id) || null;
-  setText('satelliteInfo',state.satellite ? `${state.satellite.name} at ${slot(state.satellite.longitude)}. ${state.satellite.custom ? 'User-entered position.' : 'Nominal slot, not live tracking.'} Confirm this is your assigned satellite and current position.` : 'Nominal GEO slots, not live tracking. Confirm the assigned orbital position with your provider.');
-  resetAlignment(true); calculate();
+  ui.customSatellite.hidden=ui.satelliteSelect.value!=='custom';
+  state.satellite=satellites.find(s=>s.id===ui.satelliteSelect.value)||null;
+  state.heldMagnetic=null; resetAlignment(true); calculate(); renderStatus(now());
 }
-$('satelliteSelect').addEventListener('change', selectSatellite);
-$('addSatellite').addEventListener('click', () => {
-  const longitude = numberIn($('customLongitude').value,0,180);
-  if (longitude === null) { setText('customStatus','Enter a longitude from 0° to 180° and choose E or W.'); return; }
-  const sat = { id: `custom-${satellites.length}`, name: $('customName').value.trim().slice(0,60) || 'Custom GEO satellite', longitude: longitude * Number($('customHemisphere').value), custom: true };
-  satellites.push(sat); populateSatellites(); $('satelliteSelect').value = sat.id; setText('customStatus',''); selectSatellite();
+ui.satelliteSelect.addEventListener('change',selectSatellite);
+ui.customSatellite.addEventListener('submit',e=>{
+  e.preventDefault(); const n=numberIn(ui.customLongitude.value,0,180); if(n===null)return;
+  const sat={id:`custom-${satellites.length}`,name:ui.customName.value.trim().slice(0,60)||'Custom GEO satellite',longitude:n*Number(ui.customHemisphere.value)};
+  satellites.push(sat); populateSatellites(); ui.satelliteSelect.value=sat.id; selectSatellite();
 });
 
-function clearGPS() {
-  ++state.geoRun;
-  if (state.geoID !== null && navigator.geolocation) navigator.geolocation.clearWatch(state.geoID);
-  state.geoID = null;
+function locationUsable() {
+  const p=state.position;
+  return !!p && (p.source==='Manual' || (Number.isFinite(p.accuracy)&&p.accuracy<=100&&Date.now()-p.at<=300000&&Date.now()-p.at>=-1000));
 }
-function startGPS() {
-  clearGPS(); state.location = null; state.gpsMessage = 'Requesting precise location…'; resetAlignment(true); calculate();
-  if (!window.isSecureContext || !navigator.geolocation) { state.gpsMessage = 'GPS unavailable. Use HTTPS or enter coordinates manually.'; render(); return; }
-  const token = state.geoRun;
+function stopGPS() {
+  if (state.geoID!==null) navigator.geolocation?.clearWatch(state.geoID);
+  state.geoID=null;
+}
+function startGPS(token) {
+  state.gpsMessage='Finding your location…';
+  if (!navigator.geolocation) { state.gpsMessage='GPS unavailable. Use manual coordinates in Settings.'; return; }
   try {
-    state.geoID = navigator.geolocation.watchPosition(position => {
-      if (token !== state.geoRun) return;
-      const c = position.coords, lat = numberIn(c.latitude,-90,90), lon = numberIn(c.longitude,-180,180);
-      if (lat === null || lon === null || !Number.isFinite(position.timestamp) || position.timestamp > Date.now()+60000) { state.gpsMessage = 'Invalid location reading; retry GPS.'; state.location = null; calculate(); return; }
-      const alt = Number.isFinite(c.altitude) ? numberIn(c.altitude/1000,-1,100) : null;
-      state.location = { lat, lon, alt: alt ?? 0, altMeasured: alt !== null, source: 'GPS', accuracy: numberIn(c.accuracy,0,1000000), at: position.timestamp };
-      state.gpsMessage = ''; populateSatellites(); calculate();
-    }, error => {
-      if (token !== state.geoRun) return;
-      state.gpsMessage = ({ 1: 'Location permission denied. Allow precise location or enter coordinates manually.', 2: 'Location unavailable. Move outdoors and retry GPS, or enter coordinates.', 3: 'GPS timed out. Retry outdoors, or enter coordinates manually.' })[error.code] || 'GPS failed. Retry or enter coordinates manually.';
-      state.location = null; calculate();
-    }, { enableHighAccuracy: true, maximumAge: 0, timeout: 20000 });
-  } catch (_) { state.gpsMessage = 'GPS access was blocked. Enter coordinates manually.'; }
-  render();
-}
-$('useGPS').addEventListener('click', startGPS);
-$('locationForm').addEventListener('submit', e => {
-  e.preventDefault();
-  const lat = numberIn($('latitude').value,0,90), lon = numberIn($('longitude').value,0,180);
-  if (lat === null || lon === null) { setText('locationError','Enter a valid latitude and longitude.'); return; }
-  clearGPS(); state.gpsMessage = ''; setText('locationError','');
-  state.location = { lat: lat*Number($('latitudeHemisphere').value), lon: lon*Number($('longitudeHemisphere').value), alt: 0, altMeasured: false, source: 'Manual', accuracy: null, at: Date.now() };
-  resetAlignment(true); populateSatellites(); calculate();
-});
-function pruneSamples(now) {
-  state.headings = state.headings.filter(s => now-s.at <= 1300);
-  state.tilts = state.tilts.filter(s => now-s.at <= 1300);
+    state.geoID=navigator.geolocation.watchPosition(result=>{
+      if(token!==state.generation||!state.running)return;
+      const c=result.coords,lat=numberIn(c.latitude,-90,90),lon=numberIn(c.longitude,-180,180);
+      if(lat===null||lon===null||!Number.isFinite(result.timestamp)||Math.abs(Date.now()-result.timestamp)>300000) {
+        state.gpsMessage='Invalid or old GPS fix. Retry outdoors.'; state.position=null; calculate(); return;
+      }
+      const old=state.position;
+      state.position={lat,lon,altitude:numberIn(c.altitude,-1000,100000),accuracy:numberIn(c.accuracy,0,1000000),altitudeAccuracy:numberIn(c.altitudeAccuracy,0,1000000),at:result.timestamp,source:'GPS'};
+      state.gpsMessage='';
+      // A new fix normally only changes the displayed coordinates. Do not reset the
+      // alignment dwell or re-run WMM on every watch callback when stationary.
+      if(!old||old.source!=='GPS'||Math.abs(old.lat-lat)>0.00005||Math.abs(old.lon-lon)>0.00005||Math.abs((old.altitude??0)-(state.position.altitude??0))>20||state.sourceDate!==new Date().toISOString().slice(0,10)) calculate();
+      else { state.dirty=true; refreshPosition(); }
+      const cell=`${lat.toFixed(2)},${lon.toFixed(2)}`;
+      if(cell!==state.lastGeoLabelCell) {
+        for(const option of ui.satelliteSelect.options) {
+          const sat=satellites.find(s=>s.id===option.value); if(!sat)continue;
+          option.textContent=`${sat.name} · ${slot(sat.longitude)}${geoLookAngles(lat,lon,sat.longitude).elevation<=0?' · below horizon':''}`;
+        }
+        state.lastGeoLabelCell=cell;
+      }
+      if(cell!==state.placeCell) { state.place=''; state.placeError=''; }
+      maybeLookupPlace(); requestFrame();
+    },error=>{
+      if(token!==state.generation||!state.running)return;
+      state.gpsMessage=({1:'GPS permission denied. Allow precise location or use manual coordinates.',2:'GPS unavailable. Move outdoors or use manual coordinates.',3:'GPS timed out. Retry outdoors.'})[error.code]||'GPS unavailable.';
+      state.position=null; abortPlace(); state.place=''; calculate();
+    },{enableHighAccuracy:true,maximumAge:0,timeout:20000});
+  } catch (_) { state.gpsMessage='GPS blocked. Use HTTPS or manual coordinates.'; }
 }
 function onOrientation(event) {
-  if (!state.running || document.hidden) return;
-  const now = Date.now(), reading = phoneReading(event);
-  if (!state.phone) state.phone = { heading: null, accuracy: null, tilt: null, flat: false, usableTilt: false, source: '' };
-  if (reading.tilt !== null) {
-    Object.assign(state.phone, { tilt: reading.tilt, flat: reading.flat, usableTilt: reading.usableTilt });
-    state.tiltAt = now; state.tilts.push({ at: now, value: reading.tilt });
+  if(!state.running||document.hidden)return;
+  const t=now(), r=phoneReading(event);
+  // Do not let relative events replace the absolute compass or duplicate samples.
+  const hasHeading=r.heading!==null;
+  if(hasHeading && state.sensorSource==='Apple magnetic compass' && r.source!=='Apple magnetic compass')return;
+  if(!state.reading)state.reading={heading:null,accuracy:null,tilt:null,flat:false,usableTilt:false};
+  if(r.tilt!==null) {
+    state.tiltAt=t; state.beta=numberIn(event.beta,-180,180); state.gamma=numberIn(event.gamma,-90,90);
+    Object.assign(state.reading,{tilt:r.tilt,flat:r.flat,usableTilt:r.usableTilt});
   }
-  if (reading.heading !== null) {
-    Object.assign(state.phone, { heading: reading.heading, accuracy: reading.accuracy, source: reading.source });
-    state.headingAt = now; state.headings.push({ at: now, value: reading.heading });
-  } else if ('webkitCompassHeading' in event || event.absolute === true) {
-    state.phone.heading = null; state.phone.accuracy = null; state.headingAt = 0; state.headings = []; resetAlignment();
+  if(hasHeading) {
+    Object.assign(state.reading,{heading:r.heading,accuracy:r.accuracy}); state.headingAt=t; state.sensorSource=r.source; state.eventCount++;
+    state.samples.push({heading:r.heading,tilt:r.tilt,at:t});
+    if(state.samples.length>256)state.samples.splice(0,state.samples.length-256);
+  } else if('webkitCompassHeading' in event || event.absolute===true) {
+    state.reading.heading=null; state.reading.accuracy=null; state.headingAt=-Infinity; state.samples.length=0; resetAlignment();
   }
-  pruneSamples(now);
+  requestFrame();
 }
 async function releaseWake() {
-  const wake = state.wake; state.wake = null;
-  try { if (wake && !wake.released) await wake.release(); } catch (_) { /* No effect on sensor readings. */ }
+  const wake=state.wake; state.wake=null;
+  try { if(wake&&!wake.released)await wake.release(); } catch (_) { /* Already released. */ }
 }
-async function acquireWake() {
-  if (!state.running || !$('keepAwake').checked || document.hidden) return;
-  if (!navigator.wakeLock) { setText('wakeStatus','Screen wake lock is not supported in this browser.'); return; }
-  const token = state.run;
+async function keepAwake() {
+  if(!state.running||!ui.keepAwake.checked||document.hidden||!navigator.wakeLock)return;
+  const token=state.generation;
   try {
-    const wake = await navigator.wakeLock.request('screen');
-    if (token !== state.run || !state.running || !$('keepAwake').checked) { await wake.release(); return; }
-    await releaseWake(); state.wake = wake; setText('wakeStatus','Keeping the screen awake.');
-    wake.addEventListener('release', () => { if (state.wake === wake) { state.wake = null; setText('wakeStatus','Screen wake lock released by the browser.'); } });
-  } catch (_) { setText('wakeStatus','Screen wake lock unavailable. Check your auto-lock setting.'); }
+    const wake=await navigator.wakeLock.request('screen');
+    if(token!==state.generation||!state.running||!ui.keepAwake.checked){await wake.release();return;}
+    await releaseWake(); state.wake=wake; text('wakeStatus','Screen kept awake while sensors run.');
+    wake.addEventListener('release',()=>{if(state.wake===wake){state.wake=null;text('wakeStatus','Screen wake lock released.');}});
+  }catch(_){text('wakeStatus','Wake lock unavailable. Check your screen auto-lock setting.');}
 }
-function stopSensors(message = 'Sensors stopped. Calculated targets remain available.') {
-  ++state.run; state.running = false; state.starting = false;
-  window.removeEventListener('deviceorientation',onOrientation);
-  window.removeEventListener('deviceorientationabsolute',onOrientation);
-  clearGPS(); state.phone = null; state.headingAt = 0; state.tiltAt = 0; state.headings = []; state.tilts = [];
-  state.motionMessage = message; resetAlignment(); releaseWake(); render();
+function stopSensors(message='Sensors off. Enable GPS to resume.') {
+  state.generation++; state.running=false; state.starting=false; stopGPS(); abortPlace(); releaseWake();
+  window.removeEventListener('deviceorientation',onOrientation); window.removeEventListener('deviceorientationabsolute',onOrientation);
+  if(state.raf!==null)cancelAnimationFrame(state.raf); state.raf=null; state.lastFrame=null;
+  state.reading=null; state.headingAt=-Infinity; state.tiltAt=-Infinity; state.shownHeading=null; state.samples.length=0; state.sensorSource='';
+  state.motionMessage=message; resetAlignment(); draw(null,0,now()); renderStatus(now());
 }
-function startSensors() {
-  stopSensors('Starting sensors…');
-  if (!window.isSecureContext) { state.motionMessage = 'Sensors require HTTPS. Manual pointing calculations still work.'; render(); return; }
-  state.running = true; state.starting = true; state.motionMessage = 'Waiting for motion/orientation permission…';
-  const token = state.run;
-  // This request must happen synchronously inside the tap, before awaiting GPS or wake lock.
+function startSensors(useGPS=true) {
+  stopSensors('Requesting sensor access…');
+  if(!window.isSecureContext){state.motionMessage='Sensor access needs HTTPS.';renderStatus(now());return;}
+  state.running=true; state.starting=true; state.gpsMessage=''; const token=state.generation;
+  state.frameCount=0;state.eventCount=0;state.statsAt=now();
+  // Called directly from the tap, before any await. iOS requires user activation.
   let permission;
   try {
-    permission = typeof window.DeviceOrientationEvent === 'undefined' ? Promise.resolve('unsupported') : typeof window.DeviceOrientationEvent.requestPermission === 'function' ? window.DeviceOrientationEvent.requestPermission(true) : Promise.resolve('granted');
-  } catch (_) { permission = Promise.resolve('denied'); }
-  if (!state.location || state.location.source !== 'Manual') startGPS();
-  acquireWake();
-  Promise.resolve(permission).then(result => {
-    if (token !== state.run) return;
-    state.starting = false;
-    if (result !== 'granted') state.motionMessage = result === 'unsupported' ? 'This browser has no orientation API. Manual target calculations are available.' : 'Motion/orientation permission denied. Allow it in site settings, then tap Enable sensors again.';
-    else {
-      window.addEventListener('deviceorientation',onOrientation,{ passive: true });
-      window.addEventListener('deviceorientationabsolute',onOrientation,{ passive: true });
-      state.motionMessage = 'Waiting for phone sensors. If nothing arrives, check permissions or try Safari on iPhone / Chrome on Android.';
-    }
-    render();
-  }).catch(() => { if (token === state.run) { state.starting = false; state.motionMessage = 'Motion access failed. Retry from the Enable sensors button.'; render(); } });
-  render();
+    permission=typeof window.DeviceOrientationEvent==='undefined'?Promise.resolve('unsupported'):typeof window.DeviceOrientationEvent.requestPermission==='function'?window.DeviceOrientationEvent.requestPermission(true):Promise.resolve('granted');
+  }catch(_){permission=Promise.resolve('denied');}
+  if(useGPS){state.position=null;state.place='';calculate();startGPS(token);}
+  keepAwake();
+  Promise.resolve(permission).then(value=>{
+    if(token!==state.generation||!state.running)return;
+    state.starting=false;
+    if(value==='granted') {
+      window.addEventListener('deviceorientation',onOrientation,{passive:true}); window.addEventListener('deviceorientationabsolute',onOrientation,{passive:true});
+      state.motionMessage='Waiting for compass. Allow motion/orientation access.';
+    }else state.motionMessage=value==='unsupported'?'This browser has no compass sensor API. Targets still calculate.':'Compass permission denied. Allow motion/orientation in site settings, then retry.';
+    state.dirty=true; requestFrame();
+  }).catch(()=>{if(token===state.generation){state.starting=false;state.motionMessage='Motion access failed. Restart sensors.';state.dirty=true;requestFrame();}});
+  requestFrame(); renderStatus(now());
 }
-$('startSensors').addEventListener('click', startSensors);
-$('stopSensors').addEventListener('click', () => stopSensors());
-$('keepAwake').addEventListener('change', () => { if ($('keepAwake').checked) acquireWake(); else { releaseWake(); setText('wakeStatus',''); } });
-document.addEventListener('visibilitychange', () => { if (document.hidden && (state.running || state.geoID !== null)) stopSensors('Paused while the page was hidden. Tap Enable sensors to resume.'); });
-window.addEventListener('pagehide', () => stopSensors());
+ui.gpsToggle.addEventListener('click',()=>{if(state.running)stopSensors();else startSensors(state.position?.source!=='Manual');});
+ui.retrySensors.addEventListener('click',()=>startSensors(state.position?.source!=='Manual'));
+ui.keepAwake.addEventListener('change',()=>{if(ui.keepAwake.checked)keepAwake();else{releaseWake();text('wakeStatus','');}});
+ui.manualPosition.addEventListener('submit',e=>{
+  e.preventDefault();const lat=numberIn(ui.latitude.value,-90,90),lon=numberIn(ui.longitude.value,-180,180);if(lat===null||lon===null)return;
+  stopSensors(); state.position={lat,lon,altitude:null,accuracy:null,at:Date.now(),source:'Manual'}; state.place=''; state.placeError='';
+  resetAlignment(true); calculate(); startSensors(false);
+});
+document.addEventListener('visibilitychange',()=>{if(document.hidden)stopSensors('Paused while hidden. Enable GPS to resume.');});
+window.addEventListener('pagehide',()=>stopSensors('Paused. Enable GPS to resume.'));
 
-function stableSamples(samples, circular, threshold) {
-  if (samples.length < 4 || samples.at(-1).at-samples[0].at < 800) return false;
-  const values = samples.map(s => s.value), mean = circular ? circularMean(values) : values.reduce((a,b)=>a+b,0)/values.length;
-  return mean !== null && values.every(v => Math.abs(circular ? angleError(v,mean) : v-mean) <= threshold);
+function readings(t) {
+  const r=state.reading, freshHeading=state.running&&Number.isFinite(r?.heading)&&t-state.headingAt<=2000;
+  const freshTilt=state.running&&Number.isFinite(r?.tilt)&&t-state.tiltAt<=2000;
+  const magnetic=freshHeading&&settings.azOffset!==null?wrap(r.heading+settings.azOffset):null;
+  const dec=state.field?.declination;
+  return {magnetic,trueHeading:Number.isFinite(magnetic)&&Number.isFinite(dec)?wrap(magnetic+dec):null,freshHeading,freshTilt};
 }
-function render() {
-  const now = Date.now(), m = mode(), needAz = m !== 'elevation', needEl = m !== 'azimuth', { azOffset, elOffset } = offsets();
-  const tolerance = numberIn($('tolerance').value,1,20), loc = state.location, sol = state.solution, dec = state.field?.declination;
-  const targetMag = Number.isFinite(sol?.azimuth) && Number.isFinite(dec) ? wrap(sol.azimuth-dec) : null;
-  const headingFresh = state.running && now-state.headingAt <= 2000;
-  const tiltFresh = state.running && now-state.tiltAt <= 2000;
-  const positionOK = !!loc && (loc.source === 'Manual' || (Number.isFinite(loc.accuracy) && loc.accuracy <= 100 && now-loc.at <= 300000 && now-loc.at >= -60000));
-  const fresh = state.running && !document.hidden && tiltFresh && (!needAz || headingFresh);
-  const input = { mode: m, target: sol ? { azimuth: targetMag, elevation: sol.elevation } : null, reading: state.phone, tolerance, fresh, positionOK, mountOK: $('mountConfirmed').checked, fieldOK: state.field?.reliable === true, stable: false, azOffset, elOffset };
-  let result = alignment(input);
-  pruneSamples(now);
-  if (result.state === 'near') {
-    if (state.inZoneSince === null) state.inZoneSince = now;
-    const stable = now-state.inZoneSince >= 900 && (!needAz || stableSamples(state.headings,true,Math.min(2,tolerance/2))) && (!needEl || stableSamples(state.tilts,false,Math.min(1,tolerance/2)));
-    result = alignment({ ...input, stable });
-  } else state.inZoneSince = null;
-  $('instrument').dataset.state = result.state; setText('alignmentStatus',result.message);
-  setText('targetTrue',formatAngle(sol?.azimuth)); setText('targetMagnetic',formatAngle(targetMag)); setText('targetElevation',formatAngle(sol?.elevation));
-  if (loc) {
-    setText('positionStatus',`${Math.abs(loc.lat).toFixed(5)}°${loc.lat<0?'S':'N'} / ${Math.abs(loc.lon).toFixed(5)}°${loc.lon<0?'W':'E'}`);
-    setText('positionDetail',loc.source === 'Manual' ? 'Manual position. Verify it is still current. Sea-level altitude assumed.' : `GPS ${Number.isFinite(loc.accuracy)?`±${Math.round(loc.accuracy)} m`:'accuracy unknown'} · ${Math.max(0,Math.floor((now-loc.at)/1000))} s old. ${!positionOK?'A fresh fix within 100 m is required for green. Tap Use GPS.':loc.altMeasured?'GPS ellipsoid altitude used.':'Sea-level altitude assumed.'}`);
-  } else { setText('positionStatus',state.gpsMessage || 'Location not set'); setText('positionDetail','Allow precise location, or enter coordinates manually.'); }
-  const liveMag = headingFresh && Number.isFinite(state.phone?.heading) && azOffset !== null ? wrap(state.phone.heading+azOffset) : null;
-  const liveTrue = Number.isFinite(liveMag) && Number.isFinite(dec) ? wrap(liveMag+dec) : null;
-  const liveEl = tiltFresh && Number.isFinite(state.phone?.tilt) && elOffset !== null ? state.phone.tilt+elOffset : null;
-  setText('liveMagnetic',formatAngle(liveMag)); setText('liveTrue',formatAngle(liveTrue)); setText('liveElevation',needEl?formatAngle(liveEl):'Not measured');
-  const trueDial = $('northReference').value === 'true';
-  setText('dialReference',trueDial?'True north':'Magnetic north'); setText('azimuthLabel',trueDial?'AZIMUTH (TRUE)':'AZIMUTH (MAG)'); setText('dialAzimuth',formatAngle(trueDial ? liveTrue : liveMag)); $('magneticReference').classList.toggle('active',!trueDial); $('trueReference').classList.toggle('active',trueDial);
-  const targetDial = trueDial ? sol?.azimuth : targetMag, phoneDial = trueDial ? liveTrue : liveMag;
-  for (const [id,angle] of [['targetNeedle',targetDial],['phoneNeedle',phoneDial]]) {
-    $(id).setAttribute('visibility',Number.isFinite(angle)?'visible':'hidden');
-    if (Number.isFinite(angle)) $(id).setAttribute('transform',`rotate(${angle} 140 140)`);
-  }
-  document.querySelector('.sp-dial').hidden = m === 'elevation';
-  // SVG hidden support differs; explicit display keeps the two displays mutually exclusive.
-  document.querySelector('.sp-dial').style.display = m === 'elevation' ? 'none' : '';
-  $('tiltDisplay').hidden = m !== 'elevation'; $('dialLegend').hidden = m === 'elevation';
-  setText('liveTiltLarge',formatAngle(liveEl)); $('tiltMarker').style.left = `${Math.max(0,Math.min(100,(liveEl??0)/90*100))}%`;
-  const adjust = (error,positive,negative) => Number.isFinite(error) ? Math.abs(error)<0.15 ? 'Centered on target' : `${error>0?positive:negative} ${formatAngle(Math.abs(error))}` : 'Waiting for valid sensor alignment';
-  setText('turnInstruction',needAz?adjust(result.azError,'Right','Left'):adjust(result.elError,'Up','Down')); setText('azError',Number.isFinite(result.azError)?formatAngle(Math.abs(result.azError)):'—');
-  setText('tiltInstruction',m==='azimuth'?`Elevation not measured. Set ${formatAngle(sol?.elevation)} using the antenna scale.`:m==='elevation'?'Azimuth is not verified in elevation mode.':adjust(result.elError,'Raise','Lower'));
-  setText('modeWarning',m==='azimuth'?'AZIMUTH ONLY · elevation is not measured on a level base.':m==='elevation'?'ELEVATION ONLY · azimuth is not verified in this mode.':'BOTH AXES · the phone mount must follow the antenna beam.');
-  let sensor = state.motionMessage || 'Sensors off. Nothing is simulated.';
-  if (state.running && state.phone) {
-    if (needAz && !headingFresh) sensor = 'No fresh north-referenced compass. Relative rotation cannot determine north.';
-    else if (!tiltFresh) sensor = 'Tilt readings are stale. Resume motion/orientation access.';
-    else sensor = `${state.phone.source || 'Tilt sensor'} · ${Number.isFinite(state.phone.accuracy) && state.phone.accuracy>=0?`reported accuracy ±${state.phone.accuracy.toFixed(1)}°`:'compass accuracy not reported / uncalibrated'} · ${state.phone.flat?'phone level':`top-edge tilt ${formatAngle(state.phone.tilt)}`}.`;
-  }
-  setText('sensorStatus',sensor);
-  const note = state.modelError || (Number.isFinite(dec)?`WMM2025 declination ${Math.abs(dec).toFixed(2)}° ${dec>=0?'east':'west'}. ${state.field.reliable?'':'Weak horizontal magnetic field: azimuth green disabled. '}${sol && sol.elevation>0 && sol.elevation<5?'Low elevation: terrain and refraction may matter. ':''}Coordinates stay in this tab.`:'Your location is used only in this page. No location upload or account login is needed.');
-  setText('solutionNote',note);
-  $('startSensors').disabled = state.starting;
-  setText('startSensors',state.starting?'Requesting access…':state.running?'Restart sensors':'Enable sensors');
-  $('stopSensors').disabled = !state.running && state.geoID === null;
+function targetMagnetic() {
+  return Number.isFinite(state.target?.azimuth)&&Number.isFinite(state.field?.declination)?wrap(state.target.azimuth-state.field.declination):null;
 }
-$('pointMode').addEventListener('change', () => {
-  resetAlignment(true);
-  setText('mountHelp',mode()==='azimuth'?'Lay the phone flat, screen up, with its physical top/camera edge pointing in the antenna’s direction. The phone must rotate with the antenna.':mode()==='elevation'?'Place the phone along a surface that tilts with the antenna. Enter the correct elevation offset below. The physical top edge should rise as the antenna rises.':'Use a fixed mount with the phone’s physical top edge along the beam direction, or enter known offsets. It must follow both azimuth and elevation. A level base cannot measure both.');
-  render();
+function alignmentResult(t,live) {
+  if(!state.satellite)return {state:'idle',message:'',azError:null,elError:null};
+  const base={mode:settings.mode,target:state.target?{azimuth:targetMagnetic(),elevation:state.target.elevation}:null,reading:state.reading,tolerance:settings.tolerance,fresh:live.freshHeading&&live.freshTilt&&!document.hidden,positionOK:locationUsable(),mountOK:settings.mountOK,fieldOK:state.field?.reliable===true,stable:false,azOffset:settings.azOffset,elOffset:settings.elOffset};
+  let result=alignment(base);
+  if(result.state==='near') {
+    if(state.alignedSince===null)state.alignedSince=t;
+    if(t-state.alignedSince>=900&&stableSamples(state.samples,t,settings.tolerance,settings.mode==='both'))result=alignment({...base,stable:true});
+  } else state.alignedSince=null;
+  return result;
+}
+function draw(heading,dt,t) {
+  const live=readings(t), result=alignmentResult(t,live);
+  const aligned=result.state==='aligned';
+  document.body.classList.toggle('is-aligned',aligned);
+  document.body.classList.toggle('is-stale',!Number.isFinite(heading));
+  if(ui.instrument.dataset.state!==result.state){ui.instrument.dataset.state=result.state;state.dirty=true;}
+  if(Number.isFinite(heading)) {
+    state.shownHeading=smoothAngle(state.shownHeading,heading,dt);
+    const a=state.shownHeading;
+    ui.rose.style.transform=`rotate(${-a}deg)`;
+    // Labels orbit with the rose but stay upright, as on the native compass.
+    for(const label of labels)label.element.setAttribute('transform',`rotate(${a} ${label.x} ${label.y})`);
+    const rounded=Math.round(wrap(a))%360;
+    text('headingValue',`${rounded}°`);text('headingCardinal',cardinal(a));
+    if(t>=state.nextAccessible){text('bearingAccessible',`${rounded} degrees ${cardinal(a)}, ${state.reference} north`);state.nextAccessible=t+1000;}
+  }else{state.shownHeading=null;text('headingValue','—°');text('headingCardinal','');text('bearingAccessible','Heading unavailable');}
+  ui.compassFace.disabled=!live.freshHeading;
+  const markerMag=state.satellite?targetMagnetic():state.heldMagnetic;
+  const marker=state.reference==='true'?(Number.isFinite(markerMag)&&Number.isFinite(state.field?.declination)?wrap(markerMag+state.field.declination):null):markerMag;
+  const visible=Number.isFinite(marker)&&Number.isFinite(state.shownHeading);
+  attr(ui.targetMarker,'visibility',visible?'visible':'hidden');
+  if(visible)ui.targetMarker.setAttribute('transform',`rotate(${angleError(marker,state.shownHeading)} 200 200)`);
+  const arc=!state.satellite&&state.heldMagnetic!==null&&visible?deviationArc(angleError(marker,state.shownHeading)):'';
+  attr(ui.bearingArc,'d',arc);
+  const ratio=-Math.expm1(-Math.max(0,Math.min(dt,100))/65);
+  const bx=live.freshTilt?Math.max(-30,Math.min(30,(state.gamma??0)*1.2)):0;
+  const by=live.freshTilt?Math.max(-30,Math.min(30,(state.beta??0)*1.2)):0;
+  state.bubbleX+=(bx-state.bubbleX)*ratio;state.bubbleY+=(by-state.bubbleY)*ratio;
+  ui.levelBubble.setAttribute('transform',`translate(${state.bubbleX.toFixed(2)} ${state.bubbleY.toFixed(2)})`);
+  if(state.dirty||t>=state.nextStatus){renderStatus(t,live,result);state.dirty=false;state.nextStatus=t+250;}
+}
+function requestFrame() {
+  if(state.raf===null&&!document.hidden)state.raf=requestAnimationFrame(frame);
+}
+function frame(t) {
+  state.raf=null;
+  if(document.hidden)return;
+  const dt=state.lastFrame===null?16.67:Math.max(0,t-state.lastFrame);state.lastFrame=t;
+  const live=readings(t), heading=state.reference==='true'?live.trueHeading:live.magnetic;
+  draw(heading,dt,t); state.frameCount++;
+  if(state.running&&t-state.statsAt>=1000) {
+    const seconds=(t-state.statsAt)/1000;
+    text('frameStats',`Animation ${Math.round(state.frameCount/seconds)} fps · compass ${Math.round(state.eventCount/seconds)} samples/s. Browser/device controlled; animation is not extra sensor data.`);
+    state.statsAt=t;state.frameCount=0;state.eventCount=0;
+  }
+  if(state.running)requestFrame();else state.lastFrame=null;
+}
+function renderStatus(t,live=readings(t),result=alignmentResult(t,live)) {
+  attr(ui.gpsToggle,'aria-checked',state.running);attr(ui.gpsToggle,'aria-label',state.running?'Stop GPS and compass':'Enable GPS and compass');
+  text('gpsSummary',state.starting?'Allow sensor access…':state.running?(state.gpsMessage|| (state.position?.source==='Manual'?'Manual position · compass enabled':state.position?'Location acquired':'Finding GPS…')):'GPS + compass off');
+  attr(ui.magneticReference,'aria-pressed',state.reference==='magnetic');attr(ui.trueReference,'aria-pressed',state.reference==='true');
+  text('referenceLabel',state.reference==='true'?'TRUE NORTH':'MAGNETIC NORTH');
+  let message=state.running?'':state.motionMessage||'Enable GPS to begin';
+  if(state.running&&!live.freshHeading)message=state.motionMessage||'Waiting for fresh compass data';
+  else if(state.running&&state.reference==='true'&&!Number.isFinite(live.trueHeading))message='True north needs a current position and magnetic correction';
+  else if(state.satellite)message=result.message;
+  else if(state.heldMagnetic!==null)message=`Bearing held · ${deg(Math.abs(angleError(state.heldMagnetic,live.magnetic)))} off course`;
+  else if(state.running&&!state.reading?.flat)message='Hold the phone flat to align the crosshairs';
+  else if(state.running)message='';
+  if(state.satellite&&result.message==='Confirm phone placement below')message='Confirm the phone alignment below to enable green';
+  text('alignmentStatus',message);
+  document.body.classList.toggle('has-target',!!state.satellite);
+  ui.targetStrip.hidden=!state.satellite;ui.signalNote.hidden=!state.satellite;ui.mountCheck.hidden=!state.satellite;
+  text('mountLabel',settings.mode==='both'?'I verified the fixed mount follows both axes and the beam offsets.':'Phone top edge is aligned with the antenna on its rotating base.');
+  const target=state.reference==='true'?state.target?.azimuth:targetMagnetic();
+  text('targetBearing',deg(target));text('targetElevation',deg(state.target?.elevation));
+  const delta=Number.isFinite(targetMagnetic())&&Number.isFinite(live.magnetic)?angleError(targetMagnetic(),live.magnetic):null;
+  text('turnInstruction',delta===null?'—':Math.abs(delta)<0.15?'Centered':`${delta>0?'→':'←'} ${deg(Math.abs(delta))}`);
+  text('holdHint',state.satellite?`${state.satellite.name} · dot is the target`:state.heldMagnetic!==null?'Bearing held · tap the dial to release':'Tap the dial to hold a bearing');
+  attr(ui.compassFace,'aria-pressed',state.heldMagnetic!==null&&!state.satellite);
+  attr(ui.compassFace,'aria-label',state.satellite?'Compass dial with satellite target':state.heldMagnetic!==null?'Release held bearing':'Hold this bearing');
+  text('modeNote',state.satellite?(settings.mode==='both'?'Both axes: phone mount and offsets must follow the beam.':'Azimuth only. Set dish elevation separately; phone flat, top edge with antenna.'):'Keep the phone flat. Its top edge is your pointing direction.');
+  const r=state.reading;
+  text('sensorStatus',live.freshHeading?`${state.sensorSource}. ${Number.isFinite(r.accuracy)&&r.accuracy>=0?`Reported uncertainty ±${r.accuracy.toFixed(1)}°.`:'Uncertainty unknown; no green satellite alignment.'} ${live.freshTilt?`Phone tilt ${deg(r.tilt)}.`:'Tilt unavailable.'}`:state.motionMessage||'Sensors off.');
+  text('modelStatus',state.modelError||(state.field?`WMM2025: ${Math.abs(state.field.declination).toFixed(2)}° ${state.field.declination>=0?'east':'west'}. ${state.field.reliable?'':'Weak horizontal field; no green alignment.'}`:'True north uses on-device WMM2025; position required.'));
+  refreshPosition();
+}
+function refreshPosition() {
+  const p=state.position;
+  ui.coordinates.disabled=!p;
+  text('coordinates',p?`${dms(p.lat)}  ${dms(p.lon,false)}`:'Coordinates unavailable');
+  text('altitude',altitudeLabel(p?.altitude,state.unit));
+  text('positionDetail',p?(p.source==='Manual'?'Manual position. Verify it is current; altitude unavailable.':`GPS ±${Number.isFinite(p.accuracy)?Math.round(p.accuracy):'?'} m · fix ${Math.max(0,Math.round((Date.now()-p.at)/1000))} s old. Altitude uncertainty ${Number.isFinite(p.altitudeAccuracy)?`±${Math.round(p.altitudeAccuracy)} m`:'unavailable'}. ${locationUsable()?'':'Fresh ≤100 m horizontal accuracy is required for green.'}`):state.gpsMessage||'No location received.');
+  text('placeName',state.place||state.placeError||(p?.source==='Manual'?'Manual position':state.placeAbort?'Looking up place…':'Show place name'));
+  attr(ui.placeName,'data-empty',!state.place);
+}
+function changeReference(reference) {state.reference=reference;state.shownHeading=null;state.dirty=true;requestFrame();renderStatus(now());}
+ui.magneticReference.addEventListener('click',()=>changeReference('magnetic'));ui.trueReference.addEventListener('click',()=>changeReference('true'));
+ui.altitude.addEventListener('click',()=>{state.unit=state.unit==='ft'?'m':'ft';refreshPosition();});
+ui.coordinates.addEventListener('click',()=>{
+  const p=state.position;if(p)window.open(`https://maps.apple.com/?ll=${encodeURIComponent(`${p.lat},${p.lon}`)}`,'_blank','noopener,noreferrer');
 });
-for (const id of ['azOffset','elOffset']) $(id).addEventListener('input',() => { resetAlignment(true); render(); });
-for (const id of ['tolerance','northReference','mountConfirmed']) $(id).addEventListener('change',() => { resetAlignment(); render(); });
-$('magneticReference').addEventListener('click',()=>{ $('northReference').value='magnetic'; resetAlignment(); render(); });
-$('trueReference').addEventListener('click',()=>{ $('northReference').value='true'; resetAlignment(); render(); });
-const otherRegions = [];
-function fieldView(on) {
-  state.fieldView = on; document.body.classList.toggle('sp-field-view',on);
-  for (const id of otherRegions) $(id).inert = on;
-  const intro=document.querySelector('.sp-title'), top=document.querySelector('.sp-nav'); if(intro) intro.inert=on; if(top) top.inert=on;
-  $('fieldView').setAttribute('aria-pressed',String(on)); setText('fieldView',on?'Exit field view':'Field view');
-  if (on) { $('instrument').setAttribute('role','dialog'); $('instrument').setAttribute('aria-modal','true'); }
-  else { $('instrument').removeAttribute('role'); $('instrument').removeAttribute('aria-modal'); }
-  $('fieldView').focus();
+ui.compassFace.addEventListener('click',()=>{
+  const r=readings(now());if(state.satellite||!r.freshHeading)return;
+  state.heldMagnetic=state.heldMagnetic===null?r.magnetic:null;state.dirty=true;requestFrame();
+});
+function updateSettings(clearMount) {
+  settings={mode:ui.pointMode.value,tolerance:numberIn(ui.tolerance.value,1,20),azOffset:numberIn(ui.azOffset.value,-180,180),elOffset:numberIn(ui.elOffset.value,-90,90),mountOK:ui.mountConfirmed.checked};
+  resetAlignment(clearMount);state.shownHeading=null;requestFrame();renderStatus(now());
 }
-$('fieldView').addEventListener('click',() => fieldView(!state.fieldView));
-document.addEventListener('keydown', e => {
-  if (!state.fieldView) return;
-  if (e.key === 'Escape') { e.preventDefault(); fieldView(false); }
-  if (e.key === 'Tab') {
-    const controls = [...$('instrument').querySelectorAll('button:not(:disabled),a[href],input,select')].filter(el=>el.getClientRects().length);
-    const first = controls[0], last = controls.at(-1);
-    if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
-    else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+ui.pointMode.addEventListener('change',()=>updateSettings(true));
+for(const id of ['azOffset','elOffset'])ui[id].addEventListener('input',()=>updateSettings(true));
+for(const id of ['tolerance','mountConfirmed'])ui[id].addEventListener('change',()=>updateSettings(false));
+
+// Place lookup is separate from location permission and never part of animation.
+function abortPlace() {state.placeToken++;if(state.placeAbort)state.placeAbort.abort();state.placeAbort=null;}
+async function maybeLookupPlace(force=false) {
+  const p=state.position;
+  if(!ui.placeConsent.checked||!state.running||document.hidden||p?.source!=='GPS'||!locationUsable()||Date.now()-p.at>60000||state.placeAbort)return;
+  const cell=`${p.lat.toFixed(2)},${p.lon.toFixed(2)}`;
+  if((!force&&cell===state.placeCell&&state.place)||now()-state.placeAttempt<60000)return;
+  state.placeAttempt=now();state.placeError='';state.placeCell=cell;
+  const token=++state.placeToken,controller=new AbortController();state.placeAbort=controller;refreshPosition();
+  const timeout=setTimeout(()=>controller.abort(),8000);
+  try {
+    const place=await lookupPlace(p,controller.signal);
+    const current=state.position;
+    if(token===state.placeToken&&ui.placeConsent.checked&&state.running&&current?.source==='GPS'&&`${current.lat.toFixed(2)},${current.lon.toFixed(2)}`===cell)state.place=place;
+  }catch(_){if(token===state.placeToken)state.placeError='Place unavailable · tap to retry';}
+  finally{clearTimeout(timeout);if(token===state.placeToken){state.placeAbort=null;refreshPosition();}}
+}
+ui.placeName.addEventListener('click',()=>{
+  if(ui.placeConsent.checked){maybeLookupPlace(true);return;}
+  ui.placeDialog.showModal();
+});
+ui.denyPlace.addEventListener('click',()=>ui.placeDialog.close());
+ui.allowPlace.addEventListener('click',()=>{ui.placeConsent.checked=true;ui.placeDialog.close();maybeLookupPlace();});
+ui.placeConsent.addEventListener('change',()=>{if(ui.placeConsent.checked)maybeLookupPlace();else{abortPlace();state.place='';state.placeError='';state.placeAttempt=-Infinity;refreshPosition();}});
+const focusRegions=[document.querySelector('.topbar'),ui.controls,ui.settings];
+function focusView(on) {
+  state.focus=on;document.body.classList.toggle('focus-mode',on);
+  focusRegions.forEach(el=>{el.inert=on;});
+  attr(ui.fieldView,'aria-pressed',on);text('fieldView',on?'Done':'Expand ⛶');
+  if(on){attr(ui.instrument,'role','dialog');attr(ui.instrument,'aria-modal','true');}else{ui.instrument.removeAttribute('role');ui.instrument.removeAttribute('aria-modal');}
+  ui.fieldView.focus({preventScroll:true});
+}
+ui.fieldView.addEventListener('click',()=>focusView(!state.focus));
+document.addEventListener('keydown',event=>{
+  if(!state.focus||ui.placeDialog.open)return;
+  if(event.key==='Escape'){event.preventDefault();focusView(false);}
+  if(event.key==='Tab') {
+    const controls=[...ui.instrument.querySelectorAll('button:not(:disabled),input:not(:disabled),a[href]')].filter(el=>el.getClientRects().length);
+    const first=controls[0],last=controls.at(-1);
+    if(event.shiftKey&&document.activeElement===first){event.preventDefault();last.focus();}else if(!event.shiftKey&&document.activeElement===last){event.preventDefault();first.focus();}
   }
 });
-populateSatellites(); render();
-setInterval(render,150);
+buildDial();populateSatellites();renderStatus(now());requestFrame();
