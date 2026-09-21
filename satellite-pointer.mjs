@@ -206,7 +206,7 @@ function render() {
   const liveEl = tiltFresh && Number.isFinite(state.phone?.tilt) && elOffset !== null ? state.phone.tilt+elOffset : null;
   setText('liveMagnetic',formatAngle(liveMag)); setText('liveTrue',formatAngle(liveTrue)); setText('liveElevation',needEl?formatAngle(liveEl):'Not measured');
   const trueDial = $('northReference').value === 'true';
-  setText('dialReference',trueDial?'True north':'Magnetic north');
+  setText('dialReference',trueDial?'True north':'Magnetic north'); setText('azimuthLabel',trueDial?'AZIMUTH (TRUE)':'AZIMUTH (MAG)'); setText('dialAzimuth',formatAngle(trueDial ? liveTrue : liveMag)); $('magneticReference').classList.toggle('active',!trueDial); $('trueReference').classList.toggle('active',trueDial);
   const targetDial = trueDial ? sol?.azimuth : targetMag, phoneDial = trueDial ? liveTrue : liveMag;
   for (const [id,angle] of [['targetNeedle',targetDial],['phoneNeedle',phoneDial]]) {
     $(id).setAttribute('visibility',Number.isFinite(angle)?'visible':'hidden');
@@ -218,7 +218,7 @@ function render() {
   $('tiltDisplay').hidden = m !== 'elevation'; $('dialLegend').hidden = m === 'elevation';
   setText('liveTiltLarge',formatAngle(liveEl)); $('tiltMarker').style.left = `${Math.max(0,Math.min(100,(liveEl??0)/90*100))}%`;
   const adjust = (error,positive,negative) => Number.isFinite(error) ? Math.abs(error)<0.15 ? 'Centered on target' : `${error>0?positive:negative} ${formatAngle(Math.abs(error))}` : 'Waiting for valid sensor alignment';
-  setText('turnInstruction',needAz?adjust(result.azError,'Turn right','Turn left'):adjust(result.elError,'Raise','Lower'));
+  setText('turnInstruction',needAz?adjust(result.azError,'Right','Left'):adjust(result.elError,'Up','Down')); setText('azError',Number.isFinite(result.azError)?formatAngle(Math.abs(result.azError)):'—');
   setText('tiltInstruction',m==='azimuth'?`Elevation not measured. Set ${formatAngle(sol?.elevation)} using the antenna scale.`:m==='elevation'?'Azimuth is not verified in elevation mode.':adjust(result.elError,'Raise','Lower'));
   setText('modeWarning',m==='azimuth'?'AZIMUTH ONLY · elevation is not measured on a level base.':m==='elevation'?'ELEVATION ONLY · azimuth is not verified in this mode.':'BOTH AXES · the phone mount must follow the antenna beam.');
   let sensor = state.motionMessage || 'Sensors off. Nothing is simulated.';
@@ -241,11 +241,13 @@ $('pointMode').addEventListener('change', () => {
 });
 for (const id of ['azOffset','elOffset']) $(id).addEventListener('input',() => { resetAlignment(true); render(); });
 for (const id of ['tolerance','northReference','mountConfirmed']) $(id).addEventListener('change',() => { resetAlignment(); render(); });
-const otherRegions = ['workspaceNav','setupPanel','helpPanel'];
+$('magneticReference').addEventListener('click',()=>{ $('northReference').value='magnetic'; resetAlignment(); render(); });
+$('trueReference').addEventListener('click',()=>{ $('northReference').value='true'; resetAlignment(); render(); });
+const otherRegions = [];
 function fieldView(on) {
   state.fieldView = on; document.body.classList.toggle('sp-field-view',on);
   for (const id of otherRegions) $(id).inert = on;
-  document.querySelector('.sp-intro').inert = on; document.querySelector('.sp-topbar').inert = on;
+  const intro=document.querySelector('.sp-title'), top=document.querySelector('.sp-nav'); if(intro) intro.inert=on; if(top) top.inert=on;
   $('fieldView').setAttribute('aria-pressed',String(on)); setText('fieldView',on?'Exit field view':'Field view');
   if (on) { $('instrument').setAttribute('role','dialog'); $('instrument').setAttribute('aria-modal','true'); }
   else { $('instrument').removeAttribute('role'); $('instrument').removeAttribute('aria-modal'); }
