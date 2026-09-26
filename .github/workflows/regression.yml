@@ -26,6 +26,9 @@ jobs:
           node --check atelier-shell.js
           node --check cloud.js
           node --check cs50/app.js
+          node --check cs50/studio/core.js
+          node --check cs50/studio/store.js
+          node --check cs50/studio/app.js
           node --check security.js
       - name: Package review snapshot
         if: always()
