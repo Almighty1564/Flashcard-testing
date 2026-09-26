@@ -4,7 +4,7 @@
   let all=[], filtered=[];
   const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
   function profile(row){return row.profile||row.profiles||{}}
-  function accountName(row){const p=profile(row);return p.username||p.display_name||row.user_id.slice(0,8)}
+  function accountName(row){const p=profile(row);return p.username||p.display_name||row.account_label||row.user_id.slice(0,8)}
   function location(row){return [row.city,row.region,row.country_code].filter(Boolean).join(", ")||"Unknown"}
   function device(ua){
     ua=ua||"";
@@ -37,7 +37,7 @@
     $("refreshBtn").disabled=true;
     try{
       const days=Number($("range").value)||30, since=new Date(Date.now()-days*86400000).toISOString();
-      const res=await FC.client.from("login_audit").select("id,user_id,ip_address,city,region,country_code,timezone,user_agent,logged_in_at,source,profile:profiles(username,display_name)").gte("logged_in_at",since).order("logged_in_at",{ascending:false}).limit(1000);
+      const res=await FC.client.from("login_audit").select("id,user_id,account_label,ip_address,city,region,country_code,timezone,user_agent,logged_in_at,source,profile:profiles(username,display_name)").gte("logged_in_at",since).order("logged_in_at",{ascending:false}).limit(1000);
       if(res.error)throw res.error;
       all=res.data||[];markNewIps(all);render();
     }catch(error){$("rows").innerHTML='<tr><td colspan="6" class="error">Could not load security activity: '+esc(error.message||error)+'</td></tr>'}
