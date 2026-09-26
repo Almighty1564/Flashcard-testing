@@ -23,7 +23,10 @@ jobs:
           node --check study-reliability.js
           node --check authoring-reliability.js
           node --check atelier-portal.js
-          node --check atelier-shell.js\n          node --check cloud.js\n          node --check cs50/app.js\n          node --check security.js
+          node --check atelier-shell.js
+          node --check cloud.js
+          node --check cs50/app.js
+          node --check security.js
       - name: Package review snapshot
         if: always()
         run: git archive --format=zip --output=source-snapshot.zip HEAD
