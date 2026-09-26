@@ -1,0 +1,23 @@
+{
+  "schema": 1,
+  "id": "tomato08-cs50-applied",
+  "version": "1.0.0",
+  "title": "CS50 Applied",
+  "video": "https://www.youtube.com/watch?v=gmuTjeQUbTM",
+  "source": "https://cs50.harvard.edu/x/2026/",
+  "honesty": "https://cs50.harvard.edu/x/2026/honesty/",
+  "unitFiles": [
+    "units/scratch.json",
+    "units/c.json",
+    "units/arrays.json",
+    "units/algorithms.json",
+    "units/memory.json",
+    "units/structures.json",
+    "units/python.json",
+    "units/sql.json",
+    "units/ai.json",
+    "units/web.json",
+    "units/flask.json",
+    "units/capstone.json"
+  ]
+}
