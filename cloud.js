@@ -109,7 +109,7 @@
       .maybeSingle();
 
     if (res.error) throw new Error(res.error.message);
-    if (!res.data) return { id: session.user.id, username: null, role: "tester" };
+    if (!res.data) return null;
     return res.data;
   }
 
