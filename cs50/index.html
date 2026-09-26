@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#141619">
+<meta name="description" content="Tomato08 programming course companion. Learn, build, debug, adapt, and record evidence of your skills.">
+<meta name="referrer" content="strict-origin-when-cross-origin">
+<title>CS50 Applied / Tomato08</title>
+<link rel="stylesheet" href="style.css?v=1">
+</head>
+<body>
+<a class="skip" href="#main">Skip to course</a>
+<header class="topbar"><a class="brand" href="../index.html"><b>t08</b><span>TOMATO08<small>APPLIED LEARNING</small></span></a><nav aria-label="Course navigation"><button data-view="course" class="active">Course</button><button data-view="evidence">Evidence</button><button data-view="setup">Setup</button></nav><button id="accountButton" class="quiet">Account</button></header>
+<div class="layout"><aside class="sidebar" aria-label="Curriculum"><div class="sidehead"><span class="eyebrow">THE PATH</span><span id="sideCount">12 sections</span></div><div id="unitNav"></div><div class="sidefoot"><b>Build it. Prove it.</b><p>Original practice alongside Harvard CS50. Not an official Harvard course or certificate.</p><a href="https://cs50.harvard.edu/x/2026/" target="_blank" rel="noopener noreferrer">Harvard course ↗</a></div></aside><main id="main" tabindex="-1"><div id="saveStatus" class="save-status" role="status">Loading your workspace…</div><div id="app"><h1>CS50 Applied</h1><p>Loading curriculum…</p></div></main></div>
+<div id="toast" role="status" aria-live="polite" hidden></div>
+<dialog id="accountDialog"><form method="dialog"><button class="close" aria-label="Close account dialog">×</button></form><span class="eyebrow">YOUR WORKSPACE</span><h2>Account & backups</h2><div id="accountInfo"></div><form id="loginForm"><label for="username">Tomato08 username</label><input id="username" autocomplete="username" autocapitalize="none" required><label for="password">Password</label><input id="password" type="password" autocomplete="current-password" required><button class="primary" type="submit">Sign in</button></form><p id="loginError" class="error" role="alert"></p><p class="muted">Course progress is saved in this browser, separated by account. Signing in does not enable cross-device sync. Export a backup before changing devices or clearing browser data.</p><div class="actions"><button id="backupButton">Export backup</button><button id="importBackupButton">Import backup</button><button id="signoutButton">Sign out</button></div></dialog>
+<input type="file" id="reportInput" accept=".json,application/json" hidden>
+<input type="file" id="backupInput" accept=".json,application/json" hidden>
+<noscript><p>Enable JavaScript to use the quizzes, editor, and progress record.</p></noscript>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="../supabase-config.js?v=9"></script>
+<script src="app.js?v=1"></script>
+</body>
+</html>
