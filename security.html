@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0d1117">
+<title>Security Activity · Tomato08</title>
+<style>
+:root{color-scheme:dark;--bg:#0d1117;--panel:#161b22;--panel2:#0f141b;--line:#30363d;--text:#e6edf3;--muted:#8b949e;--accent:#2f81f7;--good:#3fb950;--warn:#d29922;--bad:#f85149;font-family:Inter,ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);line-height:1.5}button,input,select{font:inherit}a{color:inherit}.shell{max-width:1500px;margin:auto;padding:24px}.top{display:flex;justify-content:space-between;gap:20px;align-items:flex-start;margin-bottom:22px}.top h1{margin:4px 0 6px;font-size:clamp(28px,4vw,42px)}.eyebrow{font-size:11px;font-weight:800;letter-spacing:1.6px;color:var(--accent)}.muted{color:var(--muted)}.actions{display:flex;gap:8px;flex-wrap:wrap}.btn{display:inline-flex;align-items:center;justify-content:center;min-height:42px;padding:9px 13px;border:1px solid var(--line);border-radius:9px;background:#21262d;color:var(--text);font-weight:700;text-decoration:none;cursor:pointer}.btn:hover{border-color:#6e7681}.panel{border:1px solid var(--line);background:var(--panel);border-radius:13px;padding:18px;margin-bottom:16px}.notice{border-left:3px solid var(--warn);background:#2b2312;padding:12px 14px;border-radius:7px;font-size:13px}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:16px 0}.stat{background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:13px}.stat strong{display:block;font-size:24px}.stat span{font-size:11px;color:var(--muted)}.filters{display:grid;grid-template-columns:160px minmax(220px,1fr) auto;gap:10px;align-items:end}.field label{display:block;color:var(--muted);font-size:11px;font-weight:700;margin-bottom:5px}.field input,.field select{width:100%;background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:8px;padding:10px}.table-wrap{overflow:auto;border:1px solid var(--line);border-radius:11px}table{border-collapse:collapse;width:100%;min-width:980px;background:var(--panel2)}th,td{text-align:left;padding:11px 12px;border-bottom:1px solid var(--line);vertical-align:top;font-size:12px}th{position:sticky;top:0;background:#161b22;color:var(--muted);font-size:10px;letter-spacing:.6px;text-transform:uppercase}tr:last-child td{border-bottom:0}.who{font-weight:800;font-size:13px}.badge{display:inline-block;border:1px solid var(--line);border-radius:999px;padding:2px 7px;font-size:9px;margin-left:6px;color:var(--muted)}.badge.new{color:#f0c257;border-color:#8a6919;background:#2b2312}.badge.base{color:#7ee787;border-color:#2ea043;background:#122719}.mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace}.empty{padding:38px;text-align:center;color:var(--muted)}#gate{max-width:480px;margin:80px auto}.error{color:#ff9b94}.privacy{font-size:11px;color:var(--muted);margin-top:12px}.dot{width:8px;height:8px;border-radius:50%;display:inline-block;background:var(--good);margin-right:6px}@media(max-width:750px){.shell{padding:16px}.top{display:block}.top .actions{margin-top:15px}.stats{grid-template-columns:1fr 1fr}.filters{grid-template-columns:1fr}.panel{padding:14px}}
+</style>
+</head>
+<body>
+<main class="shell">
+<section id="gate" class="panel"><span class="eyebrow">DEVELOPER ONLY</span><h1>Checking access…</h1><p class="muted">Security activity is restricted to the Tomato08 developer account.</p><p id="gateError" class="error"></p></section>
+<section id="app" hidden>
+  <header class="top"><div><span class="eyebrow">TOMATO08 / SECURITY</span><h1>Login activity</h1><p class="muted"><span class="dot"></span>Successful sign-ins recorded after this feature was enabled.</p></div><div class="actions"><a class="btn" href="./developer.html">Developer studio</a><a class="btn" href="./tester.html">Learning</a><button class="btn" id="refreshBtn">Refresh</button><button class="btn" id="exportBtn">Export CSV</button></div></header>
+  <div class="notice"><b>Read this correctly:</b> IP location is approximate. VPNs, cellular networks, military/government networks, and ISP routing can make a legitimate login appear in another city or state. Treat an unfamiliar account/IP/device combination as a reason to investigate, not automatic proof of compromise.</div>
+  <div class="stats"><div class="stat"><strong id="loginCount">—</strong><span>Logins in view</span></div><div class="stat"><strong id="accountCount">—</strong><span>Accounts</span></div><div class="stat"><strong id="ipCount">—</strong><span>Public IPs</span></div><div class="stat"><strong id="newIpCount">—</strong><span>New-IP events</span></div></div>
+  <section class="panel"><div class="filters"><div class="field"><label for="range">Time range</label><select id="range"><option value="7">Last 7 days</option><option value="30" selected>Last 30 days</option><option value="180">Last 180 days</option></select></div><div class="field"><label for="search">Filter account, IP, location, or device</label><input id="search" type="search" placeholder="stud07, 192.0.2.1, North Carolina, Chrome…"></div><button class="btn" id="clearBtn">Clear filter</button></div></section>
+  <section class="table-wrap" aria-live="polite"><table><thead><tr><th>Account</th><th>Date / time</th><th>Approx. location</th><th>Public IP</th><th>Device / browser</th><th>Source</th></tr></thead><tbody id="rows"></tbody></table><div id="empty" class="empty" hidden>No matching login activity.</div></section>
+  <p class="privacy">Security records are retained for up to 180 days. The IP address is captured server-side. City/region are best-effort IP-derived context and can be wrong. Only the developer role can read this table through Row Level Security.</p>
+</section>
+</main>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="./supabase-config.js?v=9"></script>
+<script src="./cloud.js?v=10"></script>
+<script>
+(function(){
+  "use strict";
+  const $=id=>document.getElementById(id);
+  let all=[], filtered=[];
+  const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c]));
+  function profile(row){return row.profile||row.profiles||{}}
+  function accountName(row){const p=profile(row);return p.username||p.display_name||row.user_id.slice(0,8)}
+  function location(row){return [row.city,row.region,row.country_code].filter(Boolean).join(", ")||"Unknown"}
+  function device(ua){
+    ua=ua||"";
+    let browser=/Edg\//.test(ua)?"Edge":/Chrome\//.test(ua)?"Chrome":/Firefox\//.test(ua)?"Firefox":/Safari\//.test(ua)&&!/Chrome\//.test(ua)?"Safari":"Other";
+    let os=/Windows/.test(ua)?"Windows":/Android/.test(ua)?"Android":/iPhone|iPad/.test(ua)?"iOS/iPadOS":/Mac OS X/.test(ua)?"macOS":/Linux/.test(ua)?"Linux":"Unknown OS";
+    return browser+" · "+os;
+  }
+  function markNewIps(rows){
+    const chronological=[...rows].sort((a,b)=>new Date(a.logged_in_at)-new Date(b.logged_in_at)), seen=new Map();
+    chronological.forEach(row=>{
+      const set=seen.get(row.user_id)||new Set();
+      row._ipState=!row.ip_address?"unknown":set.size===0?"baseline":set.has(row.ip_address)?"known":"new";
+      if(row.ip_address)set.add(row.ip_address);seen.set(row.user_id,set);
+    });
+  }
+  function render(){
+    const q=$("search").value.trim().toLowerCase();
+    filtered=all.filter(r=>!q||[accountName(r),r.ip_address,location(r),device(r.user_agent),r.user_agent,r.source].join(" ").toLowerCase().includes(q));
+    $("loginCount").textContent=filtered.length;
+    $("accountCount").textContent=new Set(filtered.map(r=>r.user_id)).size;
+    $("ipCount").textContent=new Set(filtered.map(r=>r.ip_address).filter(Boolean)).size;
+    $("newIpCount").textContent=filtered.filter(r=>r._ipState==="new").length;
+    $("rows").innerHTML=filtered.map(r=>{
+      const state=r._ipState==="new"?'<span class="badge new">NEW IP</span>':r._ipState==="baseline"?'<span class="badge base">BASELINE</span>':"";
+      return '<tr><td><span class="who">'+esc(accountName(r))+'</span>'+state+'</td><td>'+esc(new Date(r.logged_in_at).toLocaleString())+'<br><span class="muted">'+esc(r.timezone||"")+'</span></td><td>'+esc(location(r))+'</td><td class="mono">'+esc(r.ip_address||"Unknown")+'</td><td>'+esc(device(r.user_agent))+'<br><span class="muted" title="'+esc(r.user_agent||"")+'">'+esc((r.user_agent||"").slice(0,95))+'</span></td><td>'+esc(r.source||"web")+'</td></tr>';
+    }).join("");
+    $("empty").hidden=filtered.length>0;
+  }
+  async function load(){
+    $("refreshBtn").disabled=true;
+    try{
+      const days=Number($("range").value)||30, since=new Date(Date.now()-days*86400000).toISOString();
+      const res=await FC.client.from("login_audit").select("id,user_id,ip_address,city,region,country_code,timezone,user_agent,logged_in_at,source,profile:profiles(username,display_name)").gte("logged_in_at",since).order("logged_in_at",{ascending:false}).limit(1000);
+      if(res.error)throw res.error;
+      all=res.data||[];markNewIps(all);render();
+    }catch(error){$("rows").innerHTML='<tr><td colspan="6" class="error">Could not load security activity: '+esc(error.message||error)+'</td></tr>'}
+    finally{$("refreshBtn").disabled=false}
+  }
+  function csv(){
+    const cols=["account","logged_in_at","city","region","country_code","ip_address","timezone","device","user_agent","source","ip_state"];
+    const quote=v=>'"'+String(v??"").replace(/"/g,'""')+'"';
+    const lines=[cols.join(",")].concat(filtered.map(r=>[accountName(r),r.logged_in_at,r.city,r.region,r.country_code,r.ip_address,r.timezone,device(r.user_agent),r.user_agent,r.source,r._ipState].map(quote).join(",")));
+    const blob=new Blob([lines.join("\n")],{type:"text/csv"}),url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download="tomato08-login-activity.csv";a.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  }
+  $("range").addEventListener("change",load);$("search").addEventListener("input",render);$("refreshBtn").addEventListener("click",load);$("exportBtn").addEventListener("click",csv);$("clearBtn").addEventListener("click",()=>{$("search").value="";render();$("search").focus()});
+  (async()=>{
+    try{
+      if(!window.FC)throw new Error("Account service did not load.");
+      const access=await FC.requireDeveloper();
+      if(!access||access.denied){location.replace("./index.html?return="+encodeURIComponent("/security.html"));return}
+      $("gate").hidden=true;$("app").hidden=false;await load();
+    }catch(error){$("gate").querySelector("h1").textContent="Security activity unavailable";$("gateError").textContent=error.message||error}
+  })();
+})();
+</script>
+</body></html>
