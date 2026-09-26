@@ -117,6 +117,6 @@ test('unit conversion, weather advice and safe news links still work', () => {
 });
 test('HTML loads versioned assets without removing authentication or podcast scripts', () => {
   const s=fs.readFileSync(path.join(__dirname,'../tester.html'),'utf8');
-  for(const f of ['briefing-weather.css?v=20260913-1','briefing-data.js?v=20260913-1','briefing.js?v=20260913-1','cloud.js?v=10','atelier-portal.js?v=2','./podcast.html']) assert.ok(s.includes(f));
+  for(const f of ['briefing-weather.css?v=20260913-1','briefing-data.js?v=20260913-1','briefing.js?v=20260913-1','cloud.js?v=11','atelier-portal.js?v=2','./podcast.html']) assert.ok(s.includes(f));
   assert.match(s,/<section id="testerApp" hidden/);
 });
