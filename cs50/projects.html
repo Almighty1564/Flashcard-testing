@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<meta name="referrer" content="no-referrer">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self' https://cdn.jsdelivr.net; style-src 'self' 'unsafe-inline'; connect-src 'self' https://semtnzdzpluhnkzxkquk.supabase.co wss://semtnzdzpluhnkzxkquk.supabase.co; img-src 'self' data:; object-src 'none'; base-uri 'none'; form-action 'self'; frame-src 'none'">
+<meta name="theme-color" content="#131619">
+<title>Project Studio / Tomato08</title>
+<link rel="stylesheet" href="studio/studio.css?v=2">
+</head>
+<body>
+<a class="skip" href="#main">Skip to workspace</a>
+<header><a class="brand" href="../index.html"><b>t08</b><span>PROJECT STUDIO<small>CS50 APPLIED / TOMATO08</small></span></a><a href="./index.html">Foundation course ↗</a><button id="account" type="button">Account & backups</button></header>
+<section id="gate" class="gate"><span class="eyebrow">YOUR PRIVATE LEARNING RECORD</span><h1>Checking your access.</h1><p id="gateMessage">Use your existing approved Tomato08 account. Required MFA and revoked-session controls still apply.</p><a class="button primary" href="../index.html?return=%2Fcs50%2Fprojects.html">Sign in to Project Studio</a></section>
+<div id="workspace" hidden>
+ <aside><nav aria-label="Studio"><button data-view="today" type="button">Today</button><button data-view="projects" type="button">Projects</button><button data-view="skills" type="button">Skill evidence</button><button data-view="history" type="button">Attempt history</button><button data-view="setup" type="button">Setup & resources</button></nav><div class="sidebar-note"><b>The next useful thing.</b><p>Build small. Test the failures. Keep the evidence.</p><span>15 releases · 3 useful projects</span></div></aside>
+ <main id="main" tabindex="-1"><div id="syncState" role="status">Opening local evidence…</div><div id="content"></div></main>
+</div>
+<dialog id="backupDialog" aria-labelledby="backupTitle"><form method="dialog"><button class="close" aria-label="Close">×</button></form><h2 id="backupTitle">Account & backups</h2><p id="accountLabel"></p><p>Reports contain selected source files and notes. Use synthetic data and review the report before importing. Optional cloud sync stores these privately in your Supabase account; it is not end-to-end encryption.</p><div class="actions"><button id="toggleSync">Enable cloud sync</button><button id="syncNow">Sync now</button></div><p id="syncDetail"></p><div class="actions"><button id="exportBackup">Export Studio backup</button><button id="importBackup">Import Studio backup</button><button id="signout">Sign out</button></div><p class="small">Foundation-course backups remain separate. Its original v1 browser data is preserved; use the Foundation Account recovery export for an old or incompatible record. Clearing browser storage deletes unsynced local evidence.</p></dialog>
+<input type="file" id="reportFile" accept="application/json,.json" hidden>
+<input type="file" id="backupFile" accept="application/json,.json" hidden>
+<p id="toast" role="status" aria-live="polite" hidden></p>
+<noscript>This interactive course requires JavaScript. Downloadable instructions remain readable in the repository.</noscript>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="../supabase-config.js?v=9"></script>
+<script src="../cloud.js?v=12"></script>
+<script src="../security-auth.js?v=1"></script>
+<script src="studio/core.js?v=2"></script>
+<script src="studio/store.js?v=2"></script>
+<script src="studio/app.js?v=2"></script>
+</body>
+</html>
