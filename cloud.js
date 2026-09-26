@@ -36,6 +36,44 @@
     return u + "@" + (cfg.emailDomain || "flashcard.invalid");
   }
 
+  async function recordLoginAudit(source) {
+    var geo = {};
+    try {
+      var controller = new AbortController();
+      var timer = setTimeout(function () { controller.abort(); }, 1800);
+      var response = await fetch("https://api.bigdatacloud.net/data/reverse-geocode-client?localityLanguage=en", {
+        signal: controller.signal,
+        referrerPolicy: "no-referrer"
+      });
+      clearTimeout(timer);
+      if (response.ok) {
+        var data = await response.json();
+        geo.city = data.city || data.locality || null;
+        geo.region = data.principalSubdivision || null;
+        geo.country_code = data.countryCode || null;
+      }
+    } catch (_) {}
+
+    try {
+      geo.timezone = Intl.DateTimeFormat().resolvedOptions().timeZone || null;
+    } catch (_) {}
+
+    try {
+      var audit = await client.functions.invoke("login-audit", {
+        body: {
+          city: geo.city || null,
+          region: geo.region || null,
+          country_code: geo.country_code || null,
+          timezone: geo.timezone || null,
+          source: source || "portal"
+        }
+      });
+      if (audit.error) console.warn("Security login audit could not be recorded:", audit.error.message);
+    } catch (error) {
+      console.warn("Security login audit could not be recorded:", error && error.message ? error.message : error);
+    }
+  }
+
   async function signIn(username, password) {
     var email = usernameToEmail(username);
     if (!email) throw new Error("Enter your username.");
@@ -46,6 +84,7 @@
       password: password
     });
     if (res.error) throw new Error("Username or password is incorrect.");
+    await recordLoginAudit("portal");
     return res.data.session;
   }
 
@@ -464,6 +503,7 @@
     config: cfg,
     usernameToEmail: usernameToEmail,
     signIn: signIn,
+    recordLoginAudit: recordLoginAudit,
     signOut: signOut,
     getSession: getSession,
     getProfile: getProfile,
