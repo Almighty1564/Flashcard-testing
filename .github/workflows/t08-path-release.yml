@@ -51,6 +51,7 @@ jobs:
           Path('/tmp/t08-path-files.txt').write_text('\n'.join(sorted(p for p in allowed if not p.startswith('.github/workflows/')))+'\n')
           print('Verified and applied exactly 22 scoped source changes.')
           PY
+          python .github/t08-path-release/fixes.py
       - name: Repository and local checker regressions
         run: |
           node --test tests/*.test.cjs podcast-media.test.mjs
@@ -68,10 +69,11 @@ jobs:
           T08_TEST_OUTPUT: /tmp/t08-map-results/studio
           T08_DRILL_OUTPUT: /tmp/t08-map-results/drills
         run: |
+          set -o pipefail
           mkdir -p /tmp/t08-map-results/studio /tmp/t08-map-results/drills
-          python tests/course-path-browser.py
-          python tests/project-studio-browser.py
-          python tests/python-drills-browser.py
+          python tests/course-path-browser.py 2>&1 | tee /tmp/t08-map-results/map-log.txt
+          python tests/project-studio-browser.py 2>&1 | tee /tmp/t08-map-results/studio-log.txt
+          python tests/python-drills-browser.py 2>&1 | tee /tmp/t08-map-results/drills-log.txt
       - name: Commit verified application files to staging only
         run: |
           git config user.name 'github-actions[bot]'
