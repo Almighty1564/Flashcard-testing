@@ -1,0 +1,10 @@
+{
+  "id": "tomato08-notebook-sync",
+  "name": "Tomato08 Notebook Sync",
+  "version": "1.0.0",
+  "minAppVersion": "1.6.0",
+  "description": "Sync managed Markdown notes with your Tomato08 course notebook, preserving conflicting revisions.",
+  "author": "Tomato08",
+  "authorUrl": "https://www.tomato08.com",
+  "isDesktopOnly": true
+}

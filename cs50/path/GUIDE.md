@@ -40,7 +40,7 @@ Press **Notes**. The notebook is docked beside the course on wide screens and op
 - **Archive** hides a note from the normal list without deleting history. Archived notes can be restored.
 - Revision history keeps earlier text. Conflicting revisions from different tabs/devices require an explicit merge.
 
-This is a lightweight linked notebook, not an Obsidian integration or a full Markdown/Obsidian implementation. It does not access a local Obsidian vault, install plugins, or change your filesystem.
+The built-in notebook remains independent of Obsidian. Optional two-way synchronization is now available through the custom Tomato08 Notebook Sync desktop plugin. Open Notes → Connect Obsidian for the plugin ZIP, setup guide and cloud-sync control. No Obsidian Sync subscription is required. The website cannot install the plugin or access a local vault by itself. See ../obsidian/SETUP.md for the exact scope and limitations.
 
 ## Storage and backups
 

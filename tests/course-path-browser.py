@@ -46,6 +46,19 @@ try:
   page.locator('#objectiveDetail [data-stage="review"]').click();page.locator('#reviewText').fill('I can explain array bounds, but this is a reflection without a completed implementation.');page.locator('[data-action="saveReflection"]').click();wait_ready(page,'T08CoursePath.progress.get("cs-arrays").reflection');check('Reflection without implementation cannot complete the objective',not page.evaluate('T08CoursePath.progress.get("cs-arrays").complete'))
   page.locator('#notesButton').click();wait_ready(page,'window.T08Notebook?.ledger');page.locator('#nbNew').click();page.locator('#nbText').wait_for(state='visible');page.locator('#nbTitle').fill('Array reasoning');page.locator('#nbText').fill('An array contains elements. See [[Memory notes]].\n\n```python\nvalues = [1, 2, 3]\n```');page.locator('#nbSave').click();wait_ready(page,'!T08Notebook.dirty && T08Notebook.notes.some(n=>n.title==="Array reasoning")');nid=page.evaluate('T08Notebook.current.id');check('Notebook saves actual account-isolated revisions')
   check('Note is associated with selected topic',page.evaluate('T08Notebook.current.topics.includes("cs-arrays")'))
+  page.locator('#nbObsidian summary').click()
+  check('Obsidian setup is available inside the notebook without another tab',len(ctx.pages)==1 and page.locator('#nbObsidianSync').is_visible())
+  check('Website setup never asks for an Obsidian password',page.locator('#nbObsidian input[type=password]').count()==0)
+  with page.expect_download() as dl:page.locator('#nbObsidian a[download]').first.click()
+  archive=OUT/'tomato08-notebook-sync.zip';dl.value.save_as(str(archive))
+  import zipfile,hashlib
+  with zipfile.ZipFile(archive) as z:
+   names=z.namelist();check('Plugin download contains installable bundle and manifest',all('tomato08-notebook-sync/'+x in names for x in ['main.js','manifest.json','styles.css']))
+   check('Downloaded plugin matches the tested bundle',hashlib.sha256(z.read('tomato08-notebook-sync/main.js')).hexdigest()==hashlib.sha256((ROOT/'cs50/obsidian/main.js').read_bytes()).hexdigest())
+  page.locator('#nbObsidianSync').click();wait_ready(page,'document.querySelector("#nbStatus").textContent.includes("Cloud sync complete")')
+  check('Notebook cloud control publishes a saved revision after explicit consent',any(r['payload'].get('kind')=='course-note' for r in REMOTE))
+  page.locator('#nbObsidian summary').click()
+
   page.locator('#nbLinks [data-create-title]').click();page.locator('#nbTitle').wait_for();wait_ready(page,'T08Notebook.current?.title==="Memory notes"');page.locator('#nbText').fill('Pointers refer to an address.');page.locator('#nbSave').click();wait_ready(page,'!T08Notebook.dirty');check('Wikilink creates related note without a new browser tab',len(ctx.pages)==1)
   check('Backlinks show the referring note','Array reasoning' in page.locator('#nbBacklinks').inner_text())
   page.locator('#nbTitle').fill('Memory and addresses');page.locator('#nbSave').click();wait_ready(page,'!T08Notebook.dirty && T08Notebook.current.title==="Memory and addresses"');check('Renaming retains a link alias',page.evaluate('T08Notebook.current.aliases.includes("Memory notes")'))
