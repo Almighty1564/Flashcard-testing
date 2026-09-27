@@ -2,9 +2,9 @@ name: Project Studio browser checks
 on:
   push:
     branches: [main, 'fix/**']
-    paths: ['cs50/**', 'tests/project-studio-browser.py', '.github/workflows/project-studio-browser.yml']
+    paths: ['cs50/**', 'tests/project-studio-browser.py', 'tests/python-drills-browser.py', 'tests/python-drills-runner.py', 'tests/browser_wait.py', '.github/workflows/project-studio-browser.yml']
   pull_request:
-    paths: ['cs50/**', 'tests/project-studio-browser.py', '.github/workflows/project-studio-browser.yml']
+    paths: ['cs50/**', 'tests/project-studio-browser.py', 'tests/python-drills-browser.py', 'tests/python-drills-runner.py', 'tests/browser_wait.py', '.github/workflows/project-studio-browser.yml']
 permissions:
   contents: read
 jobs:
@@ -25,7 +25,12 @@ jobs:
       - name: Verify browser storage, CSP and sync using synthetic accounts
         env:
           T08_TEST_OUTPUT: /tmp/t08-browser-results
-        run: python tests/project-studio-browser.py
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/t08-browser-results
+          python tests/project-studio-browser.py 2>&1 | tee /tmp/t08-browser-results/studio-test.log
+          python tests/python-drills-runner.py 2>&1 | tee /tmp/t08-browser-results/runner-test.log
+          T08_DRILL_OUTPUT=/tmp/t08-browser-results/drills python tests/python-drills-browser.py 2>&1 | tee /tmp/t08-browser-results/drill-test.log
       - uses: actions/upload-artifact@v4
         if: always()
         with:

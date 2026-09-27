@@ -6,6 +6,7 @@ from pathlib import Path
 import json,threading,http.server,socketserver,time,tempfile,os,zipfile
 from urllib.parse import urlparse,parse_qs
 from playwright.sync_api import sync_playwright
+from browser_wait import wait_ready
 ROOT=Path(__file__).resolve().parents[1];OUTPUT=Path(os.environ.get('T08_TEST_OUTPUT',tempfile.mkdtemp(prefix='t08-browser-')));OUTPUT.mkdir(exist_ok=True)
 class Handler(http.server.SimpleHTTPRequestHandler):
  def __init__(self,*a,**k):super().__init__(*a,directory=str(ROOT),**k)
@@ -48,7 +49,7 @@ try:
   page.evaluate('''async()=>{await T08Studio.ledger.append({type:'draft',release_id:'fg-01',parents:[],text:'Second branch',repo:'another fixture',assistance:'none'});}''');page.reload();page.locator('#notes').wait_for();check('Conflicting note heads are blocked pending explicit merge',page.locator('#notes').is_disabled())
   page.locator('.conflict details summary').first.click();page.locator('[data-merge]').first.click();page.locator('[data-action="saveNotes"]').click();page.wait_for_timeout(350);page.reload();page.locator('#notes').wait_for();check('Merged revision survives reload',not page.locator('#notes').is_disabled())
   # Wait for async initial cloud sync and the diagnostics surface after reload.
-  page.wait_for_function('window.T08Studio?.ledger')
+  wait_ready(page,'window.T08Studio?.ledger')
   # Ledger-level batch conflict must abort atomically.
   check('Immutable batch collision rejected',page.evaluate('''async()=>{const e=(await T08Studio.ledger.all())[0];try{await T08Studio.ledger.merge([{...e,payload:{...e.payload,text:'tampered'}}]);return false;}catch(_){return (await T08Studio.ledger.all()).find(x=>x.id===e.id).payload.text===e.payload.text;}}'''))
   page.locator('#account').click();page.locator('#signout').click();page.locator('#gate').wait_for(state='visible');check('Signout clears displayed evidence',page.locator('#workspace').is_hidden());check('No uncaught browser exceptions',not errors)
