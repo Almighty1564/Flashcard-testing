@@ -1,0 +1,47 @@
+name: Connected course and notebook checks
+on:
+  push:
+    branches: [main, fix/course-map-notebook]
+    paths: ['cs50/**', 'tests/**', '.github/workflows/course-map-browser.yml']
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: All repository and course-map core tests
+        run: |
+          node --test tests/*.test.cjs podcast-media.test.mjs
+          python tests/python-drills-runner.py
+      - name: Browser test dependencies
+        run: |
+          python -m pip install playwright==1.57.0
+          python -m playwright install --with-deps chromium
+      - name: Native course, notebook and legacy integration
+        env:
+          T08_PATH_OUTPUT: /tmp/t08-map-results
+          T08_TEST_OUTPUT: /tmp/t08-map-results/studio
+          T08_DRILL_OUTPUT: /tmp/t08-map-results/drills
+        run: |
+          set -o pipefail
+          mkdir -p /tmp/t08-map-results/studio /tmp/t08-map-results/drills
+          python tests/course-path-browser.py 2>&1 | tee /tmp/t08-map-results/map-log.txt
+          python tests/project-studio-browser.py 2>&1 | tee /tmp/t08-map-results/studio-log.txt
+          python tests/python-drills-browser.py 2>&1 | tee /tmp/t08-map-results/drills-log.txt
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: connected-course-notebook-verification
+          path: /tmp/t08-map-results
+          retention-days: 7
