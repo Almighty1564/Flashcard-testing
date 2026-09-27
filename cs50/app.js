@@ -285,8 +285,8 @@
       if(window.CS50_BUNDLE?.course)C=clone(window.CS50_BUNDLE.course);else{const res=await fetch('manifest.json');if(!res.ok)throw new Error('Curriculum could not be loaded. Reload with a connection.');C=await res.json();if(Array.isArray(C.unitFiles)){C.units=await Promise.all(C.unitFiles.map(async path=>{const r=await fetch(path);if(!r.ok)throw new Error('A course section could not load. Reload with a connection.');return r.json();}));}}
       tasks=C.units.flatMap(u=>u.tasks.map(t=>({...t,unit:u.id})));C.units.forEach(u=>u.tasks=u.tasks.map(t=>tasks.find(x=>x.id===t.id)));
       activeUnit=C.units[0];loadAccount('guest');route();
-      if(window.supabase?.createClient&&window.FC_CONFIG?.url){
-        client=window.supabase.createClient(window.FC_CONFIG.url,window.FC_CONFIG.publishableKey,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'flashcard_portal_session'}});
+      if((window.FC?.client||window.supabase?.createClient)&&window.FC_CONFIG?.url){
+        client=window.FC?.client||window.supabase.createClient(window.FC_CONFIG.url,window.FC_CONFIG.publishableKey,{auth:{persistSession:true,autoRefreshToken:true,storageKey:'flashcard_portal_session'}});
         client.auth.onAuthStateChange((_event,session)=>{const next=session?.user?.id||'guest';if(next!==account)setTimeout(()=>loadAccount(next,session?.user||null),0);});
         const result=await Promise.race([client.auth.getSession(),new Promise(resolve=>setTimeout(()=>resolve(null),5000))]);
         if(result?.data?.session){const user=result.data.session.user;if(account!==user.id)loadAccount(user.id,user);}

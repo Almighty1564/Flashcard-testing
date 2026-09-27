@@ -1,0 +1,18 @@
+/* Portable note model. Uses existing append-only draft revisions, not assessment evidence. */
+(function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.T08NotesCore=api;})(globalThis,function(){
+ 'use strict';
+ const NOTE=/^notebook-[0-9a-f-]{36}$/i, own=(x,k)=>Object.prototype.hasOwnProperty.call(x,k);
+ const clean=x=>String(x||'').trim().toLocaleLowerCase();
+ function valid(e){const p=e?.payload;return p?.type==='draft'&&p.kind==='course-note'&&p.note_schema===1&&NOTE.test(p.release_id)&&typeof p.title==='string'&&p.title.trim().length>0&&p.title.length<=140&&typeof p.text==='string'&&p.text.length<=50000&&Array.isArray(p.topics)&&p.topics.length<=50&&p.topics.every(x=>typeof x==='string'&&/^[-a-z0-9]+$/.test(x))&&Array.isArray(p.parents)&&p.parents.every(x=>typeof x==='string')&&Array.isArray(p.aliases)&&p.aliases.length<=30&&p.aliases.every(x=>typeof x==='string'&&x.length<=140)&&typeof p.archived==='boolean';}
+ function heads(events,id){const ds=events.filter(e=>valid(e)&&e.payload.release_id===id),replaced=new Set(ds.flatMap(e=>e.payload.parents));return ds.filter(e=>!replaced.has(e.id)).sort((a,b)=>a.client_at.localeCompare(b.client_at)||a.id.localeCompare(b.id));}
+ function notes(events){const ids=[...new Set(events.filter(valid).map(e=>e.payload.release_id))];return ids.map(id=>{const hs=heads(events,id),e=hs.at(-1);return {...e.payload,id,heads:hs,updated:e.client_at,conflict:hs.length>1,archived:hs.every(h=>h.payload.archived)};}).sort((a,b)=>b.updated.localeCompare(a.updated)||a.id.localeCompare(b.id));}
+ function links(text){const out=[];let fence=false;for(const line of String(text).split('\n')){if(/^\s*```/.test(line)){fence=!fence;continue;}if(fence)continue;for(const m of line.replace(/`[^`]*`/g,'').matchAll(/\[\[([^\]\n]{1,220})\]\]/g)){const [target,...rest]=m[1].split('|');out.push({target:target.trim(),label:rest.join('|').trim()||target.trim()});}}return out;}
+ function resolve(all,target){if(NOTE.test(target))return all.filter(n=>n.id===target);const t=clean(target);return all.filter(n=>clean(n.title)===t||n.aliases.some(a=>clean(a)===t));}
+ function backlinks(all,id){return all.filter(n=>!n.archived&&n.id!==id&&links(n.text).some(l=>resolve(all,l.target).some(x=>x.id===id)));}
+ function payload(note,patch,parents){const title=(patch.title??note.title).trim();const aliases=[...new Set([...(note.aliases||[]),...(title!==note.title?[note.title]:[])])].slice(-30);return {schema:2,type:'draft',kind:'course-note',note_schema:1,release_id:note.id,title,text:patch.text??note.text,topics:patch.topics??note.topics,aliases,archived:patch.archived??note.archived,parents,repo:''};}
+ function safeFilename(title,id){return (title.replace(/[^\p{L}\p{N} _-]/gu,'').trim().slice(0,70)||'Note')+'-'+id.slice(-8)+'.md';}
+ function markdown(note){return '# '+note.title+'\n\n<!-- Tomato08 note '+note.id+'; topics: '+note.topics.join(', ')+' -->\n\n'+note.text+'\n';}
+ function backup(events,account){return {kind:'tomato08-notebook-backup',schema:1,account,exported:new Date().toISOString(),events:events.filter(valid)};}
+ function readBackup(raw){if(!raw||raw.kind!=='tomato08-notebook-backup'||raw.schema!==1||!Array.isArray(raw.events)||raw.events.length>15000||raw.events.some(e=>!valid(e)||typeof e.id!=='string'||!Number.isFinite(Date.parse(e.client_at))))throw new Error('Invalid notebook backup. Existing notes were not changed.');return raw.events.map(e=>({...e,synced:false}));}
+ return {valid,heads,notes,links,resolve,backlinks,payload,safeFilename,markdown,backup,readBackup};
+});

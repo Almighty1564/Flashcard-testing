@@ -1,0 +1,455 @@
+{
+  "version": "1.0.0",
+  "phases": [
+    {
+      "id": "basics",
+      "title": "Programming foundations",
+      "description": "Understand programs before automating systems."
+    },
+    {
+      "id": "python",
+      "title": "The Python toolkit",
+      "description": "Learn a concept, vary it, and solve fresh problems."
+    },
+    {
+      "id": "local",
+      "title": "Useful local tools",
+      "description": "Combine the skills into real multi-file software."
+    },
+    {
+      "id": "systems",
+      "title": "Data, services & interfaces",
+      "description": "Add persistence, reporting, and web integration."
+    },
+    {
+      "id": "capstone",
+      "title": "Independent delivery",
+      "description": "Demonstrate, adapt, and hand over a working tool."
+    }
+  ],
+  "objectives": [
+    {
+      "id": "cs-scratch",
+      "kind": "foundation",
+      "ref": "scratch",
+      "phase": "basics",
+      "requires": [],
+      "goal": "Break a task into state, events, and repeatable steps."
+    },
+    {
+      "id": "cs-c",
+      "kind": "foundation",
+      "ref": "c",
+      "phase": "basics",
+      "requires": [
+        "cs-scratch"
+      ],
+      "goal": "Write, compile, and debug C programs with input, decisions, loops, and functions."
+    },
+    {
+      "id": "cs-arrays",
+      "kind": "foundation",
+      "ref": "arrays",
+      "phase": "basics",
+      "requires": [
+        "cs-c"
+      ],
+      "goal": "Store collections, respect bounds, and search records."
+    },
+    {
+      "id": "cs-algorithms",
+      "kind": "foundation",
+      "ref": "algorithms",
+      "phase": "basics",
+      "requires": [
+        "cs-c",
+        "cs-arrays"
+      ],
+      "goal": "Choose, implement, and explain search and sorting behavior."
+    },
+    {
+      "id": "cs-memory",
+      "kind": "foundation",
+      "ref": "memory",
+      "phase": "basics",
+      "requires": [
+        "cs-c",
+        "cs-arrays"
+      ],
+      "goal": "Handle pointers, allocation, and lifetime explicitly."
+    },
+    {
+      "id": "cs-structures",
+      "kind": "foundation",
+      "ref": "structures",
+      "phase": "basics",
+      "requires": [
+        "cs-arrays",
+        "cs-algorithms",
+        "cs-memory"
+      ],
+      "goal": "Choose a structure to suit the operations and ownership."
+    },
+    {
+      "id": "cs-python",
+      "kind": "foundation",
+      "ref": "python",
+      "phase": "basics",
+      "requires": [
+        "cs-c",
+        "cs-arrays",
+        "cs-structures"
+      ],
+      "goal": "Transfer your programming reasoning into Python."
+    },
+    {
+      "id": "py-values",
+      "kind": "python",
+      "ref": "values",
+      "phase": "python",
+      "requires": [
+        "cs-python"
+      ],
+      "goal": "Represent, convert and update small pieces of communications data."
+    },
+    {
+      "id": "py-decisions",
+      "kind": "python",
+      "ref": "decisions",
+      "phase": "python",
+      "requires": [
+        "cs-python",
+        "py-values"
+      ],
+      "goal": "Make boundaries, missing evidence and decision order explicit."
+    },
+    {
+      "id": "py-loops",
+      "kind": "python",
+      "ref": "loops",
+      "phase": "python",
+      "requires": [
+        "cs-python",
+        "py-values",
+        "py-decisions"
+      ],
+      "goal": "Process a collection reliably, preserving order and boundaries."
+    },
+    {
+      "id": "py-collections",
+      "kind": "python",
+      "ref": "collections",
+      "phase": "python",
+      "requires": [
+        "cs-python",
+        "py-loops"
+      ],
+      "goal": "Model device data and transform it without accidental information loss."
+    },
+    {
+      "id": "py-strings",
+      "kind": "python",
+      "ref": "strings",
+      "phase": "python",
+      "requires": [
+        "cs-python",
+        "py-collections"
+      ],
+      "goal": "Turn text exports into meaningful, validated records."
+    },
+    {
+      "id": "py-functions",
+      "kind": "python",
+      "ref": "functions",
+      "phase": "python",
+      "requires": [
+        "cs-python",
+        "py-collections",
+        "py-strings"
+      ],
+      "goal": "Build callable components with clear parameters, returns, and ownership."
+    },
+    {
+      "id": "py-sorting",
+      "kind": "python",
+      "ref": "sorting",
+      "phase": "python",
+      "requires": [
+        "py-collections",
+        "py-functions"
+      ],
+      "goal": "Choose order, tie-breaking, mutation and selection semantics deliberately."
+    },
+    {
+      "id": "py-reliability",
+      "kind": "python",
+      "ref": "reliability",
+      "phase": "python",
+      "requires": [
+        "py-decisions",
+        "py-functions"
+      ],
+      "goal": "Handle faults explicitly and write tests that expose incorrect behavior."
+    },
+    {
+      "id": "py-files",
+      "kind": "python",
+      "ref": "files",
+      "phase": "python",
+      "requires": [
+        "py-strings",
+        "py-collections",
+        "py-reliability"
+      ],
+      "goal": "Work on disposable files with explicit formats, encodings and ownership."
+    },
+    {
+      "id": "py-models",
+      "kind": "python",
+      "ref": "models",
+      "phase": "python",
+      "requires": [
+        "py-functions",
+        "py-collections"
+      ],
+      "goal": "Represent state and stream data through well-defined Python interfaces."
+    },
+    {
+      "id": "py-addressing",
+      "kind": "python",
+      "ref": "addressing",
+      "phase": "python",
+      "requires": [
+        "py-collections",
+        "py-reliability"
+      ],
+      "goal": "Use standard address models and retain routing context."
+    },
+    {
+      "id": "py-integration",
+      "kind": "python",
+      "ref": "integration",
+      "phase": "python",
+      "requires": [
+        "py-models",
+        "py-addressing",
+        "py-reliability"
+      ],
+      "goal": "Combine interface-independent collection with honest, testable conclusions."
+    },
+    {
+      "id": "project-fg-01",
+      "kind": "project",
+      "ref": "fg-01",
+      "phase": "local",
+      "requires": [
+        "py-files",
+        "py-functions",
+        "py-collections"
+      ],
+      "goal": ""
+    },
+    {
+      "id": "project-fg-02",
+      "kind": "project",
+      "ref": "fg-02",
+      "phase": "local",
+      "requires": [
+        "project-fg-01"
+      ],
+      "goal": ""
+    },
+    {
+      "id": "project-fg-03",
+      "kind": "project",
+      "ref": "fg-03",
+      "phase": "local",
+      "requires": [
+        "project-fg-02"
+      ],
+      "goal": ""
+    },
+    {
+      "id": "project-fg-04",
+      "kind": "project",
+      "ref": "fg-04",
+      "phase": "local",
+      "requires": [
+        "project-fg-03"
+      ],
+      "goal": ""
+    },
+    {
+      "id": "project-fg-05",
+      "kind": "project",
+      "ref": "fg-05",
+      "phase": "local",
+      "requires": [
+        "project-fg-04"
+      ],
+      "goal": ""
+    },
+    {
+      "id": "project-kit-01",
+      "kind": "project",
+      "ref": "kit-01",
+      "phase": "local",
+      "requires": [
+        "py-functions",
+        "py-reliability"
+      ],
+      "goal": ""
+    },
+    {
+      "id": "project-kit-02",
+      "kind": "project",
+      "ref": "kit-02",
+      "phase": "local",
+      "requires": [
+        "project-kit-01",
+        "py-files"
+      ],
+      "goal": ""
+    },
+    {
+      "id": "project-log-01",
+      "kind": "project",
+      "ref": "log-01",
+      "phase": "local",
+      "requires": [
+        "py-files",
+        "py-reliability"
+      ],
+      "goal": ""
+    },
+    {
+      "id": "project-log-02",
+      "kind": "project",
+      "ref": "log-02",
+      "phase": "local",
+      "requires": [
+        "project-log-01",
+        "py-sorting"
+      ],
+      "goal": ""
+    },
+    {
+      "id": "cs-sql",
+      "kind": "foundation",
+      "ref": "sql",
+      "phase": "systems",
+      "requires": [
+        "py-files"
+      ],
+      "goal": "Model data, query relationships, and preserve records across runs."
+    },
+    {
+      "id": "project-kit-03",
+      "kind": "project",
+      "ref": "kit-03",
+      "phase": "systems",
+      "requires": [
+        "project-kit-02",
+        "cs-sql"
+      ],
+      "goal": ""
+    },
+    {
+      "id": "project-kit-04",
+      "kind": "project",
+      "ref": "kit-04",
+      "phase": "systems",
+      "requires": [
+        "project-kit-03",
+        "py-models"
+      ],
+      "goal": ""
+    },
+    {
+      "id": "cs-ai",
+      "kind": "foundation",
+      "ref": "ai",
+      "phase": "systems",
+      "requires": [
+        "py-reliability"
+      ],
+      "goal": "Evaluate suggestions using explicit contracts and reproducible evidence."
+    },
+    {
+      "id": "cs-web",
+      "kind": "foundation",
+      "ref": "web",
+      "phase": "systems",
+      "requires": [
+        "cs-python"
+      ],
+      "goal": "Build interfaces with structure, labels, events, and validated input."
+    },
+    {
+      "id": "project-log-03",
+      "kind": "project",
+      "ref": "log-03",
+      "phase": "systems",
+      "requires": [
+        "project-log-02",
+        "py-integration"
+      ],
+      "goal": ""
+    },
+    {
+      "id": "project-log-04",
+      "kind": "project",
+      "ref": "log-04",
+      "phase": "systems",
+      "requires": [
+        "project-log-03",
+        "cs-web"
+      ],
+      "goal": ""
+    },
+    {
+      "id": "cs-flask",
+      "kind": "foundation",
+      "ref": "flask",
+      "phase": "systems",
+      "requires": [
+        "cs-web",
+        "cs-sql"
+      ],
+      "goal": "Connect validated requests, Python logic, and persistent data."
+    },
+    {
+      "id": "project-kit-05",
+      "kind": "project",
+      "ref": "kit-05",
+      "phase": "systems",
+      "requires": [
+        "project-kit-04",
+        "cs-flask"
+      ],
+      "goal": ""
+    },
+    {
+      "id": "project-kit-06",
+      "kind": "project",
+      "ref": "kit-06",
+      "phase": "systems",
+      "requires": [
+        "project-kit-05"
+      ],
+      "goal": ""
+    },
+    {
+      "id": "cs-capstone",
+      "kind": "foundation",
+      "ref": "capstone",
+      "phase": "capstone",
+      "requires": [
+        "project-kit-06",
+        "project-log-04",
+        "project-fg-05"
+      ],
+      "goal": "Solve a cumulative practical, adapt the result, and deliver a reproducible application."
+    }
+  ]
+}
