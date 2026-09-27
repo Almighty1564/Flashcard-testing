@@ -48,9 +48,17 @@ jobs:
               assert hashlib.sha256(result).hexdigest()==e['after'],f'After fingerprint mismatch: {p}'
               prepared.append((p,result))
           for p,result in prepared:p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(result)
+          p=Path('tests/project-studio-browser.py'); text=p.read_text()
+          assert hashlib.sha256(text.encode()).hexdigest()=='fc44f081c9e234a5bd67cceb03e270966c2eb8f5d949460c1dc6914547112182'
+          old="  # Ledger-level batch conflict must abort atomically.\n  check('Immutable batch collision rejected'"
+          new="  # Wait for async initial cloud sync and the diagnostics surface after reload.\n  page.wait_for_function('window.T08Studio?.ledger')\n  # Ledger-level batch conflict must abort atomically.\n  check('Immutable batch collision rejected'"
+          assert text.count(old)==1
+          text=text.replace(old,new)
+          assert hashlib.sha256(text.encode()).hexdigest()=='37fadd97f7e34202e5013bcca19b67e981bb59bedda9e393e6edaec3f8818008'
+          p.write_text(text)
           paths=sorted(p for p in allowed if not p.startswith('.github/workflows/'))
           Path('/tmp/t08-drill-paths.txt').write_text('\n'.join(paths)+'\n')
-          print('Verified and applied exactly 35 scoped source changes.')
+          print('Verified and applied exactly 35 scoped source changes and an explicit reload-test readiness fix.')
           PY
       - name: Repository and checker tests
         run: |
@@ -68,8 +76,9 @@ jobs:
           T08_TEST_OUTPUT: /tmp/t08-browser-results
           T08_DRILL_OUTPUT: /tmp/t08-browser-results/drills
         run: |
-          python tests/project-studio-browser.py
-          python tests/python-drills-browser.py
+          mkdir -p /tmp/t08-browser-results
+          python tests/project-studio-browser.py 2>&1 | tee /tmp/t08-browser-results/studio-test.log
+          python tests/python-drills-browser.py 2>&1 | tee /tmp/t08-browser-results/drill-test.log
       - name: Commit verified application sources to staging only
         run: |
           git config user.name 'github-actions[bot]'
