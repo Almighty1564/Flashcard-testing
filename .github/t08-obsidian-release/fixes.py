@@ -7,3 +7,12 @@ if new not in s:
     assert s.count(old)==1,'Unexpected notebook sync function'
     p.write_text(s.replace(old,new))
 print('Preserved final cloud-sync status after editor refresh.')
+
+p=Path('tests/course-path-browser.py')
+s=p.read_text()
+old="page.locator('#toggleSync').click();wait_ready(page,"
+new="page.locator('#syncNow').click();wait_ready(page,"
+if new not in s:
+    assert s.count(old)==1,'Unexpected existing sync control check'
+    p.write_text(s.replace(old,new))
+print('Test uses Sync now because the inline connection step already enabled cloud sync.')
