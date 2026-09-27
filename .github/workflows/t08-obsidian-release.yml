@@ -57,6 +57,7 @@ jobs:
           Path('/tmp/t08-obsidian-files.txt').write_text('\n'.join(sorted(p for p in allowed|generated if not p.startswith('.github/workflows/')))+'\n')
           print('Applied 21 scoped source updates and verified three generated deliverables.')
           PY
+          python .github/t08-obsidian-release/fixes.py
       - name: Repository, bridge, host and local checker regressions
         run: |
           node --test tests/*.test.cjs podcast-media.test.mjs
