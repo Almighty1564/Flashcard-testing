@@ -1,0 +1,51 @@
+name: Obsidian notebook integration
+on:
+  push:
+    branches: [main, 'fix/obsidian-note-sync']
+    paths: ['cs50/obsidian/**', 'cs50/path/notebook.js', 'cs50/path.html', 'tests/obsidian-*.test.cjs', 'tests/course-path-browser.py', '.github/workflows/obsidian-sync.yml']
+permissions:
+  contents: read
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Reproducible plugin and all repository regressions
+        run: |
+          sha256sum cs50/obsidian/main.js cs50/obsidian/tomato08-notebook-sync.zip > /tmp/plugin-before.sha
+          python cs50/obsidian/build.py
+          python cs50/obsidian/package.py
+          sha256sum --check /tmp/plugin-before.sha
+          node --test tests/*.test.cjs podcast-media.test.mjs
+          python tests/python-drills-runner.py
+      - name: Install browser testing dependencies
+        run: |
+          python -m pip install playwright==1.57.0
+          python -m playwright install --with-deps chromium
+      - name: Website connection, download, and existing course integration
+        env:
+          T08_PATH_OUTPUT: /tmp/t08-obsidian-results/path
+          T08_TEST_OUTPUT: /tmp/t08-obsidian-results/studio
+          T08_DRILL_OUTPUT: /tmp/t08-obsidian-results/drills
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/t08-obsidian-results/{path,studio,drills}
+          python tests/course-path-browser.py
+          python tests/project-studio-browser.py
+          python tests/python-drills-browser.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: obsidian-connection-browser-results
+          path: /tmp/t08-obsidian-results
+          if-no-files-found: warn
+          retention-days: 7
