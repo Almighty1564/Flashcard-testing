@@ -1,0 +1,807 @@
+{
+  "id": "integration",
+  "title": "APIs, telemetry & evidence",
+  "outcome": "Combine interface-independent collection with honest, testable conclusions.",
+  "prerequisites": [
+    "models",
+    "addressing",
+    "sorting"
+  ],
+  "steps": [
+    {
+      "title": "1. Separate transport and meaning",
+      "text": "These drills use injected fake callables, never real equipment. A collector obtains data; a normalizer shapes it; a validator compares it with intended requirements. Reuse the same analysis with files, SSH or HTTP later.",
+      "code": ""
+    },
+    {
+      "title": "2. Recognize unsuccessful collection",
+      "text": "No response is not proof of health. Preserve error categories and missing fields. An HTTP JSON response is not necessarily a successful HTTP operation.",
+      "code": "def summarize(response):\n    if response[\"status\"] != 200:\n        return {\"state\":\"unknown\"}\n    return {\"state\":\"observed\",\"data\":response[\"body\"]}"
+    },
+    {
+      "title": "3. Bound pagination and retries",
+      "text": "A page cursor can repeat, and remote services can fail. Detect cycles and cap work. Tests provide deterministic fake pages so you can inspect exact call order.",
+      "code": ""
+    },
+    {
+      "title": "4. Preserve units and time",
+      "text": "Normalize timestamps into UTC and units into an explicit common scale. Do not combine incomparable metrics or label an old measurement current.",
+      "code": "from datetime import datetime, timezone\nt=datetime.fromisoformat(\"2026-01-01T10:00:00-05:00\")\nprint(t.astimezone(timezone.utc).isoformat())"
+    },
+    {
+      "title": "5. Intent is not observation",
+      "text": "Compare expected state with observed state without overwriting the approved expectation. Produce evidence references and a distinct UNKNOWN state when collection is incomplete. Configuration changes belong in an explicitly authorized lab project.",
+      "code": ""
+    }
+  ],
+  "references": [
+    {
+      "title": "datetime",
+      "url": "https://docs.python.org/3/library/datetime.html"
+    },
+    {
+      "title": "urllib",
+      "url": "https://docs.python.org/3/library/urllib.request.html"
+    },
+    {
+      "title": "unittest.mock",
+      "url": "https://docs.python.org/3/library/unittest.mock.html"
+    }
+  ],
+  "project": "log-03",
+  "tasks": [
+    {
+      "id": "py-integration-01",
+      "topic": "integration",
+      "number": 1,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Decode an API envelope",
+      "brief": "Separate status from body.",
+      "contract": [
+        "Define unwrap(response). response is {status:int,body:any}. Return body only for 200, otherwise raise ValueError."
+      ],
+      "focus": [
+        "response contract"
+      ],
+      "starter": "def unwrap(response):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: decode an api envelope.",
+        "Check the HTTP-style status before returning the body; having a body is not success.",
+        "Compare the implementation with case 03-empty body. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(unwrap({\"status\":200,\"body\":{\"up\":True}}), {'up': True})\n"
+        },
+        {
+          "id": "02-error JSON",
+          "setup": "pass\n",
+          "check": "raises(ValueError,lambda:unwrap({\"status\":403,\"body\":{\"error\":\"denied\"}}))\n"
+        },
+        {
+          "id": "03-empty body",
+          "setup": "pass\n",
+          "check": "expect(unwrap({\"status\":200,\"body\":[]}), [])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "5241b75b106f922529104d24e2b08d4b4cca21fd1c686a3b61e09625d2baf741"
+    },
+    {
+      "id": "py-integration-02",
+      "topic": "integration",
+      "number": 2,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Paginated fake API",
+      "brief": "Retrieve all pages in order.",
+      "contract": [
+        "Define pages(fetch). Start cursor None; fetch(cursor) returns {items:list,next:cursor_or_None}. Stop when next is None.",
+        "Return concatenated items. These fixtures are acyclic; cycle handling comes next."
+      ],
+      "focus": [
+        "pagination"
+      ],
+      "starter": "def pages(fetch):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: paginated fake api.",
+        "Keep requesting with the next cursor until the response explicitly ends pagination.",
+        "Compare the implementation with case 02-empty. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-two pages",
+          "setup": "calls=[]\ndef fetch(cursor):\n    calls.append(cursor)\n    return {\"items\":[1],\"next\":\"b\"} if cursor is None else {\"items\":[2],\"next\":None}\n",
+          "check": "expect(pages(fetch),[1,2])\nexpect(calls,[None,\"b\"])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "pass\n",
+          "check": "expect(pages(lambda c:{\"items\":[],\"next\":None}), [])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "88959b6662e1ec96ac019f4b7e53b8ee4197970703c1b579b9899098f27a266b"
+    },
+    {
+      "id": "py-integration-03",
+      "topic": "integration",
+      "number": 3,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Reject a pagination cycle",
+      "brief": "Bound an invalid remote workflow.",
+      "contract": [
+        "Define safe_pages(fetch,max_pages=10). Like pages, but raise ValueError before requesting a previously used cursor again or exceeding max_pages.",
+        "max_pages is a positive int. Return items on normal completion; do not silently return incomplete data."
+      ],
+      "focus": [
+        "bounded integration"
+      ],
+      "starter": "def safe_pages(fetch, max_pages=10):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: reject a pagination cycle.",
+        "Remember every cursor already requested and stop before repeating one or exceeding the budget.",
+        "Compare the implementation with case 03-limit. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(safe_pages(lambda c:{\"items\":[1],\"next\":None}), [1])\n"
+        },
+        {
+          "id": "02-cycle",
+          "setup": "calls=[]\ndef fetch(c):\n    calls.append(c);return {\"items\":[],\"next\":\"b\"}\n",
+          "check": "raises(ValueError,lambda:safe_pages(fetch))\nexpect(calls,[None,\"b\"])\n"
+        },
+        {
+          "id": "03-limit",
+          "setup": "calls=[]\ndef fetch(c):\n    calls.append(c);return {\"items\":[],\"next\":str(len(calls))}\n",
+          "check": "raises(ValueError,lambda:safe_pages(fetch,2))\nexpect(len(calls),2)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "38366527154c34b6ce23ff475c6164525ebcdfd32890f72b349b8a24d357ae80"
+    },
+    {
+      "id": "py-integration-04",
+      "topic": "integration",
+      "number": 4,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Normalize timestamp to UTC",
+      "brief": "Make offsets comparable.",
+      "contract": [
+        "Define utc(text). Parse an offset-aware ISO timestamp and return UTC isoformat using +00:00. Naive timestamps raise ValueError."
+      ],
+      "focus": [
+        "timezone"
+      ],
+      "starter": "def utc(text):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: normalize timestamp to utc.",
+        "An offset-aware timestamp carries timezone context; a naive timestamp cannot be safely assumed to be UTC.",
+        "Compare the implementation with case 03-naive. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(utc(\"2026-01-01T10:00:00-05:00\"), '2026-01-01T15:00:00+00:00')\n"
+        },
+        {
+          "id": "02-Z",
+          "setup": "pass\n",
+          "check": "expect(utc(\"2026-01-01T15:00:00Z\"), '2026-01-01T15:00:00+00:00')\n"
+        },
+        {
+          "id": "03-naive",
+          "setup": "pass\n",
+          "check": "raises(ValueError,lambda:utc(\"2026-01-01T10:00:00\"))\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "37fa08449612e2a5ac5ee7ce6638b5eaf5101a813c4b250e37799df673b5de15"
+    },
+    {
+      "id": "py-integration-05",
+      "topic": "integration",
+      "number": 5,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Age with injected clock",
+      "brief": "Avoid hardcoded real-time behavior.",
+      "contract": [
+        "Define age_seconds(observed,now). Both are offset-aware datetime objects. Return (now-observed).total_seconds(). Future observation raises ValueError."
+      ],
+      "focus": [
+        "clock injection"
+      ],
+      "starter": "def age_seconds(observed, now):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: age with injected clock.",
+        "Use the supplied clock value rather than the real wall clock so the behavior is reproducible.",
+        "Compare the implementation with case 02-future. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-elapsed",
+          "setup": "from datetime import datetime,timezone,timedelta\nnow=datetime(2026,1,1,tzinfo=timezone.utc)\n",
+          "check": "expect(age_seconds(now-timedelta(seconds=30),now),30.0)\n"
+        },
+        {
+          "id": "02-future",
+          "setup": "from datetime import datetime,timezone,timedelta\nnow=datetime(2026,1,1,tzinfo=timezone.utc)\n",
+          "check": "raises(ValueError,lambda:age_seconds(now+timedelta(seconds=1),now))\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "74f83a6209f919c3dbecd8796108d69b7eed08b3ddba0b8ca23cf59b74fabff9"
+    },
+    {
+      "id": "py-integration-06",
+      "topic": "integration",
+      "number": 6,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Unit normalization",
+      "brief": "Normalize latency without guessing.",
+      "contract": [
+        "Define milliseconds(value,unit). unit \"s\" multiplies by 1000, \"ms\" preserves, \"us\" divides by 1000. Unknown units raise ValueError. Numeric finite input supplied."
+      ],
+      "focus": [
+        "unit model"
+      ],
+      "starter": "def milliseconds(value, unit):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: unit normalization.",
+        "Choose a conversion factor from the supported unit names; reject an unrecognized unit.",
+        "Compare the implementation with case 04-unsupported. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(milliseconds(2,\"s\"), 2000)\n"
+        },
+        {
+          "id": "02-microseconds",
+          "setup": "pass\n",
+          "check": "expect(milliseconds(1000,\"us\"), 1.0)\n"
+        },
+        {
+          "id": "03-zero",
+          "setup": "pass\n",
+          "check": "expect(milliseconds(0,\"ms\"), 0)\n"
+        },
+        {
+          "id": "04-unsupported",
+          "setup": "pass\n",
+          "check": "raises(ValueError,lambda:milliseconds(1,\"minutes\"))\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "b5e923207a0015b9947e5670464184db199911e2301376e80568f1f8d8a2abf3"
+    },
+    {
+      "id": "py-integration-07",
+      "topic": "integration",
+      "number": 7,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Retain latest record",
+      "brief": "Deduplicate by an explicit timestamp.",
+      "contract": [
+        "Define latest(rows). Rows have id and numeric time. Return dict id->whole record with greatest time. Equal time keeps the FIRST record. Preserve input."
+      ],
+      "focus": [
+        "deduplication"
+      ],
+      "starter": "def latest(rows):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: retain latest record.",
+        "Replace an indexed record only for a strictly later time; equality preserves the first observation.",
+        "Compare the implementation with case 03-empty. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(latest([{ \"id\":\"A\",\"time\":2,\"v\":1},{\"id\":\"A\",\"time\":1,\"v\":2}]), {'A': {'id': 'A', 'time': 2, 'v': 1}})\n"
+        },
+        {
+          "id": "02-tie",
+          "setup": "pass\n",
+          "check": "expect(latest([{ \"id\":\"A\",\"time\":2,\"v\":1},{\"id\":\"A\",\"time\":2,\"v\":2}]), {'A': {'id': 'A', 'time': 2, 'v': 1}})\n"
+        },
+        {
+          "id": "03-empty",
+          "setup": "pass\n",
+          "check": "expect(latest([]), {})\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "be29dfbfd0e415f20393b97bbc9397cc026b7ae5df4abdbe6bed9d9ad3510e1a"
+    },
+    {
+      "id": "py-integration-08",
+      "topic": "integration",
+      "number": 8,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Three-state compliance",
+      "brief": "Keep unknown separate from failure.",
+      "contract": [
+        "Define assess(expected,observed). expected is dict; observed is dict or None.",
+        "If observed is None, return UNKNOWN for every expected key. Otherwise absent keys UNKNOWN, matching values PASS, other values FAIL. Ignore extra observed keys."
+      ],
+      "focus": [
+        "evidence states"
+      ],
+      "starter": "def assess(expected, observed):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: three-state compliance.",
+        "Absent evidence should produce UNKNOWN, not PASS; compare only after the observation is available.",
+        "Compare the implementation with case 04-empty. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(assess({\"vlan\":10,\"up\":True},{\"vlan\":20}), {'vlan': 'FAIL', 'up': 'UNKNOWN'})\n"
+        },
+        {
+          "id": "02-zero",
+          "setup": "pass\n",
+          "check": "expect(assess({\"errors\":0},{\"errors\":0}), {'errors': 'PASS'})\n"
+        },
+        {
+          "id": "03-collection failure",
+          "setup": "pass\n",
+          "check": "expect(assess({\"up\":True},None), {'up': 'UNKNOWN'})\n"
+        },
+        {
+          "id": "04-empty",
+          "setup": "pass\n",
+          "check": "expect(assess({},None), {})\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "dc285c7a317c5c8e4a7cac2fd91076cce70cf5a96f8fe516f1a5613f2e71af7c"
+    },
+    {
+      "id": "py-integration-09",
+      "topic": "integration",
+      "number": 9,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Do not overwrite intended state",
+      "brief": "Produce drift findings.",
+      "contract": [
+        "Define drift(expected,observed). Return sorted list of expected keys whose observed value is missing or different.",
+        "Do not modify either dictionary; extras in observed are ignored."
+      ],
+      "focus": [
+        "intent vs observation"
+      ],
+      "starter": "def drift(expected, observed):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: do not overwrite intended state.",
+        "Keep the intended dictionary unchanged and report differing keys separately.",
+        "Compare the implementation with case 03-extra. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-preserved",
+          "setup": "e={\"vlan\":10};o={\"vlan\":20};e0=e.copy();o0=o.copy()\n",
+          "check": "expect(drift(e,o),[\"vlan\"])\nexpect(e,e0)\nexpect(o,o0)\n"
+        },
+        {
+          "id": "02-missing",
+          "setup": "pass\n",
+          "check": "expect(drift({\"x\":None},{}), ['x'])\n"
+        },
+        {
+          "id": "03-extra",
+          "setup": "pass\n",
+          "check": "expect(drift({}, {\"extra\":1}), [])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "8ed1a8af423ac2dbb2a41c4e67179c931cb514a95be2b81e4445018140749038"
+    },
+    {
+      "id": "py-integration-10",
+      "topic": "integration",
+      "number": 10,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Escaped HTML evidence",
+      "brief": "Report strings as text, not executable markup.",
+      "contract": [
+        "Define html_names(names). Return \"<ul>\" plus one \"<li>escaped name</li>\" per item, then \"</ul>\".",
+        "Use html.escape(name,quote=True), preserve order, no extra whitespace."
+      ],
+      "focus": [
+        "output encoding"
+      ],
+      "starter": "def html_names(names):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: escaped html evidence.",
+        "Escape names as HTML text rather than concatenating untrusted markup.",
+        "Compare the implementation with case 03-ampersand. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(html_names([\"R1\",\"<script>\"]), '<ul><li>R1</li><li>&lt;script&gt;</li></ul>')\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "pass\n",
+          "check": "expect(html_names([]), '<ul></ul>')\n"
+        },
+        {
+          "id": "03-ampersand",
+          "setup": "pass\n",
+          "check": "expect(html_names([\"A&B\"]), '<ul><li>A&amp;B</li></ul>')\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "9b0ea2ab7f28e8107819883ef0cb52edee6f507ea9f28ead9c5a263d777c3454"
+    },
+    {
+      "id": "py-integration-11",
+      "topic": "integration",
+      "number": 11,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "TTL cache with an injected clock",
+      "brief": "Do not re-fetch a fresh observation.",
+      "contract": [
+        "Define cached(key,now,ttl,cache,fetch). cache maps key to {at,value}. now is numeric time, ttl>=0.",
+        "Reuse entry exactly when 0<=now-at<ttl; otherwise fetch(key), update cache and return value. A cached None is valid."
+      ],
+      "focus": [
+        "cache",
+        "clock"
+      ],
+      "starter": "def cached(key, now, ttl, cache, fetch):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: ttl cache with an injected clock.",
+        "A cached value is valid only within the stated age interval; zero can still be a valid cached value.",
+        "Compare the implementation with case 03-future invalid. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-fresh none",
+          "setup": "cache={\"A\":{\"at\":10,\"value\":None}}\ncalls=[]\n",
+          "check": "expect(cached(\"A\",11,5,cache,lambda k:calls.append(k)),None)\nexpect(calls,[])\n"
+        },
+        {
+          "id": "02-expired",
+          "setup": "cache={\"A\":{\"at\":10,\"value\":1}}\ncalls=[]\ndef fetch(k):calls.append(k);return 2\n",
+          "check": "expect(cached(\"A\",15,5,cache,fetch),2)\nexpect(calls,[\"A\"])\nexpect(cache[\"A\"],{\"at\":15,\"value\":2})\n"
+        },
+        {
+          "id": "03-future invalid",
+          "setup": "cache={\"A\":{\"at\":20,\"value\":1}}\n",
+          "check": "expect(cached(\"A\",10,5,cache,lambda k:3),3)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "233ad34973def976285633b3e43dbd52ec8c41727447e245c02b8a6f0218cc10"
+    },
+    {
+      "id": "py-integration-12",
+      "topic": "integration",
+      "number": 12,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Stable import IDs",
+      "brief": "Make replay behavior explicit.",
+      "contract": [
+        "Define merge(existing,incoming). Inputs are lists of {id,...} records. Return a NEW list: existing order retained, new IDs appended in incoming order.",
+        "First occurrence of each ID wins across both inputs. Do not mutate inputs."
+      ],
+      "focus": [
+        "idempotency"
+      ],
+      "starter": "def merge(existing, incoming):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: stable import ids.",
+        "Index stable record IDs while retaining the required original order and conflict policy.",
+        "Compare the implementation with case 03-duplicate incoming. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(merge([{ \"id\":\"A\",\"v\":1}],[{\"id\":\"A\",\"v\":2},{\"id\":\"B\",\"v\":3}]), [{'id': 'A', 'v': 1}, {'id': 'B', 'v': 3}])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "pass\n",
+          "check": "expect(merge([],[]), [])\n"
+        },
+        {
+          "id": "03-duplicate incoming",
+          "setup": "pass\n",
+          "check": "expect(merge([],[{\"id\":\"A\"},{\"id\":\"A\"}]), [{'id': 'A'}])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "cc29baf354f18066cae6f2d43ab703f30ce40672a2089e9bc3283fb3da42590e"
+    },
+    {
+      "id": "py-integration-13",
+      "topic": "integration",
+      "number": 13,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Evidence-linked threshold findings",
+      "brief": "Attach a supporting ID.",
+      "contract": [
+        "Define findings(rows,limit). Each row has id,device,value (number or None).",
+        "Return {device,evidence:id,state} in input order. UNKNOWN for None, FAIL for value>limit, PASS otherwise. limit is a supplied exercise policy."
+      ],
+      "focus": [
+        "traceability"
+      ],
+      "starter": "def findings(rows, limit):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: evidence-linked threshold findings.",
+        "Attach each finding to its source record ID so the report is reviewable.",
+        "Compare the implementation with case 03-empty. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(findings([{ \"id\":\"e1\",\"device\":\"R1\",\"value\":None},{\"id\":\"e2\",\"device\":\"S1\",\"value\":10}],10), [{'device': 'R1', 'evidence': 'e1', 'state': 'UNKNOWN'}, {'device': 'S1', 'evidence': 'e2', 'state': 'PASS'}])\n"
+        },
+        {
+          "id": "02-failure",
+          "setup": "pass\n",
+          "check": "expect(findings([{ \"id\":\"e3\",\"device\":\"R2\",\"value\":11}],10), [{'device': 'R2', 'evidence': 'e3', 'state': 'FAIL'}])\n"
+        },
+        {
+          "id": "03-empty",
+          "setup": "pass\n",
+          "check": "expect(findings([],0), [])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "a375e108f5966214bfef863dc64f1f497def8a0374cb7302d4c63b9be3d8c741"
+    },
+    {
+      "id": "py-integration-14",
+      "topic": "integration",
+      "number": 14,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Validate before changing fake state",
+      "brief": "Separate planning from application.",
+      "contract": [
+        "Define apply(plan,approved,writer). plan is a list of {device,command}. If not approved, return 0 without calling writer.",
+        "If approved, call writer(device,command) for each item in order and return count. Exceptions propagate; do not pretend a partial failure completed. No real devices."
+      ],
+      "focus": [
+        "approval gate"
+      ],
+      "starter": "def apply(plan, approved, writer):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: validate before changing fake state.",
+        "Validate the whole plan before invoking the injected writer; a later bad row must not leave an earlier partial change.",
+        "Compare the implementation with case 03-failure. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-unapproved",
+          "setup": "calls=[]\n",
+          "check": "expect(apply([{\"device\":\"R1\",\"command\":\"SAMPLE\"}],False,lambda *args:calls.append(args)),0)\nexpect(calls,[])\n"
+        },
+        {
+          "id": "02-approved",
+          "setup": "calls=[]\n",
+          "check": "expect(apply([{\"device\":\"R1\",\"command\":\"SAMPLE\"}],True,lambda *args:calls.append(args)),1)\nexpect(calls,[(\"R1\",\"SAMPLE\")])\n"
+        },
+        {
+          "id": "03-failure",
+          "setup": "def writer(*args):raise RuntimeError()\n",
+          "check": "raises(RuntimeError,lambda:apply([{\"device\":\"R1\",\"command\":\"SAMPLE\"}],True,writer))\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "f06ae2304b3e95637884f40cd18cfe009216656499a9a00b7869afa0d31f5426"
+    },
+    {
+      "id": "py-integration-15",
+      "topic": "integration",
+      "number": 15,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Verification after an action",
+      "brief": "Do not confuse execution with success.",
+      "contract": [
+        "Define execute_verify(action,verify). Call action once, then verify once. Return PASS if verify() is exactly True, FAIL if exactly False, UNKNOWN if None.",
+        "action and verify exceptions propagate. They are fake callables."
+      ],
+      "focus": [
+        "postcheck"
+      ],
+      "starter": "def execute_verify(action, verify):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: verification after an action.",
+        "Separate action errors from verification outcomes and keep None distinct from False.",
+        "Compare the implementation with case 03-missing postcheck. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-order",
+          "setup": "calls=[]\ndef action():calls.append(\"action\")\ndef verify():calls.append(\"verify\");return True\n",
+          "check": "expect(execute_verify(action,verify),\"PASS\")\nexpect(calls,[\"action\",\"verify\"])\n"
+        },
+        {
+          "id": "02-failed postcheck",
+          "setup": "pass\n",
+          "check": "expect(execute_verify(lambda:None,lambda:False), 'FAIL')\n"
+        },
+        {
+          "id": "03-missing postcheck",
+          "setup": "pass\n",
+          "check": "expect(execute_verify(lambda:None,lambda:None), 'UNKNOWN')\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "a6aecaed6d30fe9b97d8671a0e3eb3137c0c6a8541cf2305429ec8b28cfd049e"
+    },
+    {
+      "id": "py-integration-16",
+      "topic": "integration",
+      "number": 16,
+      "version": "1.0.0",
+      "mode": "check",
+      "kind": "build",
+      "title": "Check: readiness report",
+      "brief": "Integrate inventory, observations and a policy.",
+      "contract": [
+        "Define readiness(expected_names,observations,limit). expected_names are unique in required order; observations maps name->numeric latency or None.",
+        "Return records {name,state} for all expected names: UNKNOWN if absent/None, PASS for latency<=limit, FAIL otherwise. Ignore extra observations."
+      ],
+      "focus": [
+        "integration"
+      ],
+      "starter": "def readiness(expected_names, observations, limit):\n    pass\n",
+      "hints": [],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(readiness([\"A\",\"B\",\"C\"],{\"A\":0,\"B\":11,\"X\":1},10), [{'name': 'A', 'state': 'PASS'}, {'name': 'B', 'state': 'FAIL'}, {'name': 'C', 'state': 'UNKNOWN'}])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "pass\n",
+          "check": "expect(readiness([],{},0), [])\n"
+        },
+        {
+          "id": "03-null",
+          "setup": "pass\n",
+          "check": "expect(readiness([\"A\"],{\"A\":None},10), [{'name': 'A', 'state': 'UNKNOWN'}])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "ce4ef1d17efdc7d23eab7e852d576caed2c8c1727eca8950e1d2eeaea8893ab2"
+    },
+    {
+      "id": "py-integration-17",
+      "topic": "integration",
+      "number": 17,
+      "version": "1.0.0",
+      "mode": "check",
+      "kind": "build",
+      "title": "Check: collect independently",
+      "brief": "Use the caller-provided source and preserve failures.",
+      "contract": [
+        "Define report(names,fetch). Call fetch(name) once per unique supplied name (input names are unique).",
+        "Return ordered records {name,value,state}; state OBSERVED on success (including None/0), UNKNOWN with value None for TimeoutError. Other exceptions propagate."
+      ],
+      "focus": [
+        "transport-independent logic"
+      ],
+      "starter": "def report(names, fetch):\n    pass\n",
+      "hints": [],
+      "cases": [
+        {
+          "id": "01-mixed",
+          "setup": "calls=[]\ndef fetch(n):\n    calls.append(n)\n    if n==\"B\":raise TimeoutError()\n    return 0\n",
+          "check": "expect(report([\"A\",\"B\"],fetch),[{\"name\":\"A\",\"value\":0,\"state\":\"OBSERVED\"},{\"name\":\"B\",\"value\":None,\"state\":\"UNKNOWN\"}])\nexpect(calls,[\"A\",\"B\"])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "pass\n",
+          "check": "expect(report([],lambda n:1), [])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "13c33afb0325b3375c869ecd0cd7d59d48b229198f792738bcc1fa649d1827c1"
+    },
+    {
+      "id": "py-integration-18",
+      "topic": "integration",
+      "number": 18,
+      "version": "1.0.0",
+      "mode": "check",
+      "kind": "build",
+      "title": "Check: identify changed evidence",
+      "brief": "Compare snapshots without redefining intent.",
+      "contract": [
+        "Define changed(previous,current). Both are dict device->value. Return {added,removed,changed} sorted name lists.",
+        "changed includes shared keys with unequal values; missing differs from present None. Preserve both inputs."
+      ],
+      "focus": [
+        "snapshot comparison"
+      ],
+      "starter": "def changed(previous, current):\n    pass\n",
+      "hints": [],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(changed({\"A\":1,\"B\":None},{\"A\":2,\"C\":None}), {'added': ['C'], 'removed': ['B'], 'changed': ['A']})\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "pass\n",
+          "check": "expect(changed({}, {}), {'added': [], 'removed': [], 'changed': []})\n"
+        },
+        {
+          "id": "03-same",
+          "setup": "pass\n",
+          "check": "expect(changed({\"A\":0},{\"A\":0}), {'added': [], 'removed': [], 'changed': []})\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "cc4782e977066e694ba04dccc258858895fe95ffaa4710a1dd7bbf2c289f9560"
+    }
+  ]
+}

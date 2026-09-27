@@ -1,0 +1,803 @@
+{
+  "id": "functions",
+  "title": "Functions: 15 distinct forms",
+  "outcome": "Build callable components with clear parameters, returns, and ownership.",
+  "prerequisites": [
+    "strings"
+  ],
+  "steps": [
+    {
+      "title": "1. Input and return",
+      "text": "A function accepts arguments and returns a value. In these drills, define exactly the function name/signature in the contract. The checker calls it with several inputs.",
+      "code": "def double(value):\n    return value * 2\nprint(double(3)) # 6"
+    },
+    {
+      "title": "2. Call signatures",
+      "text": "Positional and keyword arguments provide different calling forms. Defaults apply only when an argument is omitted. A * in a signature makes later parameters keyword-only; / makes earlier parameters positional-only.",
+      "code": "def label(name, *, prefix=\"lab\"):\n    return f\"{prefix}:{name}\""
+    },
+    {
+      "title": "3. Return information, not just text",
+      "text": "Returning a structured result makes logic reusable. Printing is a separate interface decision. Multiple return values are usually a tuple.",
+      "code": "def endpoints(values):\n    return min(values), max(values)"
+    },
+    {
+      "title": "4. Treat functions as values",
+      "text": "A callback is a function supplied to another function. Dependency injection passes a collector into analysis so it can be replaced during tests.",
+      "code": "def collect_names(fetch):\n    return [row[\"name\"] for row in fetch()]"
+    },
+    {
+      "title": "5. Verify repeated calls",
+      "text": "Mutable defaults are created once. Use None then allocate inside the function. Test repeated calls and supplied containers to expose accidental shared state.",
+      "code": "def add_note(note, notes=None):\n    if notes is None:\n        notes=[]\n    return notes+[note]"
+    }
+  ],
+  "references": [
+    {
+      "title": "Defining functions",
+      "url": "https://docs.python.org/3/tutorial/controlflow.html#defining-functions"
+    },
+    {
+      "title": "More function parameters",
+      "url": "https://docs.python.org/3/tutorial/controlflow.html#more-on-defining-functions"
+    }
+  ],
+  "project": "kit-01",
+  "tasks": [
+    {
+      "id": "py-functions-01",
+      "topic": "functions",
+      "number": 1,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "One argument, one value",
+      "brief": "Return a conversion.",
+      "contract": [
+        "Define to_mhz(ghz) returning ghz*1000 as a number. Do not print."
+      ],
+      "focus": [
+        "parameter",
+        "return"
+      ],
+      "starter": "def to_mhz(ghz):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: one argument, one value.",
+        "Define the requested name, use its parameter in the calculation and return rather than print.",
+        "Compare the implementation with case 03-small. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(to_mhz(7.25), 7250.0)\n"
+        },
+        {
+          "id": "02-zero",
+          "setup": "pass\n",
+          "check": "expect(to_mhz(0), 0)\n"
+        },
+        {
+          "id": "03-small",
+          "setup": "pass\n",
+          "check": "expect(to_mhz(.001), 1.0)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "06d04af65aa879f74c971649c1e8e19fad45de76024591d65c477debb8a06e9f"
+    },
+    {
+      "id": "py-functions-02",
+      "topic": "functions",
+      "number": 2,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Two parameters",
+      "brief": "Calculate a quantity total.",
+      "contract": [
+        "Define power(quantity, watts). Return their product. Accept positional and keyword calls."
+      ],
+      "focus": [
+        "positional",
+        "keyword"
+      ],
+      "starter": "def power(quantity, watts):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: two parameters.",
+        "Parameter names form part of keyword calls; retain the exact requested signature.",
+        "Compare the implementation with case 03-zero. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(power(4,18), 72)\n"
+        },
+        {
+          "id": "02-keywords",
+          "setup": "pass\n",
+          "check": "expect(power(watts=18,quantity=4), 72)\n"
+        },
+        {
+          "id": "03-zero",
+          "setup": "pass\n",
+          "check": "expect(power(0,65), 0)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "0ba93d48355355c33abae8bd9c74100da3692b53774fd2e5c4c1797e8e49a535"
+    },
+    {
+      "id": "py-functions-03",
+      "topic": "functions",
+      "number": 3,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "A default argument",
+      "brief": "Use an overridable threshold.",
+      "contract": [
+        "Define above(value, threshold=10). Return whether value is strictly above threshold."
+      ],
+      "focus": [
+        "default argument"
+      ],
+      "starter": "def above(value, threshold=10):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: a default argument.",
+        "A default applies when omitted, not when a supplied value happens to be zero.",
+        "Compare the implementation with case 04-keyword. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(above(11), True)\n"
+        },
+        {
+          "id": "02-boundary",
+          "setup": "pass\n",
+          "check": "expect(above(10), False)\n"
+        },
+        {
+          "id": "03-override",
+          "setup": "pass\n",
+          "check": "expect(above(5,4), True)\n"
+        },
+        {
+          "id": "04-keyword",
+          "setup": "pass\n",
+          "check": "expect(above(5,threshold=6), False)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "c02f433463b455cfbcc3c519d487030112f1b3d6cd230f57d0e080fe7aaa2f35"
+    },
+    {
+      "id": "py-functions-04",
+      "topic": "functions",
+      "number": 4,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Keyword-only safety option",
+      "brief": "Make the flag explicit.",
+      "contract": [
+        "Define describe_change(name, *, apply=False). Return \"APPLY:<name>\" if apply else \"PREVIEW:<name>\".",
+        "Passing apply as a second positional argument must raise TypeError."
+      ],
+      "focus": [
+        "keyword-only"
+      ],
+      "starter": "def describe_change(name, *, apply=False):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: keyword-only safety option.",
+        "A bare star separates positional parameters from keyword-only options.",
+        "Compare the implementation with case 03-positional rejected. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(describe_change(\"R1\"), 'PREVIEW:R1')\n"
+        },
+        {
+          "id": "02-explicit",
+          "setup": "pass\n",
+          "check": "expect(describe_change(\"R1\",apply=True), 'APPLY:R1')\n"
+        },
+        {
+          "id": "03-positional rejected",
+          "setup": "pass\n",
+          "check": "raises(TypeError, lambda: describe_change(\"R1\", True))\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "db8cd884bb1f541a0630b122b4e7e16cf2ec885d24fb5bd398c6bbd06fbe7807"
+    },
+    {
+      "id": "py-functions-05",
+      "topic": "functions",
+      "number": 5,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Positional-only measurement",
+      "brief": "Control the calling contract.",
+      "contract": [
+        "Define scale(value, /, factor=1000). Return value*factor. value=... keyword calls must fail."
+      ],
+      "focus": [
+        "positional-only"
+      ],
+      "starter": "def scale(value, /, factor=1000):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: positional-only measurement.",
+        "The slash marks preceding parameters positional-only; later parameters can still accept keywords.",
+        "Compare the implementation with case 03-keyword rejected. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(scale(2), 2000)\n"
+        },
+        {
+          "id": "02-factor keyword",
+          "setup": "pass\n",
+          "check": "expect(scale(2,factor=3), 6)\n"
+        },
+        {
+          "id": "03-keyword rejected",
+          "setup": "pass\n",
+          "check": "raises(TypeError, lambda: scale(value=2))\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "9d07dca572b6fb99e38dfc81944fcee7058d9318ab9de274188e9cc137f73b8c"
+    },
+    {
+      "id": "py-functions-06",
+      "topic": "functions",
+      "number": 6,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Collect positional arguments",
+      "brief": "Support a variable number of values.",
+      "contract": [
+        "Define total(*readings). Return sum of numeric readings, zero for no readings."
+      ],
+      "focus": [
+        "*args"
+      ],
+      "starter": "def total(*readings):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: collect positional arguments.",
+        "Starred positional arguments arrive as a tuple; the empty tuple is valid input.",
+        "Compare the implementation with case 03-signed. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(total(1,2,3), 6)\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "pass\n",
+          "check": "expect(total(), 0)\n"
+        },
+        {
+          "id": "03-signed",
+          "setup": "pass\n",
+          "check": "expect(total(-2,5), 3)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "838a66ba58fce115bd357c595bd82ddf9a980ef252330a4fa48d1e616d558348"
+    },
+    {
+      "id": "py-functions-07",
+      "topic": "functions",
+      "number": 7,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Collect keyword settings",
+      "brief": "Build a structured record.",
+      "contract": [
+        "Define settings(**kwargs). Return a new dictionary of supplied settings."
+      ],
+      "focus": [
+        "**kwargs"
+      ],
+      "starter": "def settings(**kwargs):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: collect keyword settings.",
+        "Double-star keyword arguments arrive as a dictionary with the caller's field names.",
+        "Compare the implementation with case 03-false. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(settings(site=\"A\",vlan=10), {'site': 'A', 'vlan': 10})\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "pass\n",
+          "check": "expect(settings(), {})\n"
+        },
+        {
+          "id": "03-false",
+          "setup": "pass\n",
+          "check": "expect(settings(enabled=False), {'enabled': False})\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "2f96fcdb1a9c7db4d899cd40ac8c66f46dedd953612771c606c71d6d9ad3dabf"
+    },
+    {
+      "id": "py-functions-08",
+      "topic": "functions",
+      "number": 8,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Return multiple values",
+      "brief": "Preserve a tuple result.",
+      "contract": [
+        "Define limits(values). Return a tuple (minimum,maximum); empty input returns (None,None)."
+      ],
+      "focus": [
+        "tuple return"
+      ],
+      "starter": "def limits(values):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: return multiple values.",
+        "Decide the empty result before calling min or max on the collection.",
+        "Compare the implementation with case 03-single. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(limits([3,1,9]), (1, 9))\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "pass\n",
+          "check": "expect(limits([]), (None, None))\n"
+        },
+        {
+          "id": "03-single",
+          "setup": "pass\n",
+          "check": "expect(limits([-5]), (-5, -5))\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "109fe7602618f05c2751a6287c7fa28192374d7b4f2e001584be36b91dded447"
+    },
+    {
+      "id": "py-functions-09",
+      "topic": "functions",
+      "number": 9,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Return a structured summary",
+      "brief": "Separate logic from formatting.",
+      "contract": [
+        "Define summary(values). Return {count,total,mean}; mean is None for empty."
+      ],
+      "focus": [
+        "dictionary return"
+      ],
+      "starter": "def summary(values):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: return a structured summary.",
+        "Calculate count and total first; only compute a mean when the count is nonzero.",
+        "Compare the implementation with case 02-empty. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(summary([2,4]), {'count': 2, 'total': 6, 'mean': 3.0})\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "pass\n",
+          "check": "expect(summary([]), {'count': 0, 'total': 0, 'mean': None})\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "0f3faf5830e5aa935cda3d5c49b734875fc6a29eab0900016d4f0975929f18ec"
+    },
+    {
+      "id": "py-functions-10",
+      "topic": "functions",
+      "number": 10,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Early rejection",
+      "brief": "Return immediately for unusable input.",
+      "contract": [
+        "Define valid_name(name). Return False unless name is a nonempty string after stripping; True otherwise."
+      ],
+      "focus": [
+        "early return"
+      ],
+      "starter": "def valid_name(name):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: early rejection.",
+        "Return early for a wrong type so string methods are never called on an incompatible value.",
+        "Compare the implementation with case 04-number. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(valid_name(\"R1\"), True)\n"
+        },
+        {
+          "id": "02-None",
+          "setup": "pass\n",
+          "check": "expect(valid_name(None), False)\n"
+        },
+        {
+          "id": "03-blank",
+          "setup": "pass\n",
+          "check": "expect(valid_name(\" \"), False)\n"
+        },
+        {
+          "id": "04-number",
+          "setup": "pass\n",
+          "check": "expect(valid_name(1), False)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "88ef34e5d9a8394bf55042a5657ee6b2ce730431cc74140b2abc4e0d7a1b54a9"
+    },
+    {
+      "id": "py-functions-11",
+      "topic": "functions",
+      "number": 11,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "repair",
+      "title": "Repair print versus return",
+      "brief": "A reusable function must return its answer.",
+      "contract": [
+        "Define square(value), returning value*value. It must not print anything."
+      ],
+      "focus": [
+        "return versus print"
+      ],
+      "starter": "def square(value):\n    print(value * value)\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: repair print versus return.",
+        "The caller needs the returned object; writing text to standard output does not provide it.",
+        "Compare the implementation with case 03-zero. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(square(3), 9)\n"
+        },
+        {
+          "id": "02-negative",
+          "setup": "pass\n",
+          "check": "expect(square(-2), 4)\n"
+        },
+        {
+          "id": "03-zero",
+          "setup": "pass\n",
+          "check": "expect(square(0), 0)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "476757efa043d8ce129fd682d80406c1cde05776c1a2f64876a2259401ca28e5"
+    },
+    {
+      "id": "py-functions-12",
+      "topic": "functions",
+      "number": 12,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "repair",
+      "title": "Repair mutable default",
+      "brief": "Do not retain earlier calls.",
+      "contract": [
+        "Define add_tag(tag,tags=None). Return a NEW list containing supplied tags followed by tag.",
+        "Repeated omitted-default calls are independent; a supplied list must remain unchanged."
+      ],
+      "focus": [
+        "default lifetime",
+        "ownership"
+      ],
+      "starter": "def add_tag(tag, tags=[]):\n    tags.append(tag)\n    return tags\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: repair mutable default.",
+        "A default list is created when the function is defined; allocate per call and copy supplied lists.",
+        "Compare the implementation with case 03-empty. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-independent calls",
+          "setup": "pass\n",
+          "check": "expect(add_tag(\"A\"),[\"A\"])\nexpect(add_tag(\"B\"),[\"B\"])\n"
+        },
+        {
+          "id": "02-input preserved",
+          "setup": "items=[\"A\"]\n",
+          "check": "expect(add_tag(\"B\",items), ['A', 'B'])\nexpect(items,[\"A\"])\n"
+        },
+        {
+          "id": "03-empty",
+          "setup": "pass\n",
+          "check": "expect(add_tag(\"X\",[]), ['X'])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "535da4f92f6180f520e266ebdb2087e2d5d41176bbd452db1669255cbf48541c"
+    },
+    {
+      "id": "py-functions-13",
+      "topic": "functions",
+      "number": 13,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Accept a validation callback",
+      "brief": "Select values using a supplied rule.",
+      "contract": [
+        "Define select(values,predicate). Return values for which predicate(value) is truthy, in original order.",
+        "Call predicate once per value. Preserve the input."
+      ],
+      "focus": [
+        "higher-order function"
+      ],
+      "starter": "def select(values, predicate):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: accept a validation callback.",
+        "Call the supplied predicate for each value and keep the original value when it passes.",
+        "Compare the implementation with case 03-callback count. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(select([1,2,3,4], lambda x:x%2==0), [2, 4])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "pass\n",
+          "check": "expect(select([], lambda x:True), [])\n"
+        },
+        {
+          "id": "03-callback count",
+          "setup": "calls=[]\ndef rule(x):\n    calls.append(x)\n    return x>0\n",
+          "check": "expect(select([-1,0,2],rule),[2])\nexpect(calls,[-1,0,2])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "29be9be732ec445672ff06ea9b14b1b5e1986e0baa962d5975cbc18169525d5a"
+    },
+    {
+      "id": "py-functions-14",
+      "topic": "functions",
+      "number": 14,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Create a configured function",
+      "brief": "Use a closure without shared configuration.",
+      "contract": [
+        "Define threshold_rule(limit). Return a callable that accepts value and returns value>=limit.",
+        "Rules created with different limits must remain independent."
+      ],
+      "focus": [
+        "closure"
+      ],
+      "starter": "def threshold_rule(limit):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: create a configured function.",
+        "The returned function should retain access to the limit supplied to the outer call.",
+        "Compare the implementation with case 02-negative. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-two rules",
+          "setup": "pass\n",
+          "check": "low=threshold_rule(5)\nhigh=threshold_rule(10)\nexpect(low(7),True)\nexpect(high(7),False)\nexpect(low(5),True)\n"
+        },
+        {
+          "id": "02-negative",
+          "setup": "pass\n",
+          "check": "expect(threshold_rule(0)(-1), False)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "6435b42a16c27dee256ed36c933f240877487427bf0b92a98e5e6c69be11dd67"
+    },
+    {
+      "id": "py-functions-15",
+      "topic": "functions",
+      "number": 15,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Inject an offline collector",
+      "brief": "Test analysis without equipment.",
+      "contract": [
+        "Define device_names(collector). Call the zero-argument collector exactly once.",
+        "It returns list of {name}; return names in that order. Do not make network calls."
+      ],
+      "focus": [
+        "dependency injection"
+      ],
+      "starter": "def device_names(collector):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: inject an offline collector.",
+        "Call the collector once, save its returned records, and extract names from that one observation.",
+        "Compare the implementation with case 03-once. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(device_names(lambda:[{\"name\":\"R1\"},{\"name\":\"S1\"}]), ['R1', 'S1'])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "pass\n",
+          "check": "expect(device_names(lambda:[]), [])\n"
+        },
+        {
+          "id": "03-once",
+          "setup": "calls=[]\ndef fetch():\n    calls.append(1)\n    return [{\"name\":\"X\"}]\n",
+          "check": "expect(device_names(fetch),[\"X\"])\nexpect(len(calls),1)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "70b7689308900666beaaa0f61162ee9064a40d98bbe7700c8a61403a540d4876"
+    },
+    {
+      "id": "py-functions-16",
+      "topic": "functions",
+      "number": 16,
+      "version": "1.0.0",
+      "mode": "check",
+      "kind": "build",
+      "title": "Check: independent conversion function",
+      "brief": "Make the caller choose the unit.",
+      "contract": [
+        "Define convert(value, *, unit=\"MHz\"). GHz multiplies by 1000, MHz preserves value; unsupported units raise ValueError. Return numeric MHz."
+      ],
+      "focus": [
+        "signature",
+        "exception"
+      ],
+      "starter": "def convert(value, *, unit=\"MHz\"):\n    pass\n",
+      "hints": [],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(convert(2), 2)\n"
+        },
+        {
+          "id": "02-GHz",
+          "setup": "pass\n",
+          "check": "expect(convert(2,unit=\"GHz\"), 2000)\n"
+        },
+        {
+          "id": "03-invalid",
+          "setup": "pass\n",
+          "check": "raises(ValueError,lambda:convert(2,unit=\"Hz\"))\n"
+        },
+        {
+          "id": "04-keyword only",
+          "setup": "pass\n",
+          "check": "raises(TypeError,lambda:convert(2,\"GHz\"))\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "a33bd8602856753181ad9264eb4092974b68d348d5167cadcb31b8d820381e97"
+    },
+    {
+      "id": "py-functions-17",
+      "topic": "functions",
+      "number": 17,
+      "version": "1.0.0",
+      "mode": "check",
+      "kind": "build",
+      "title": "Check: assemble a pipeline",
+      "brief": "Combine injected operations.",
+      "contract": [
+        "Define pipeline(value, steps). Apply each callable in order, passing its result to the next. Return unchanged value for an empty steps list."
+      ],
+      "focus": [
+        "composition"
+      ],
+      "starter": "def pipeline(value, steps):\n    pass\n",
+      "hints": [],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(pipeline(3,[lambda x:x+1,lambda x:x*2]), 8)\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "pass\n",
+          "check": "expect(pipeline(\"x\",[]), 'x')\n"
+        },
+        {
+          "id": "03-type transitions",
+          "setup": "pass\n",
+          "check": "expect(pipeline(\" 4 \",[str.strip,int,lambda x:x+2]), 6)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "d0f3fcc310647b3c96092f707be10b5bf8f7dea3c91ec9b499abb2952e969ad4"
+    },
+    {
+      "id": "py-functions-18",
+      "topic": "functions",
+      "number": 18,
+      "version": "1.0.0",
+      "mode": "check",
+      "kind": "build",
+      "title": "Check: avoid cross-call state",
+      "brief": "Return validated records independently.",
+      "contract": [
+        "Define append_record(record, records=None). Return new list with record appended.",
+        "Do not mutate provided records. Multiple omitted-default calls must not share state."
+      ],
+      "focus": [
+        "ownership",
+        "default"
+      ],
+      "starter": "def append_record(record, records=None):\n    pass\n",
+      "hints": [],
+      "cases": [
+        {
+          "id": "01-repeated",
+          "setup": "pass\n",
+          "check": "expect(append_record(\"A\"),[\"A\"])\nexpect(append_record(\"B\"),[\"B\"])\n"
+        },
+        {
+          "id": "02-supplied",
+          "setup": "items=[\"A\"]\n",
+          "check": "expect(append_record(\"B\",items), ['A', 'B'])\nexpect(items,[\"A\"])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "8553dd2724f229074944d51f3e4df00b16b5f9f493ae332073e15f0984d06f42"
+    }
+  ]
+}

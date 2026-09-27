@@ -1,0 +1,846 @@
+{
+  "id": "sorting",
+  "title": "Sorting: 15 distinct requirements",
+  "outcome": "Choose order, tie-breaking, mutation and selection semantics deliberately.",
+  "prerequisites": [
+    "functions",
+    "collections"
+  ],
+  "steps": [
+    {
+      "title": "1. One dataset, different jobs",
+      "text": "These 15 tasks reuse the same fictional device shape. Each changes a meaningful requirement: key, direction, tie-break, mutation, grouping or missing values.",
+      "code": "devices=[{\"name\":\"B\",\"latency_ms\":4},{\"name\":\"A\",\"latency_ms\":1}]"
+    },
+    {
+      "title": "2. New list versus in place",
+      "text": "sorted returns a new list. list.sort modifies a list and returns None. A shallow sorted copy still refers to the original records; do not edit their fields accidentally.",
+      "code": "ordered=sorted(devices,key=lambda d:d[\"latency_ms\"])"
+    },
+    {
+      "title": "3. Keys and stability",
+      "text": "A key can be a named function or lambda. Python sorting is stable: equal keys retain encounter order. Explicit secondary keys change that rule.",
+      "code": "def by_name(row):\n    return row[\"name\"].casefold()\nordered=sorted(devices,key=by_name)"
+    },
+    {
+      "title": "4. Compound requirements",
+      "text": "Tuple keys compare left to right. For mixed ascending and descending numeric fields, negating a numeric key can express descending order. Missing values need an explicit policy.",
+      "code": "ordered=sorted(devices,key=lambda d:(d[\"latency_ms\"],d[\"name\"].casefold()))"
+    },
+    {
+      "title": "5. Select rather than fully sort",
+      "text": "When only a few items are needed, heapq.nsmallest is an alternative. Output tests do not prove algorithm choice; the final technique checklist remains explicit.",
+      "code": ""
+    }
+  ],
+  "references": [
+    {
+      "title": "Sorting HOWTO",
+      "url": "https://docs.python.org/3/howto/sorting.html"
+    },
+    {
+      "title": "heapq",
+      "url": "https://docs.python.org/3/library/heapq.html"
+    }
+  ],
+  "project": "log-02",
+  "tasks": [
+    {
+      "id": "py-sorting-01",
+      "topic": "sorting",
+      "number": 1,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Ascending latency",
+      "brief": "Produce a new ordered list.",
+      "contract": [
+        "Define order(rows). Return a new list sorted by latency_ms ascending. Preserve equal-key order and original rows."
+      ],
+      "focus": [
+        "sorted",
+        "lambda"
+      ],
+      "starter": "def order(rows):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: ascending latency.",
+        "The key function should extract latency; sorting whole dictionaries does not define the required order.",
+        "Compare the implementation with case 04-duplicates. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-shared dataset",
+          "setup": "rows=[{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [{'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}])\nexpect(rows,before)\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "rows=[]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [])\nexpect(rows,before)\n"
+        },
+        {
+          "id": "03-reversed input",
+          "setup": "rows=[{'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [{'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}])\nexpect(rows,before)\n"
+        },
+        {
+          "id": "04-duplicates",
+          "setup": "rows=[{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}])\nexpect(rows,before)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "2f6af5d1dccd269058a6b7782aa4fafdbbfa4ef3798059739d903b4041e35e9c"
+    },
+    {
+      "id": "py-sorting-02",
+      "topic": "sorting",
+      "number": 2,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Descending latency",
+      "brief": "Change the direction.",
+      "contract": [
+        "Define order(rows). Return a new list sorted by latency_ms descending; preserve equal-key order and inputs."
+      ],
+      "focus": [
+        "reverse"
+      ],
+      "starter": "def order(rows):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: descending latency.",
+        "Descending changes the sort direction, not the numeric signs in your returned records.",
+        "Compare the implementation with case 04-duplicates. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-shared dataset",
+          "setup": "rows=[{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}])\nexpect(rows,before)\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "rows=[]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [])\nexpect(rows,before)\n"
+        },
+        {
+          "id": "03-reversed input",
+          "setup": "rows=[{'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [{'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}])\nexpect(rows,before)\n"
+        },
+        {
+          "id": "04-duplicates",
+          "setup": "rows=[{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}])\nexpect(rows,before)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "b1e92ad1b831201175ba0e5131a667b6d266d084f285ee90d510cc9d299db75d"
+    },
+    {
+      "id": "py-sorting-03",
+      "topic": "sorting",
+      "number": 3,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Sort the existing list",
+      "brief": "Mutation is required this time.",
+      "contract": [
+        "Define order(rows). Sort the same list in place by latency_ms ascending and return None.",
+        "The caller must observe the reordered original list. Do not replace it with a new list."
+      ],
+      "focus": [
+        "list.sort",
+        "in-place"
+      ],
+      "starter": "def order(rows):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: sort the existing list.",
+        "The requirement is about object identity as well as ordering; a newly sorted copy is not enough.",
+        "Compare the implementation with case 02-empty. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-identity",
+          "setup": "rows=[{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}]\noriginal=rows\n",
+          "check": "expect(order(rows),None)\nassert rows is original\nexpect(rows,[{'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "rows=[]\n",
+          "check": "expect(order(rows),None)\nexpect(rows,[])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "ac191de97faf3a2ef0744dd388c5736846bf4acccd13659a10c693d94691897a"
+    },
+    {
+      "id": "py-sorting-04",
+      "topic": "sorting",
+      "number": 4,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Case-insensitive hostname",
+      "brief": "Use a named key function.",
+      "contract": [
+        "Define order(rows), returning a new list sorted by name.casefold(). Preserve input.",
+        "Also define name_key(row), returning the casefolded name, and use it as the key (use is self-reviewed)."
+      ],
+      "focus": [
+        "named key"
+      ],
+      "starter": "def name_key(row):\n    pass\n\ndef order(rows):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: case-insensitive hostname.",
+        "Normalize only the comparison key, not the spelling of the hostname in the output.",
+        "Compare the implementation with case 05-key function. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-shared dataset",
+          "setup": "rows=[{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [{'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}])\nexpect(rows,before)\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "rows=[]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [])\nexpect(rows,before)\n"
+        },
+        {
+          "id": "03-reversed input",
+          "setup": "rows=[{'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [{'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}])\nexpect(rows,before)\n"
+        },
+        {
+          "id": "04-duplicates",
+          "setup": "rows=[{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}])\nexpect(rows,before)\n"
+        },
+        {
+          "id": "05-key function",
+          "setup": "pass\n",
+          "check": "expect(name_key({\"name\":\"Sw-A\"}), 'sw-a')\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "895049c663aa2b1fb865e43e6c9192c0ea96c5f51acb0f0e365d8b05015b101b"
+    },
+    {
+      "id": "py-sorting-05",
+      "topic": "sorting",
+      "number": 5,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Natural numeric suffix",
+      "brief": "Avoid SW-10 before SW-2.",
+      "contract": [
+        "Define order(rows). Names have prefix-number format with one final integer suffix.",
+        "Sort by casefolded prefix then numeric suffix. Equal keys retain input order. Preserve input."
+      ],
+      "focus": [
+        "numeric key"
+      ],
+      "starter": "def order(rows):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: natural numeric suffix.",
+        "Separate the prefix from the numeric suffix; lexical order puts 10 before 2.",
+        "Compare the implementation with case 04-duplicates. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-shared dataset",
+          "setup": "rows=[{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [{'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}])\nexpect(rows,before)\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "rows=[]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [])\nexpect(rows,before)\n"
+        },
+        {
+          "id": "03-reversed input",
+          "setup": "rows=[{'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [{'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}])\nexpect(rows,before)\n"
+        },
+        {
+          "id": "04-duplicates",
+          "setup": "rows=[{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}])\nexpect(rows,before)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "03e0e7f8557318c7eb1a47c0cf88a42aae2cfadcf7888b13f53ea8304a1be3a3"
+    },
+    {
+      "id": "py-sorting-06",
+      "topic": "sorting",
+      "number": 6,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Site then latency",
+      "brief": "Use a compound key.",
+      "contract": [
+        "Define order(rows). Sort site ascending then latency_ms ascending. Inputs preserved; remaining ties stable."
+      ],
+      "focus": [
+        "tuple key"
+      ],
+      "starter": "def order(rows):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: site then latency.",
+        "A tuple key compares the first field before the second field.",
+        "Compare the implementation with case 04-duplicates. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-shared dataset",
+          "setup": "rows=[{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [{'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}])\nexpect(rows,before)\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "rows=[]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [])\nexpect(rows,before)\n"
+        },
+        {
+          "id": "03-reversed input",
+          "setup": "rows=[{'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [{'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}])\nexpect(rows,before)\n"
+        },
+        {
+          "id": "04-duplicates",
+          "setup": "rows=[{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}])\nexpect(rows,before)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "c16e7864e839c3d4cf9cee6c1bb60c7923c928478c176eafebec01eae92cacb1"
+    },
+    {
+      "id": "py-sorting-07",
+      "topic": "sorting",
+      "number": 7,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Mixed directions",
+      "brief": "Sort site up and errors down.",
+      "contract": [
+        "Define order(rows). Sort site ascending, then errors descending. Preserve input and remaining ties."
+      ],
+      "focus": [
+        "mixed direction"
+      ],
+      "starter": "def order(rows):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: mixed directions.",
+        "The two fields use different directions; reversing the whole result also reverses the site order.",
+        "Compare the implementation with case 04-duplicates. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-shared dataset",
+          "setup": "rows=[{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [{'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}])\nexpect(rows,before)\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "rows=[]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [])\nexpect(rows,before)\n"
+        },
+        {
+          "id": "03-reversed input",
+          "setup": "rows=[{'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [{'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}])\nexpect(rows,before)\n"
+        },
+        {
+          "id": "04-duplicates",
+          "setup": "rows=[{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}])\nexpect(rows,before)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "c053122c263e454ddacfe543382b8784b6a3a7da41a45969dd30ce61579d3c4a"
+    },
+    {
+      "id": "py-sorting-08",
+      "topic": "sorting",
+      "number": 8,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Three-level priority",
+      "brief": "Use deterministic tie-breaking.",
+      "contract": [
+        "Define order(rows). Sort errors descending, latency ascending, then casefolded hostname ascending. Preserve input."
+      ],
+      "focus": [
+        "multiple keys"
+      ],
+      "starter": "def order(rows):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: three-level priority.",
+        "Write all three tie-breaking fields in priority order and account for each field's direction.",
+        "Compare the implementation with case 04-duplicates. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-shared dataset",
+          "setup": "rows=[{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [{'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}])\nexpect(rows,before)\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "rows=[]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [])\nexpect(rows,before)\n"
+        },
+        {
+          "id": "03-reversed input",
+          "setup": "rows=[{'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [{'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}])\nexpect(rows,before)\n"
+        },
+        {
+          "id": "04-duplicates",
+          "setup": "rows=[{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}])\nexpect(rows,before)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "c8c044614163616ea12a5afe8fae8d88c06de5b174e5ccb78c8d6f0c77d7d1c9"
+    },
+    {
+      "id": "py-sorting-09",
+      "topic": "sorting",
+      "number": 9,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Business priority mapping",
+      "brief": "Site B comes first.",
+      "contract": [
+        "Define order(rows). Sort site B before A, then latency ascending; only A/B are supplied. Preserve input and equal-key order."
+      ],
+      "focus": [
+        "custom ordering"
+      ],
+      "starter": "def order(rows):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: business priority mapping.",
+        "Convert the business priority label into a rank before applying ordinary ordering.",
+        "Compare the implementation with case 04-duplicates. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-shared dataset",
+          "setup": "rows=[{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [{'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}])\nexpect(rows,before)\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "rows=[]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [])\nexpect(rows,before)\n"
+        },
+        {
+          "id": "03-reversed input",
+          "setup": "rows=[{'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [{'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}])\nexpect(rows,before)\n"
+        },
+        {
+          "id": "04-duplicates",
+          "setup": "rows=[{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}])\nexpect(rows,before)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "33ad2a4e9589c071166804edbfbf3b9d9e4909a31c0afad23d693466b44537ba"
+    },
+    {
+      "id": "py-sorting-10",
+      "topic": "sorting",
+      "number": 10,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Stable multipass sorting",
+      "brief": "Produce the same ordering another way.",
+      "contract": [
+        "Define order(rows). Sort site ascending then latency descending. Preserve input.",
+        "Use two stable passes: secondary key first, primary key last. Technique is self-reviewed."
+      ],
+      "focus": [
+        "stable passes"
+      ],
+      "starter": "def order(rows):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: stable multipass sorting.",
+        "Stable sorting preserves earlier order among ties; sort the lower-priority field before the higher-priority field.",
+        "Compare the implementation with case 04-duplicates. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-shared dataset",
+          "setup": "rows=[{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [{'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}])\nexpect(rows,before)\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "rows=[]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [])\nexpect(rows,before)\n"
+        },
+        {
+          "id": "03-reversed input",
+          "setup": "rows=[{'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [{'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}])\nexpect(rows,before)\n"
+        },
+        {
+          "id": "04-duplicates",
+          "setup": "rows=[{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}])\nexpect(rows,before)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "5d5d68edc6238b5e53bec3392277b8b6db26a8e2600c51f69e2def2f0d61335b"
+    },
+    {
+      "id": "py-sorting-11",
+      "topic": "sorting",
+      "number": 11,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Unknown readings last",
+      "brief": "Handle None deliberately.",
+      "contract": [
+        "Define order(rows). latency_ms is numeric or None. Sort known readings ascending, unknown last. Preserve input and equal-key order."
+      ],
+      "focus": [
+        "None policy"
+      ],
+      "starter": "def order(rows):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: unknown readings last.",
+        "Use a missing-value flag in the key so None is never directly compared against a number.",
+        "Compare the implementation with case 03-zero. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "rows=[{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'sw-2', 'site': 'A', 'latency_ms': None, 'errors': 0}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}]\n",
+          "check": "expect(order(rows), [{'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'sw-2', 'site': 'A', 'latency_ms': None, 'errors': 0}])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "pass\n",
+          "check": "expect(order([]), [])\n"
+        },
+        {
+          "id": "03-zero",
+          "setup": "pass\n",
+          "check": "expect(order([{ \"latency_ms\":None,\"name\":\"A\"},{\"latency_ms\":0,\"name\":\"B\"}]), [{'latency_ms': 0, 'name': 'B'}, {'latency_ms': None, 'name': 'A'}])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "e4f947ba8f50136718993df0dd743e0dc4cf8abeae7d2b6202d8e73bc900ca04"
+    },
+    {
+      "id": "py-sorting-12",
+      "topic": "sorting",
+      "number": 12,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Numeric text ordering",
+      "brief": "Sort values as numbers without changing fields.",
+      "contract": [
+        "Define order(rows). Each latency_ms is finite numeric text. Return records ordered by numeric latency; preserve original field strings and input."
+      ],
+      "focus": [
+        "conversion key"
+      ],
+      "starter": "def order(rows):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: numeric text ordering.",
+        "Convert numeric text in the key function; preserve the original records and their fields.",
+        "Compare the implementation with case 03-fraction. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "rows=[{\"latency_ms\":\"10\"},{\"latency_ms\":\"2\"}]\n",
+          "check": "expect(order(rows), [{'latency_ms': '2'}, {'latency_ms': '10'}])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "pass\n",
+          "check": "expect(order([]), [])\n"
+        },
+        {
+          "id": "03-fraction",
+          "setup": "pass\n",
+          "check": "expect(order([{ \"latency_ms\":\"0.5\"},{\"latency_ms\":\"0\"}]), [{'latency_ms': '0'}, {'latency_ms': '0.5'}])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "d5e56b9c6afb03a5a9e7f5bba432e88229202766ab49d9ac9a86bd4a6bfe1c3d"
+    },
+    {
+      "id": "py-sorting-13",
+      "topic": "sorting",
+      "number": 13,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Grouped order",
+      "brief": "Return sorted groups, not one flat list.",
+      "contract": [
+        "Define order(rows). Return dict site -> records sorted by errors descending within each site. Preserve input and ties."
+      ],
+      "focus": [
+        "group and sort"
+      ],
+      "starter": "def order(rows):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: grouped order.",
+        "Group first, then independently sort each group's records according to the contract.",
+        "Compare the implementation with case 04-duplicates. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-shared dataset",
+          "setup": "rows=[{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), {'B': [{'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}], 'A': [{'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}]})\nexpect(rows,before)\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "rows=[]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), {})\nexpect(rows,before)\n"
+        },
+        {
+          "id": "03-reversed input",
+          "setup": "rows=[{'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), {'B': [{'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}], 'A': [{'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}]})\nexpect(rows,before)\n"
+        },
+        {
+          "id": "04-duplicates",
+          "setup": "rows=[{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), {'B': [{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}]})\nexpect(rows,before)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "86a13c0a2f37d61e733e23dd18ec8edc47535327638d29cf838f0d146b58d64e"
+    },
+    {
+      "id": "py-sorting-14",
+      "topic": "sorting",
+      "number": 14,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Unique sorted latencies",
+      "brief": "Deduplicate values, not records.",
+      "contract": [
+        "Define order(rows). Return sorted unique latency_ms numbers. Do not change or remove any input record."
+      ],
+      "focus": [
+        "set and sorted"
+      ],
+      "starter": "def order(rows):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: unique sorted latencies.",
+        "This task deliberately asks for distinct values, unlike earlier tasks that preserve duplicate records.",
+        "Compare the implementation with case 04-duplicates. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-shared dataset",
+          "setup": "rows=[{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [1, 4, 12])\nexpect(rows,before)\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "rows=[]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [])\nexpect(rows,before)\n"
+        },
+        {
+          "id": "03-reversed input",
+          "setup": "rows=[{'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [1, 4, 12])\nexpect(rows,before)\n"
+        },
+        {
+          "id": "04-duplicates",
+          "setup": "rows=[{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [12])\nexpect(rows,before)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "a437ae17d69a95a608a529d01d258496d0b64d38cc76cf25cf6233d14cfbc7ee"
+    },
+    {
+      "id": "py-sorting-15",
+      "topic": "sorting",
+      "number": 15,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Top three without a full sort",
+      "brief": "Select only the required records.",
+      "contract": [
+        "Define order(rows). Return up to three lowest-latency records, preserving input order for ties. Preserve input.",
+        "Use heapq.nsmallest rather than sorting the entire list; technique is self-reviewed."
+      ],
+      "focus": [
+        "heapq.nsmallest"
+      ],
+      "starter": "def order(rows):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: top three without a full sort.",
+        "A partial-selection tool can retain only the best few candidates; inspect heapq.nsmallest and include the specified tie behavior.",
+        "Compare the implementation with case 04-duplicates. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-shared dataset",
+          "setup": "rows=[{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [{'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}])\nexpect(rows,before)\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "rows=[]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [])\nexpect(rows,before)\n"
+        },
+        {
+          "id": "03-reversed input",
+          "setup": "rows=[{'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [{'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}])\nexpect(rows,before)\n"
+        },
+        {
+          "id": "04-duplicates",
+          "setup": "rows=[{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}]\nbefore=__import__(\"copy\").deepcopy(rows)\n",
+          "check": "expect(order(rows), [{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}])\nexpect(rows,before)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "135b0ed863dae19f988b1f351eeab45e52267f0022258cfe93f9fb4d7214a283"
+    },
+    {
+      "id": "py-sorting-16",
+      "topic": "sorting",
+      "number": 16,
+      "version": "1.0.0",
+      "mode": "check",
+      "kind": "build",
+      "title": "Check: maintenance review",
+      "brief": "Compose a fresh ordering contract.",
+      "contract": [
+        "Define review(rows). Sort site A before B; within a site put known latency ascending then unknown latency last. Break all remaining ties with casefolded name. Preserve input."
+      ],
+      "focus": [
+        "composite ordering"
+      ],
+      "starter": "def review(rows):\n    pass\n",
+      "hints": [],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "rows=[{\"site\":\"B\",\"name\":\"b\",\"latency_ms\":1},{\"site\":\"A\",\"name\":\"z\",\"latency_ms\":None},{\"site\":\"A\",\"name\":\"a\",\"latency_ms\":0}]\n",
+          "check": "expect(review(rows), [{'site': 'A', 'name': 'a', 'latency_ms': 0}, {'site': 'A', 'name': 'z', 'latency_ms': None}, {'site': 'B', 'name': 'b', 'latency_ms': 1}])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "pass\n",
+          "check": "expect(review([]), [])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "303d389597b530791b16ec2de3e39ab50657859d5bc18e969be20e2e4b6403ff"
+    },
+    {
+      "id": "py-sorting-17",
+      "topic": "sorting",
+      "number": 17,
+      "version": "1.0.0",
+      "mode": "check",
+      "kind": "build",
+      "title": "Check: latest first",
+      "brief": "Rank a different record shape.",
+      "contract": [
+        "Define recent(rows). Records have numeric timestamp and name. Return newest timestamp first, then casefolded name ascending. Preserve original list."
+      ],
+      "focus": [
+        "sorting transfer"
+      ],
+      "starter": "def recent(rows):\n    pass\n",
+      "hints": [],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "rows=[{\"name\":\"C\",\"timestamp\":1},{\"name\":\"B\",\"timestamp\":2},{\"name\":\"A\",\"timestamp\":2}]\n",
+          "check": "expect(recent(rows), [{'name': 'A', 'timestamp': 2}, {'name': 'B', 'timestamp': 2}, {'name': 'C', 'timestamp': 1}])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "pass\n",
+          "check": "expect(recent([]), [])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "034a46b1e201a2c53630b6c7844de4a709f703944f9d28c07d7ab09e9053737f"
+    },
+    {
+      "id": "py-sorting-18",
+      "topic": "sorting",
+      "number": 18,
+      "version": "1.0.0",
+      "mode": "check",
+      "kind": "build",
+      "title": "Check: mutate one list only",
+      "brief": "Apply a constrained in-place change.",
+      "contract": [
+        "Define prioritize(rows). Sort the original list by errors descending, return the SAME list object, and do not mutate record fields."
+      ],
+      "focus": [
+        "identity",
+        "mutation"
+      ],
+      "starter": "def prioritize(rows):\n    pass\n",
+      "hints": [],
+      "cases": [
+        {
+          "id": "01-same object",
+          "setup": "rows=[{'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}]\noriginal=rows\n",
+          "check": "out=prioritize(rows)\nassert out is original\nexpect(rows,[{'name': 'RTR-1', 'site': 'B', 'latency_ms': 12, 'errors': 7}, {'name': 'SW-10', 'site': 'B', 'latency_ms': 12, 'errors': 3}, {'name': 'RTR-2', 'site': 'A', 'latency_ms': 4, 'errors': 2}, {'name': 'SW-3', 'site': 'B', 'latency_ms': 4, 'errors': 2}, {'name': 'sw-2', 'site': 'A', 'latency_ms': 4, 'errors': 0}, {'name': 'SW-1', 'site': 'A', 'latency_ms': 1, 'errors': 0}])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "rows=[]\n",
+          "check": "assert prioritize(rows) is rows\nexpect(rows,[])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "14b133630c1ebcf965a43c86dd8ee2510d6e0c9517d08e16eba8e199746a0f83"
+    }
+  ]
+}

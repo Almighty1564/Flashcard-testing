@@ -20,7 +20,7 @@ window.FC={requireUser:async()=>({id:'11111111-1111-4111-8111-111111111111',user
 def check(name,value=True):assert value,name;checks.append(name);print('PASS',name,flush=True)
 try:
  with sync_playwright() as p:
-  browser=p.chromium.launch(headless=True)
+  browser=p.chromium.launch(headless=True, **({'executable_path':os.environ['T08_CHROMIUM_EXECUTABLE']} if os.environ.get('T08_CHROMIUM_EXECUTABLE') else {}))
   def context(width=1380):
    ctx=browser.new_context(viewport={'width':width,'height':950},accept_downloads=True)
    ctx.route('https://cdn.jsdelivr.net/**',lambda r:r.fulfill(content_type='application/javascript',body='window.supabase={};'))
@@ -47,6 +47,8 @@ try:
   # Append distinct roots to reproduce concurrent edit branches without changing existing evidence.
   page.evaluate('''async()=>{await T08Studio.ledger.append({type:'draft',release_id:'fg-01',parents:[],text:'Second branch',repo:'another fixture',assistance:'none'});}''');page.reload();page.locator('#notes').wait_for();check('Conflicting note heads are blocked pending explicit merge',page.locator('#notes').is_disabled())
   page.locator('.conflict details summary').first.click();page.locator('[data-merge]').first.click();page.locator('[data-action="saveNotes"]').click();page.wait_for_timeout(350);page.reload();page.locator('#notes').wait_for();check('Merged revision survives reload',not page.locator('#notes').is_disabled())
+  # Wait for async initial cloud sync and the diagnostics surface after reload.
+  page.wait_for_function('window.T08Studio?.ledger')
   # Ledger-level batch conflict must abort atomically.
   check('Immutable batch collision rejected',page.evaluate('''async()=>{const e=(await T08Studio.ledger.all())[0];try{await T08Studio.ledger.merge([{...e,payload:{...e.payload,text:'tampered'}}]);return false;}catch(_){return (await T08Studio.ledger.all()).find(x=>x.id===e.id).payload.text===e.payload.text;}}'''))
   page.locator('#account').click();page.locator('#signout').click();page.locator('#gate').wait_for(state='visible');check('Signout clears displayed evidence',page.locator('#workspace').is_hidden());check('No uncaught browser exceptions',not errors)

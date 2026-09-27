@@ -1,0 +1,778 @@
+{
+  "id": "collections",
+  "title": "Lists, dictionaries & sets",
+  "outcome": "Model device data and transform it without accidental information loss.",
+  "prerequisites": [
+    "loops"
+  ],
+  "steps": [
+    {
+      "title": "1. Choose a representation",
+      "text": "Lists preserve order and duplicates. Dictionaries map unique keys to values. Sets store unique hashable values. Choose based on the required operation.",
+      "code": "names=[\"R2\",\"R1\",\"R2\"]\nunique=set(names)\nprint(len(unique)) # 2"
+    },
+    {
+      "title": "2. Avoid silent overwrites",
+      "text": "Building a dictionary keyed by ID overwrites an earlier duplicate unless you detect it. Decide whether duplicates are invalid, grouped, or replaced.",
+      "code": "groups={}\nfor site,name in [(\"A\",\"R1\"),(\"A\",\"R2\")]:\n    groups.setdefault(site,[]).append(name)"
+    },
+    {
+      "title": "3. Separate required and optional",
+      "text": "d[key] requires a key; d.get(key, default) handles an absent key. An existing None is not automatically replaced by that default.",
+      "code": "record={\"latency\":None}\nprint(record.get(\"latency\",0)) # None"
+    },
+    {
+      "title": "4. Normalize only what is intended",
+      "text": "Do not silently lowercase case-sensitive identifiers. Include a routing context in composite keys when addresses can legitimately repeat between contexts.",
+      "code": "key=(\"lab-blue\", \"192.0.2.10\")"
+    },
+    {
+      "title": "5. Test duplicates and ordering",
+      "text": "A set operation often needs explicit sorting before a deterministic report. Avoid modifying caller data unless the contract asks for it.",
+      "code": ""
+    }
+  ],
+  "references": [
+    {
+      "title": "Data structures",
+      "url": "https://docs.python.org/3/tutorial/datastructures.html"
+    },
+    {
+      "title": "collections",
+      "url": "https://docs.python.org/3/library/collections.html"
+    }
+  ],
+  "project": "kit-02",
+  "tasks": [
+    {
+      "id": "py-collections-01",
+      "topic": "collections",
+      "number": 1,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Optional field",
+      "brief": "Read an optional interface description.",
+      "contract": [
+        "data is dict. result=data[\"description\"] if present, otherwise \"unlabeled\". Preserve a present None or empty string."
+      ],
+      "focus": [
+        "dict.get"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: optional field.",
+        "A missing key and a present falsey value are different cases; compare get with a truthiness fallback.",
+        "Compare the implementation with case 04-normal. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = {}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'unlabeled')\n"
+        },
+        {
+          "id": "02-null",
+          "setup": "data = {'description': None}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, None)\n"
+        },
+        {
+          "id": "03-empty",
+          "setup": "data = {'description': ''}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, '')\n"
+        },
+        {
+          "id": "04-normal",
+          "setup": "data = {'description': 'uplink'}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'uplink')\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "a6a4247bad3e1bbe66e79839025ff64edede8a49238452c3e17193fe5e2c0740"
+    },
+    {
+      "id": "py-collections-02",
+      "topic": "collections",
+      "number": 2,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Index unique device IDs",
+      "brief": "Map IDs to names.",
+      "contract": [
+        "data is records {id,name} with unique IDs. Return dictionary id -> name."
+      ],
+      "focus": [
+        "dict comprehension"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: index unique device ids.",
+        "Choose which field is the key; dictionary assignment replaces an earlier value at the same key.",
+        "Compare the implementation with case 02-empty. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = [{'id': '2', 'name': 'B'}, {'id': '1', 'name': 'A'}]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, {'2': 'B', '1': 'A'})\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "data = []\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, {})\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "992c195fb51e234e84131d022e16cc91028a9d790d63af71f10660fc1ddc204c"
+    },
+    {
+      "id": "py-collections-03",
+      "topic": "collections",
+      "number": 3,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Detect duplicate keys",
+      "brief": "Do not silently overwrite duplicate IDs.",
+      "contract": [
+        "data is records {id,name}. Return sorted distinct IDs occurring more than once."
+      ],
+      "focus": [
+        "Counter",
+        "duplicates"
+      ],
+      "starter": "# data is supplied by the checker. Set result to the required value.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: detect duplicate keys.",
+        "Record a duplicate when a key is already seen, rather than letting replacement hide it.",
+        "Compare the implementation with case 03-repeated. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = [{'id': 'B', 'name': '1'}, {'id': 'A', 'name': '2'}, {'id': 'B', 'name': '3'}]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, ['B'])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "data = []\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [])\n"
+        },
+        {
+          "id": "03-repeated",
+          "setup": "data = [{'id': 'A', 'name': '1'}, {'id': 'A', 'name': '2'}, {'id': 'A', 'name': '3'}]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, ['A'])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "70a8a1e449d04777772b77a3038b600160074b7d017afe3da4d6af585054c76f"
+    },
+    {
+      "id": "py-collections-04",
+      "topic": "collections",
+      "number": 4,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Group by site",
+      "brief": "Keep all records per site.",
+      "contract": [
+        "data contains {site,name}. Return dict site -> names in encounter order."
+      ],
+      "focus": [
+        "setdefault",
+        "grouping"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: group by site.",
+        "Create a separate output list for each group; shared list references combine unrelated groups.",
+        "Compare the implementation with case 02-empty. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = [{'site': 'B', 'name': 'R1'}, {'site': 'A', 'name': 'R2'}, {'site': 'B', 'name': 'R3'}]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, {'B': ['R1', 'R3'], 'A': ['R2']})\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "data = []\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, {})\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "832078a619d4a0e024ea1c46def25b4eaf4ece34612220fd14b67db315d135c5"
+    },
+    {
+      "id": "py-collections-05",
+      "topic": "collections",
+      "number": 5,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Count device roles",
+      "brief": "Count categories.",
+      "contract": [
+        "data is role strings. Return dict role -> count with exact case preserved."
+      ],
+      "focus": [
+        "Counter"
+      ],
+      "starter": "# data is supplied by the checker. Set result to the required value.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: count device roles.",
+        "Accumulate the count for each observed category; repeated categories must not disappear.",
+        "Compare the implementation with case 03-case. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = ['router', 'switch', 'router']\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, {'router': 2, 'switch': 1})\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "data = []\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, {})\n"
+        },
+        {
+          "id": "03-case",
+          "setup": "data = ['A', 'a']\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, {'A': 1, 'a': 1})\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "fb8c9b52b2cc784c687bb1d19dcdb409ac633bf0b08b15a62721242271fa68da"
+    },
+    {
+      "id": "py-collections-06",
+      "topic": "collections",
+      "number": 6,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Missing required names",
+      "brief": "Set difference with sorted output.",
+      "contract": [
+        "data has required and actual lists of text. Return distinct required names absent from actual, sorted."
+      ],
+      "focus": [
+        "set difference"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: missing required names.",
+        "Start from the expected collection, subtract the observed membership, then restore the required output order.",
+        "Compare the implementation with case 03-extra actual. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = {'required': ['B', 'A', 'B'], 'actual': ['A']}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, ['B'])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "data = {'required': [], 'actual': []}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [])\n"
+        },
+        {
+          "id": "03-extra actual",
+          "setup": "data = {'required': ['X'], 'actual': ['X', 'Y']}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "7affe22c2768736c504e655b807c319ad758333030def3106b8549cac0563945"
+    },
+    {
+      "id": "py-collections-07",
+      "topic": "collections",
+      "number": 7,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Shared VLANs",
+      "brief": "Intersect two configurations.",
+      "contract": [
+        "data contains two lists of integer VLANs. Return distinct shared VLANs sorted numerically."
+      ],
+      "focus": [
+        "intersection"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: shared vlans.",
+        "Set intersection gives membership, but the required ordering is a separate step.",
+        "Compare the implementation with case 03-all. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = [[20, 10, 10], [10, 30]]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [10])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "data = [[], [1]]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [])\n"
+        },
+        {
+          "id": "03-all",
+          "setup": "data = [[2, 1], [1, 2]]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [1, 2])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "89f6e79f95a95fce48855880ea06515979e0c879e2c3f5269872816ceaeefcd2"
+    },
+    {
+      "id": "py-collections-08",
+      "topic": "collections",
+      "number": 8,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Configuration override",
+      "brief": "Merge defaults with explicit overrides.",
+      "contract": [
+        "data has defaults and override dicts. Return a new merged dict; override wins for matching keys, including None. Do not change either input."
+      ],
+      "focus": [
+        "dict merge"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: configuration override.",
+        "Decide which side owns conflicting keys before merging the mappings.",
+        "Compare the implementation with case 03-empty. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = {'defaults': {'a': 1, 'b': 2}, 'override': {'b': 3}}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, {'a': 1, 'b': 3})\nexpect(data,before)\n"
+        },
+        {
+          "id": "02-null",
+          "setup": "data = {'defaults': {'a': 1}, 'override': {'a': None}}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, {'a': None})\nexpect(data,before)\n"
+        },
+        {
+          "id": "03-empty",
+          "setup": "data = {'defaults': {}, 'override': {}}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, {})\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "3924c9a1f4bf0c5c1cde47f675ba244f02fb268793b6fa6c347dfd8fa0141f39"
+    },
+    {
+      "id": "py-collections-09",
+      "topic": "collections",
+      "number": 9,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Invert many-to-one records",
+      "brief": "Preserve collisions while inverting.",
+      "contract": [
+        "data is dict device->site. Return dict site->sorted device names."
+      ],
+      "focus": [
+        "inversion",
+        "grouping"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: invert many-to-one records.",
+        "Multiple old keys can share a value; inversion may need lists rather than one overwritten key.",
+        "Compare the implementation with case 02-empty. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = {'R2': 'A', 'R1': 'A', 'S1': 'B'}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, {'A': ['R1', 'R2'], 'B': ['S1']})\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "data = {}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, {})\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "c70c8b1f175c28fef15011437131556d2560bd606543d5c3b8d03620068f3270"
+    },
+    {
+      "id": "py-collections-10",
+      "topic": "collections",
+      "number": 10,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Nested safe lookup",
+      "brief": "Read a nested field with a defined fallback.",
+      "contract": [
+        "data is dict; optional telemetry is either dict or None. Return telemetry[\"rx\"] if present, else None."
+      ],
+      "focus": [
+        "nested get"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: nested safe lookup.",
+        "Check each level of nested data before indexing the next one.",
+        "Compare the implementation with case 04-empty. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = {'telemetry': {'rx': 0}}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 0)\n"
+        },
+        {
+          "id": "02-missing",
+          "setup": "data = {}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, None)\n"
+        },
+        {
+          "id": "03-null",
+          "setup": "data = {'telemetry': None}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, None)\n"
+        },
+        {
+          "id": "04-empty",
+          "setup": "data = {'telemetry': {}}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, None)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "7d9e7676b3f894af989633ccf5d9d4bfc5d3f39b9aba45c444d4042ab573bb09"
+    },
+    {
+      "id": "py-collections-11",
+      "topic": "collections",
+      "number": 11,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Remove selected fields safely",
+      "brief": "Return a redacted copy.",
+      "contract": [
+        "data is dict. Return all entries except keys password and token; do not mutate original. This is exact-key redaction, not general secret detection."
+      ],
+      "focus": [
+        "filter dictionary"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: remove selected fields safely.",
+        "Remove only the exact listed keys; substring matching could erase unrelated fields.",
+        "Compare the implementation with case 03-exact key. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = {'name': 'R1', 'password': 'SAMPLE', 'token': 'SAMPLE'}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, {'name': 'R1'})\nexpect(data,before)\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "data = {}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, {})\n"
+        },
+        {
+          "id": "03-exact key",
+          "setup": "data = {'Password': 'sample'}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, {'Password': 'sample'})\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "4dff39ceff8b190c653c74f92c0473c311e3b647f34eb1f629de83b76f9dc008"
+    },
+    {
+      "id": "py-collections-12",
+      "topic": "collections",
+      "number": 12,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Address contexts",
+      "brief": "Count duplicate addresses within a context.",
+      "contract": [
+        "data has records {context,address}. Return sorted list of [context,address] for repeated exact pairs.",
+        "These are synthetic strings; address canonicalization is taught in the addressing pack."
+      ],
+      "focus": [
+        "tuple keys"
+      ],
+      "starter": "# data is supplied by the checker. Set result to the required value.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: address contexts.",
+        "Build the identity from routing context and address together, not the address alone.",
+        "Compare the implementation with case 03-empty. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = [{'context': 'A', 'address': '192.0.2.1'}, {'context': 'B', 'address': '192.0.2.1'}]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [])\n"
+        },
+        {
+          "id": "02-same context",
+          "setup": "data = [{'context': 'A', 'address': '192.0.2.1'}, {'context': 'A', 'address': '192.0.2.1'}]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [['A', '192.0.2.1']])\n"
+        },
+        {
+          "id": "03-empty",
+          "setup": "data = []\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "a37fd902d26f57c6ab33dada0e6d406150e9c796e85c2ee71ded52ff395f2e7c"
+    },
+    {
+      "id": "py-collections-13",
+      "topic": "collections",
+      "number": 13,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "repair",
+      "title": "Independent group lists",
+      "brief": "Repair shared mutable defaults.",
+      "contract": [
+        "data is unique site names. Return dict with an independent empty list per site."
+      ],
+      "focus": [
+        "aliasing"
+      ],
+      "starter": "result = dict.fromkeys(data, [])\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: independent group lists.",
+        "Ensure each group owns its own list rather than sharing one default mutable object.",
+        "Compare the implementation with case 03-single. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = ['A', 'B']\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, {'A': [], 'B': []})\nresult[\"A\"].append(1)\nexpect(result[\"B\"],[])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "data = []\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, {})\n"
+        },
+        {
+          "id": "03-single",
+          "setup": "data = ['A']\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, {'A': []})\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "c7ede676d1606e77fcc77431cc592ee6f7c4cde62212c6c1fb8e613792787b3e"
+    },
+    {
+      "id": "py-collections-14",
+      "topic": "collections",
+      "number": 14,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Preserve the last three observations",
+      "brief": "Bound history by count.",
+      "contract": [
+        "data is a list. Return a new list containing its last three entries, or all if shorter. Preserve order."
+      ],
+      "focus": [
+        "slicing"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: preserve the last three observations.",
+        "A slice creates a list of selected positions; check the stop index because it is exclusive.",
+        "Compare the implementation with case 03-short. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = [1, 2, 3, 4, 5]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [3, 4, 5])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "data = []\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [])\n"
+        },
+        {
+          "id": "03-short",
+          "setup": "data = [1, 2]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [1, 2])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "d210a1af6a1d8cae6b8ac39c72773c8841a97e0ca7f85f88da7dff90ff7c85bb"
+    },
+    {
+      "id": "py-collections-15",
+      "topic": "collections",
+      "number": 15,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Join inventory and observations",
+      "brief": "Join by name with explicit missing.",
+      "contract": [
+        "data has names (unique strings) and observations (dict name->value). Return records {name,value} in names order; absent value is None."
+      ],
+      "focus": [
+        "join"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: join inventory and observations.",
+        "Index the related records once, then join using the documented identity and missing-record rule.",
+        "Compare the implementation with case 02-empty. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = {'names': ['B', 'A'], 'observations': {'A': 0}}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [{'name': 'B', 'value': None}, {'name': 'A', 'value': 0}])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "data = {'names': [], 'observations': {'A': 1}}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "697f93288c9c78b83e1eecd9cf759507f47f1067a36647a8980cd3fa7ff15367"
+    },
+    {
+      "id": "py-collections-16",
+      "topic": "collections",
+      "number": 16,
+      "version": "1.0.0",
+      "mode": "check",
+      "kind": "build",
+      "title": "Check: service ownership",
+      "brief": "Group endpoints under services.",
+      "contract": [
+        "data contains {service,endpoint}. Return dict service -> sorted unique endpoints."
+      ],
+      "focus": [
+        "group",
+        "deduplicate"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = [{'service': 'voice', 'endpoint': 'B'}, {'service': 'voice', 'endpoint': 'A'}, {'service': 'voice', 'endpoint': 'B'}]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, {'voice': ['A', 'B']})\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "data = []\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, {})\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "9189fd01e24645347a01d6cd18fc2ba78699c13fb1174dd8cdd795ab72537e30"
+    },
+    {
+      "id": "py-collections-17",
+      "topic": "collections",
+      "number": 17,
+      "version": "1.0.0",
+      "mode": "check",
+      "kind": "build",
+      "title": "Check: drift keys",
+      "brief": "Find differing settings.",
+      "contract": [
+        "data has expected and observed dictionaries. Return sorted keys missing on either side or unequal. A missing key differs from a key whose value is None."
+      ],
+      "focus": [
+        "union",
+        "missing versus null"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = {'expected': {'a': 1, 'b': 2}, 'observed': {'a': 1, 'b': 3, 'c': 0}}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, ['b', 'c'])\n"
+        },
+        {
+          "id": "02-missing null",
+          "setup": "data = {'expected': {'a': None}, 'observed': {}}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, ['a'])\n"
+        },
+        {
+          "id": "03-equal",
+          "setup": "data = {'expected': {}, 'observed': {}}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "e0f0bb6c191fb803b724adcc1fd7648b1b45530b8189e5a7b61cebdf70a754bd"
+    },
+    {
+      "id": "py-collections-18",
+      "topic": "collections",
+      "number": 18,
+      "version": "1.0.0",
+      "mode": "check",
+      "kind": "build",
+      "title": "Check: counts and names",
+      "brief": "Summarize active devices by site.",
+      "contract": [
+        "data contains {site,name,up}. Return dict site -> {count,names} for up=True records only; names sorted, duplicates preserved."
+      ],
+      "focus": [
+        "nested aggregation"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = [{'site': 'A', 'name': 'B', 'up': True}, {'site': 'A', 'name': 'A', 'up': True}, {'site': 'B', 'name': 'X', 'up': False}]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, {'A': {'count': 2, 'names': ['A', 'B']}})\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "data = []\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, {})\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "2895c278303d42ab351f63a10d80cf2569daf4c29cfbf2dc4d31046b9ba33ce2"
+    }
+  ]
+}

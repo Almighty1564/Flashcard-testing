@@ -1,0 +1,141 @@
+{
+  "schema": 1,
+  "version": "1.0.0",
+  "title": "Python practice: learn, vary, prove, apply",
+  "runner_version": "1.0.0",
+  "counts": {
+    "topics": 12,
+    "practice": 180,
+    "checks": 36,
+    "cases": 665
+  },
+  "topics": [
+    {
+      "id": "values",
+      "title": "Variables & values",
+      "outcome": "Represent, convert and update small pieces of communications data.",
+      "prerequisites": [],
+      "project": "kit-01",
+      "file": "drills/packs/values.json"
+    },
+    {
+      "id": "decisions",
+      "title": "Conditions & validation",
+      "outcome": "Make boundaries, missing evidence and decision order explicit.",
+      "prerequisites": [
+        "values"
+      ],
+      "project": "kit-01",
+      "file": "drills/packs/decisions.json"
+    },
+    {
+      "id": "loops",
+      "title": "Loops & iteration",
+      "outcome": "Process a collection reliably, preserving order and boundaries.",
+      "prerequisites": [
+        "values",
+        "decisions"
+      ],
+      "project": "kit-04",
+      "file": "drills/packs/loops.json"
+    },
+    {
+      "id": "collections",
+      "title": "Lists, dictionaries & sets",
+      "outcome": "Model device data and transform it without accidental information loss.",
+      "prerequisites": [
+        "loops"
+      ],
+      "project": "kit-02",
+      "file": "drills/packs/collections.json"
+    },
+    {
+      "id": "strings",
+      "title": "Strings & structured parsing",
+      "outcome": "Turn text exports into meaningful, validated records.",
+      "prerequisites": [
+        "collections"
+      ],
+      "project": "log-01",
+      "file": "drills/packs/strings.json"
+    },
+    {
+      "id": "functions",
+      "title": "Functions: 15 distinct forms",
+      "outcome": "Build callable components with clear parameters, returns, and ownership.",
+      "prerequisites": [
+        "strings"
+      ],
+      "project": "kit-01",
+      "file": "drills/packs/functions.json"
+    },
+    {
+      "id": "sorting",
+      "title": "Sorting: 15 distinct requirements",
+      "outcome": "Choose order, tie-breaking, mutation and selection semantics deliberately.",
+      "prerequisites": [
+        "functions",
+        "collections"
+      ],
+      "project": "log-02",
+      "file": "drills/packs/sorting.json"
+    },
+    {
+      "id": "reliability",
+      "title": "Exceptions & testing",
+      "outcome": "Handle faults explicitly and write tests that expose incorrect behavior.",
+      "prerequisites": [
+        "functions",
+        "decisions"
+      ],
+      "project": "log-03",
+      "file": "drills/packs/reliability.json"
+    },
+    {
+      "id": "files",
+      "title": "Files, paths & serialization",
+      "outcome": "Work on disposable files with explicit formats, encodings and ownership.",
+      "prerequisites": [
+        "reliability",
+        "strings"
+      ],
+      "project": "fg-01",
+      "file": "drills/packs/files.json"
+    },
+    {
+      "id": "models",
+      "title": "Objects, iterators & reusable components",
+      "outcome": "Represent state and stream data through well-defined Python interfaces.",
+      "prerequisites": [
+        "functions",
+        "files"
+      ],
+      "project": "kit-04",
+      "file": "drills/packs/models.json"
+    },
+    {
+      "id": "addressing",
+      "title": "IP addressing & network data",
+      "outcome": "Use standard address models and retain routing context.",
+      "prerequisites": [
+        "functions",
+        "reliability",
+        "collections"
+      ],
+      "project": "log-02",
+      "file": "drills/packs/addressing.json"
+    },
+    {
+      "id": "integration",
+      "title": "APIs, telemetry & evidence",
+      "outcome": "Combine interface-independent collection with honest, testable conclusions.",
+      "prerequisites": [
+        "models",
+        "addressing",
+        "sorting"
+      ],
+      "project": "log-03",
+      "file": "drills/packs/integration.json"
+    }
+  ]
+}

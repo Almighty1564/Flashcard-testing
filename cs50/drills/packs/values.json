@@ -1,0 +1,842 @@
+{
+  "id": "values",
+  "title": "Variables & values",
+  "outcome": "Represent, convert and update small pieces of communications data.",
+  "prerequisites": [],
+  "steps": [
+    {
+      "title": "1. Know the contract",
+      "text": "The checker supplies a different value as data for every case. Write statements assigning the required answer to result. Do not replace data with the sample input. You do not need to define a function yet.",
+      "code": "data = {\"count\": 3, \"watts\": 8}\nresult = data[\"count\"] * data[\"watts\"]\nprint(result)  # 24"
+    },
+    {
+      "title": "2. Names and types",
+      "text": "Assignment binds a name to an object. Numeric text is not a number. Use int or float intentionally; keep display formatting separate from calculation.",
+      "code": "count_text = \"12\"\ncount = int(count_text)\nlabel = f\"{count} ports\""
+    },
+    {
+      "title": "3. Trace updates",
+      "text": "The right-hand expression is evaluated before assignment. Augmented assignment updates a value; do not confuse = with ==.",
+      "code": "available = 12\navailable -= 3\navailable += 1\nprint(available)  # 10"
+    },
+    {
+      "title": "4. Copies and shared objects",
+      "text": "Two names can refer to the same list. A shallow list copy separates the outer list, but not nested mutable objects. Use deepcopy only when that is the required behavior.",
+      "code": "a = [1, 2]\nb = a.copy()\nb.append(3)\nprint(a)  # [1, 2]"
+    },
+    {
+      "title": "5. Practice, check, apply",
+      "text": "Complete the 15 varied tasks. Then solve three differently worded coding checks without hints. The supplied tests are visible practice evidence, not secure exam questions.",
+      "code": ""
+    }
+  ],
+  "references": [
+    {
+      "title": "Python introduction",
+      "url": "https://docs.python.org/3/tutorial/introduction.html"
+    },
+    {
+      "title": "Data structures",
+      "url": "https://docs.python.org/3/tutorial/datastructures.html"
+    }
+  ],
+  "project": "kit-01",
+  "tasks": [
+    {
+      "id": "py-values-01",
+      "topic": "values",
+      "number": 1,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Bind and reuse",
+      "brief": "Convert GHz to MHz.",
+      "contract": [
+        "data is a nonnegative finite number. Set result to its numeric MHz value.",
+        "Do not format the result as text."
+      ],
+      "focus": [
+        "assignment",
+        "arithmetic"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: bind and reuse.",
+        "A GHz value represents one thousand MHz; keep the intermediate value numeric.",
+        "Compare the implementation with case 04-different. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = 7.25\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 7250.0)\n"
+        },
+        {
+          "id": "02-zero",
+          "setup": "data = 0\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 0)\n"
+        },
+        {
+          "id": "03-small",
+          "setup": "data = 0.001\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 1.0)\n"
+        },
+        {
+          "id": "04-different",
+          "setup": "data = 12.8\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 12800.0)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "764561007615030ce8fee2f907e67b28045f4005a92954c2ff7b7819b9d0e9a1"
+    },
+    {
+      "id": "py-values-02",
+      "topic": "values",
+      "number": 2,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Numeric text",
+      "brief": "Use a count that arrived as text.",
+      "contract": [
+        "data is valid integer text, possibly with surrounding spaces.",
+        "Set result to the parsed integer plus 1."
+      ],
+      "focus": [
+        "int",
+        "types"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: numeric text.",
+        "Convert the text before adding; adding text and an integer is not numeric arithmetic.",
+        "Compare the implementation with case 04-multi-digit. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = '9'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 10)\n"
+        },
+        {
+          "id": "02-spaces",
+          "setup": "data = ' 0 '\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 1)\n"
+        },
+        {
+          "id": "03-signed",
+          "setup": "data = '-2'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, -1)\n"
+        },
+        {
+          "id": "04-multi-digit",
+          "setup": "data = '100'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 101)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "2b6436bcf757b91fd445f4e6dd9b8b710365c3821336e530208de82bd2230019"
+    },
+    {
+      "id": "py-values-03",
+      "topic": "values",
+      "number": 3,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Fractional input",
+      "brief": "Calculate from decimal text.",
+      "contract": [
+        "data is valid finite decimal text. Return half its numeric value in result."
+      ],
+      "focus": [
+        "float",
+        "division"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: fractional input.",
+        "Preserve fractions when converting the text; an integer conversion is the wrong representation.",
+        "Compare the implementation with case 04-exponent. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = '2.5'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 1.25)\n"
+        },
+        {
+          "id": "02-zero",
+          "setup": "data = '0'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 0.0)\n"
+        },
+        {
+          "id": "03-negative",
+          "setup": "data = '-3'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, -1.5)\n"
+        },
+        {
+          "id": "04-exponent",
+          "setup": "data = '1e2'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 50.0)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "5ce06eda10013fb2d8cc5a8e468045e942823461adf69aebf71b55b590668230"
+    },
+    {
+      "id": "py-values-04",
+      "topic": "values",
+      "number": 4,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Readable equipment label",
+      "brief": "Format a record.",
+      "contract": [
+        "data has name (text) and count (integer).",
+        "result must be exactly \"<name>: <count> units\"."
+      ],
+      "focus": [
+        "f-string"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: readable equipment label.",
+        "Use named fields in a formatted string rather than depending on dictionary order.",
+        "Compare the implementation with case 03-spaces. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = {'name': 'Radio', 'count': 3}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'Radio: 3 units')\n"
+        },
+        {
+          "id": "02-zero",
+          "setup": "data = {'name': 'SW-1', 'count': 0}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'SW-1: 0 units')\n"
+        },
+        {
+          "id": "03-spaces",
+          "setup": "data = {'name': 'Bench A', 'count': 12}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'Bench A: 12 units')\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "65ba016d07b5b9f1135c07351a08098919950f2cb7b0d26b7e2889b5cd6b2a08"
+    },
+    {
+      "id": "py-values-05",
+      "topic": "values",
+      "number": 5,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Unpack a pair",
+      "brief": "Extract paired readings.",
+      "contract": [
+        "data is a two-element sequence [rx, tx].",
+        "Unpack it and set result to tx - rx."
+      ],
+      "focus": [
+        "unpacking"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: unpack a pair.",
+        "Assign both sequence elements to names before deciding the subtraction order.",
+        "Compare the implementation with case 03-negative. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = [10, 15]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 5)\n"
+        },
+        {
+          "id": "02-equal",
+          "setup": "data = [0, 0]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 0)\n"
+        },
+        {
+          "id": "03-negative",
+          "setup": "data = [12, 5]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, -7)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "5255ed4a2e6cbe0d9f44bbb75f52b0ac7e1d36bc59f0c38895db9bd8edb0a81c"
+    },
+    {
+      "id": "py-values-06",
+      "topic": "values",
+      "number": 6,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Swap the names",
+      "brief": "Exchange two values without losing either.",
+      "contract": [
+        "data contains two values. Set result to a new list in reverse order.",
+        "Use unpacking assignment. This technique is self-reviewed."
+      ],
+      "focus": [
+        "tuple assignment"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: swap the names.",
+        "Python can evaluate both right-hand values before rebinding the two left-hand names.",
+        "Compare the implementation with case 03-equal. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = [1, 8]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [8, 1])\n"
+        },
+        {
+          "id": "02-text",
+          "setup": "data = ['rx', 'tx']\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, ['tx', 'rx'])\n"
+        },
+        {
+          "id": "03-equal",
+          "setup": "data = [0, 0]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [0, 0])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "5e202782f8579049636ed922cf78b17512cd5bb7e624ce4588c761d6e2e91cbb"
+    },
+    {
+      "id": "py-values-07",
+      "topic": "values",
+      "number": 7,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Running balance",
+      "brief": "Update an available count.",
+      "contract": [
+        "data has start, issued, returned integers. Apply issue first, then return.",
+        "Set result to the final count; valid inputs never make the issue step negative."
+      ],
+      "focus": [
+        "augmented assignment"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: running balance.",
+        "Trace issued and returned separately; each update changes the running balance.",
+        "Compare the implementation with case 03-all issued. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = {'start': 8, 'issued': 3, 'returned': 1}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 6)\n"
+        },
+        {
+          "id": "02-empty start",
+          "setup": "data = {'start': 0, 'issued': 0, 'returned': 2}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 2)\n"
+        },
+        {
+          "id": "03-all issued",
+          "setup": "data = {'start': 10, 'issued': 10, 'returned': 0}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 0)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "f609970b08bce58925c66cc87b4ce85792c2780e69b279258dbdda5891f1a921"
+    },
+    {
+      "id": "py-values-08",
+      "topic": "values",
+      "number": 8,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "repair",
+      "title": "Missing is not zero",
+      "brief": "Preserve a real zero reading.",
+      "contract": [
+        "data is a number or None. Set result to 99 only for None; otherwise preserve data."
+      ],
+      "focus": [
+        "None",
+        "identity"
+      ],
+      "starter": "result = data or 99\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: missing is not zero.",
+        "Test with None and zero side by side; a truthiness fallback treats them alike.",
+        "Compare the implementation with case 04-negative. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-missing",
+          "setup": "data = None\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 99)\n"
+        },
+        {
+          "id": "02-zero",
+          "setup": "data = 0\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 0)\n"
+        },
+        {
+          "id": "03-normal",
+          "setup": "data = 12\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 12)\n"
+        },
+        {
+          "id": "04-negative",
+          "setup": "data = -1\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, -1)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "a06d2267eea906feebd35bd878001834f2a7231e520f7731248187f0040dd87d"
+    },
+    {
+      "id": "py-values-09",
+      "topic": "values",
+      "number": 9,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Separate list ownership",
+      "brief": "Append without changing the input.",
+      "contract": [
+        "data is a list. Make a shallow copy, append \"checked\", and assign it to result.",
+        "The original data list must not change."
+      ],
+      "focus": [
+        "copy",
+        "aliasing"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: separate list ownership.",
+        "Check whether your new variable still refers to the same list as data.",
+        "Compare the implementation with case 03-duplicate. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = [1, 2]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [1, 2, 'checked'])\nexpect(data, before)\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "data = []\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, ['checked'])\nexpect(data, before)\n"
+        },
+        {
+          "id": "03-duplicate",
+          "setup": "data = ['checked']\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, ['checked', 'checked'])\nexpect(data, before)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "ca2d1c6d27dbc9dece00acde946453761f31a18dd1dc128c34b2f22dc5cfb8eb"
+    },
+    {
+      "id": "py-values-10",
+      "topic": "values",
+      "number": 10,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Nested independence",
+      "brief": "Separate a nested record.",
+      "contract": [
+        "data is {\"ports\": list}. Copy it deeply, append \"new\" to result[\"ports\"], and leave data unchanged."
+      ],
+      "focus": [
+        "deepcopy",
+        "nested state"
+      ],
+      "starter": "# data is supplied by the checker. Set result to the required value.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: nested independence.",
+        "Copying only the outer dictionary still shares the nested ports list.",
+        "Compare the implementation with case 02-empty. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = {'ports': ['Gi0/1']}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, {'ports': ['Gi0/1', 'new']})\nexpect(data,before)\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "data = {'ports': []}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, {'ports': ['new']})\nexpect(data,before)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "b644fda401d1d920b2444e61a5220cee9192b2afc78b50b9feb53f043ab502d1"
+    },
+    {
+      "id": "py-values-11",
+      "topic": "values",
+      "number": 11,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Whole units and remainder",
+      "brief": "Split a total into groups.",
+      "contract": [
+        "data is [total, group_size], both integers with total >=0 and group_size >0.",
+        "Set result to [complete_groups, remainder]."
+      ],
+      "focus": [
+        "divmod",
+        "unpacking"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: whole units and remainder.",
+        "Compute quotient and remainder together; verify total equals quotient times group size plus remainder.",
+        "Compare the implementation with case 04-small. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = [25, 8]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [3, 1])\n"
+        },
+        {
+          "id": "02-exact",
+          "setup": "data = [24, 8]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [3, 0])\n"
+        },
+        {
+          "id": "03-zero",
+          "setup": "data = [0, 5]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [0, 0])\n"
+        },
+        {
+          "id": "04-small",
+          "setup": "data = [3, 8]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [0, 3])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "5a809970f4cbbd29c5c01be31a9d6fe8d5799d83f636f379146e12593539e595"
+    },
+    {
+      "id": "py-values-12",
+      "topic": "values",
+      "number": 12,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Explicit boolean parsing",
+      "brief": "Do not treat every nonempty string as True.",
+      "contract": [
+        "data is text. After trimming and lowercasing, only yes, true and 1 mean True. All other text means False."
+      ],
+      "focus": [
+        "bool",
+        "membership"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: explicit boolean parsing.",
+        "Normalize surrounding whitespace and case before comparing against the explicit accepted strings.",
+        "Compare the implementation with case 04-empty. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = 'YES'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, True)\n"
+        },
+        {
+          "id": "02-false string",
+          "setup": "data = 'false'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, False)\n"
+        },
+        {
+          "id": "03-spaces",
+          "setup": "data = ' 1 '\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, True)\n"
+        },
+        {
+          "id": "04-empty",
+          "setup": "data = ''\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, False)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "28cc9b2b97ec4442b9d1938922f2dcb8581828e7d4d6abccccf59568bec9507d"
+    },
+    {
+      "id": "py-values-13",
+      "topic": "values",
+      "number": 13,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Format without changing meaning",
+      "brief": "Display MHz to three decimal places.",
+      "contract": [
+        "data is a finite number. result is its fixed-point display with three decimal places and \" MHz\"."
+      ],
+      "focus": [
+        "formatting"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: format without changing meaning.",
+        "Choose fixed-point formatting with exactly three places; rounding and converting to a string are different tasks.",
+        "Compare the implementation with case 03-fraction. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = 950\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, '950.000 MHz')\n"
+        },
+        {
+          "id": "02-zero",
+          "setup": "data = 0\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, '0.000 MHz')\n"
+        },
+        {
+          "id": "03-fraction",
+          "setup": "data = 12.375\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, '12.375 MHz')\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "00ce8a08a4fd725da0a07383a990c62d6a94ef9aa01b26234d4cd535e5d4b866"
+    },
+    {
+      "id": "py-values-14",
+      "topic": "values",
+      "number": 14,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Unpack the rest",
+      "brief": "Separate header from remaining fields.",
+      "contract": [
+        "data is a nonempty list. Use starred unpacking to return {\"first\": first_value, \"rest\": list_of_remaining_values}."
+      ],
+      "focus": [
+        "starred unpacking"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: unpack the rest.",
+        "Starred unpacking collects remaining elements into a list, including an empty remainder.",
+        "Compare the implementation with case 03-pair. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = ['R1', 1, 2]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, {'first': 'R1', 'rest': [1, 2]})\n"
+        },
+        {
+          "id": "02-single",
+          "setup": "data = [0]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, {'first': 0, 'rest': []})\n"
+        },
+        {
+          "id": "03-pair",
+          "setup": "data = [1, 2]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, {'first': 1, 'rest': [2]})\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "c5c75e9b341bd7937581c5edceeae13cfb3621146cc66cabbc920640f745bdd7"
+    },
+    {
+      "id": "py-values-15",
+      "topic": "values",
+      "number": 15,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Distinguish equality and identity",
+      "brief": "Classify a false-like value.",
+      "contract": [
+        "data may be None, False, integer zero, or other JSON values.",
+        "Return \"missing\" for None, \"boolean\" for bool, \"zero\" for integer 0, otherwise \"other\"."
+      ],
+      "focus": [
+        "type",
+        "identity",
+        "equality"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: distinguish equality and identity.",
+        "Check None and booleans before treating zero as an ordinary integer.",
+        "Compare the implementation with case 05-empty list. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = None\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'missing')\n"
+        },
+        {
+          "id": "02-bool false",
+          "setup": "data = False\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'boolean')\n"
+        },
+        {
+          "id": "03-int zero",
+          "setup": "data = 0\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'zero')\n"
+        },
+        {
+          "id": "04-text",
+          "setup": "data = '0'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'other')\n"
+        },
+        {
+          "id": "05-empty list",
+          "setup": "data = []\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'other')\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "170c9ffb1166de8d6aca17d9026d14edd7f7b6482f15b61d6b0eb6fc056817f7"
+    },
+    {
+      "id": "py-values-16",
+      "topic": "values",
+      "number": 16,
+      "version": "1.0.0",
+      "mode": "check",
+      "kind": "build",
+      "title": "Check: cable allocation",
+      "brief": "Calculate usable cable length.",
+      "contract": [
+        "data has reels, metres_each, reserved (nonnegative integers). result is reels*metres_each-reserved. Inputs have enough cable."
+      ],
+      "focus": [
+        "arithmetic"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = {'reels': 3, 'metres_each': 50, 'reserved': 20}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 130)\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "data = {'reels': 0, 'metres_each': 50, 'reserved': 0}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 0)\n"
+        },
+        {
+          "id": "03-all reserved",
+          "setup": "data = {'reels': 2, 'metres_each': 10, 'reserved': 20}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 0)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "d6806257535378b6d28bfc28d4de9e4ab0b61fb6e02cc5fcfc0415680b957a52"
+    },
+    {
+      "id": "py-values-17",
+      "topic": "values",
+      "number": 17,
+      "version": "1.0.0",
+      "mode": "check",
+      "kind": "build",
+      "title": "Check: telemetry label",
+      "brief": "Make a unit-aware display.",
+      "contract": [
+        "data is [name, numeric_value, unit]. result must be \"<name>=<value to 2 decimals> <unit>\"."
+      ],
+      "focus": [
+        "unpacking",
+        "formatting"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = ['latency', 2.5, 'ms']\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'latency=2.50 ms')\n"
+        },
+        {
+          "id": "02-zero",
+          "setup": "data = ['power', 0, 'W']\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'power=0.00 W')\n"
+        },
+        {
+          "id": "03-negative",
+          "setup": "data = ['offset', -1.25, 'dB']\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'offset=-1.25 dB')\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "328ce5cb32f5becc996266f3691972bf7e3bd67cf758fdf9e2dff0b411fc11c9"
+    },
+    {
+      "id": "py-values-18",
+      "topic": "values",
+      "number": 18,
+      "version": "1.0.0",
+      "mode": "check",
+      "kind": "build",
+      "title": "Check: keep an original record",
+      "brief": "Return an edited independent copy.",
+      "contract": [
+        "data has \"tags\" (list) and \"label\" (text).",
+        "Return a deep copy with tag \"reviewed\" appended, preserving all other fields and the original."
+      ],
+      "focus": [
+        "copy",
+        "state"
+      ],
+      "starter": "# data is supplied by the checker. Set result to the required value.\nresult = None\n",
+      "hints": [],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = {'tags': ['lab'], 'label': 'R1'}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, {'tags': ['lab', 'reviewed'], 'label': 'R1'})\nexpect(data,before)\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "data = {'tags': [], 'label': 'S1'}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, {'tags': ['reviewed'], 'label': 'S1'})\nexpect(data,before)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "93bf30fa145e4e3a1400d13b2454bad560a0c4ce6b72736de134d10a1d000e2f"
+    }
+  ]
+}

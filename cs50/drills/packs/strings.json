@@ -1,0 +1,831 @@
+{
+  "id": "strings",
+  "title": "Strings & structured parsing",
+  "outcome": "Turn text exports into meaningful, validated records.",
+  "prerequisites": [
+    "collections"
+  ],
+  "steps": [
+    {
+      "title": "1. Preserve information",
+      "text": "Decide which whitespace or case is meaningful. strip removes surrounding whitespace, not internal spacing. split with maxsplit preserves a remainder.",
+      "code": "line=\"name:  radio: bench A  \"\nkey,value=line.split(\":\",1)\nprint(key.strip(),value.strip())"
+    },
+    {
+      "title": "2. Use the format parser",
+      "text": "CSV can contain quoted commas. JSON can contain booleans and null. Use csv and json instead of splitting or eval.",
+      "code": "import json\nrecord=json.loads('{\"up\": true, \"latency\": null}')"
+    },
+    {
+      "title": "3. Validate complete strings",
+      "text": "A prefix match does not validate a whole identifier. re.fullmatch checks the entire pattern. Use re.escape for literal text embedded in a pattern.",
+      "code": "import re\nprint(bool(re.fullmatch(r\"SW-[0-9]+\", \"SW-12\")))"
+    },
+    {
+      "title": "4. Bytes are not characters",
+      "text": "Choose an encoding explicitly. A byte count measures encoded data, not the number of visible characters. Decode only where the input contract identifies the encoding.",
+      "code": "print(len(\"é\")) # 1\nprint(len(\"é\".encode(\"utf-8\"))) # 2"
+    },
+    {
+      "title": "5. Keep parsing separate",
+      "text": "A parser produces structured observations. A validator decides whether they meet requirements. Do not turn a parse failure into an empty healthy inventory.",
+      "code": ""
+    }
+  ],
+  "references": [
+    {
+      "title": "String methods",
+      "url": "https://docs.python.org/3/library/stdtypes.html#string-methods"
+    },
+    {
+      "title": "csv",
+      "url": "https://docs.python.org/3/library/csv.html"
+    },
+    {
+      "title": "re",
+      "url": "https://docs.python.org/3/library/re.html"
+    }
+  ],
+  "project": "log-01",
+  "tasks": [
+    {
+      "id": "py-strings-01",
+      "topic": "strings",
+      "number": 1,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Normalize a hostname",
+      "brief": "Clean surrounding spaces and case.",
+      "contract": [
+        "data is a hostname string. result is trimmed lowercase text, without modifying internal characters."
+      ],
+      "focus": [
+        "strip",
+        "lower"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: normalize a hostname.",
+        "strip removes surrounding whitespace; it does not remove internal spaces.",
+        "Compare the implementation with case 03-empty. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = ' SW-1 '\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'sw-1')\n"
+        },
+        {
+          "id": "02-internal space",
+          "setup": "data = 'R A'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'r a')\n"
+        },
+        {
+          "id": "03-empty",
+          "setup": "data = ''\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, '')\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "e49a8424220dfb32d643bcee3c5319f6f88e5834bf3d7c200605cfefd154a6d3"
+    },
+    {
+      "id": "py-strings-02",
+      "topic": "strings",
+      "number": 2,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Tokenize arbitrary whitespace",
+      "brief": "Read a whitespace-delimited export.",
+      "contract": [
+        "data is text. Split into nonempty whitespace-separated tokens."
+      ],
+      "focus": [
+        "split"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: tokenize arbitrary whitespace.",
+        "Splitting on arbitrary whitespace differs from splitting on a literal single space.",
+        "Compare the implementation with case 03-newline. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = 'Gi1  up\\t10'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, ['Gi1', 'up', '10'])\n"
+        },
+        {
+          "id": "02-blank",
+          "setup": "data = ' \\n '\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [])\n"
+        },
+        {
+          "id": "03-newline",
+          "setup": "data = 'A\\nB'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, ['A', 'B'])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "44e7da19f5279ec707a4f4670cb460e92baaab6762894431409437da94997de9"
+    },
+    {
+      "id": "py-strings-03",
+      "topic": "strings",
+      "number": 3,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Split one delimiter only",
+      "brief": "Preserve colons in a value.",
+      "contract": [
+        "data contains a colon. Return [trimmed key, trimmed remainder] splitting only at the first colon."
+      ],
+      "focus": [
+        "maxsplit"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: split one delimiter only.",
+        "Limit the split count so later colons remain part of the value.",
+        "Compare the implementation with case 03-empty value. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = 'name: router:A'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, ['name', 'router:A'])\n"
+        },
+        {
+          "id": "02-spaces",
+          "setup": "data = ' x : y '\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, ['x', 'y'])\n"
+        },
+        {
+          "id": "03-empty value",
+          "setup": "data = 'x:'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, ['x', ''])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "d684dfff84857151957946e68364c9f7aa62c2912a622877c16f23725519bc62"
+    },
+    {
+      "id": "py-strings-04",
+      "topic": "strings",
+      "number": 4,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Join report lines",
+      "brief": "Create a deterministic multiline report.",
+      "contract": [
+        "data is a list of strings. Join with newline between entries, without a final newline."
+      ],
+      "focus": [
+        "join"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: join report lines.",
+        "Put the delimiter between entries; join handles the empty list without special trailing characters.",
+        "Compare the implementation with case 03-single. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = ['A', 'B']\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'A\\nB')\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "data = []\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, '')\n"
+        },
+        {
+          "id": "03-single",
+          "setup": "data = ['A']\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'A')\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "71f8092d6bc187e5e2a47503261cc56ae200f73f79c56954a632c15d3e29e973"
+    },
+    {
+      "id": "py-strings-05",
+      "topic": "strings",
+      "number": 5,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Exact prefix removal",
+      "brief": "Remove only the leading marker.",
+      "contract": [
+        "data is text. Remove a leading \"dev-\" once, leave other occurrences intact."
+      ],
+      "focus": [
+        "removeprefix"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: exact prefix removal.",
+        "Removing a prefix is not the same as deleting all characters found in a character set.",
+        "Compare the implementation with case 03-once. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = 'dev-router'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'router')\n"
+        },
+        {
+          "id": "02-suffix",
+          "setup": "data = 'router-dev-'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'router-dev-')\n"
+        },
+        {
+          "id": "03-once",
+          "setup": "data = 'dev-dev-r'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'dev-r')\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "3ecdef38a51a3b635fa402eb9ec3e462ee425c2597cf2a03fc1ec5fe1834ede3"
+    },
+    {
+      "id": "py-strings-06",
+      "topic": "strings",
+      "number": 6,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Canonical MAC text",
+      "brief": "Normalize a syntactically valid MAC.",
+      "contract": [
+        "data has exactly 12 hexadecimal digits with optional colons, hyphens, or dots.",
+        "Return lowercase colon-separated pairs. Assume valid input in this drill."
+      ],
+      "focus": [
+        "replace",
+        "slices"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: canonical mac text.",
+        "First remove the supported separators, then normalize case and rebuild the grouping.",
+        "Compare the implementation with case 03-plain. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = 'AABB.CCDD.EEFF'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'aa:bb:cc:dd:ee:ff')\n"
+        },
+        {
+          "id": "02-hyphens",
+          "setup": "data = 'AA-BB-CC-DD-EE-FF'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'aa:bb:cc:dd:ee:ff')\n"
+        },
+        {
+          "id": "03-plain",
+          "setup": "data = '000000000000'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, '00:00:00:00:00:00')\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "b19f67ea6944cda73dceb41e58f75711e3a23fc419aa1df9e2d4f6fa21ed23a6"
+    },
+    {
+      "id": "py-strings-07",
+      "topic": "strings",
+      "number": 7,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "repair",
+      "title": "Full identifier validation",
+      "brief": "Reject a valid prefix followed by garbage.",
+      "contract": [
+        "data is text. Return True only for an entire hostname \"SW-\" followed by one or more ASCII decimal digits. Case-sensitive."
+      ],
+      "focus": [
+        "fullmatch"
+      ],
+      "starter": "import re\nresult = bool(re.match(r\"SW-[0-9]+\", data))\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: full identifier validation.",
+        "A prefix regex match can accept extra trailing text; require the entire string to match.",
+        "Compare the implementation with case 05-newline. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = 'SW-12'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, True)\n"
+        },
+        {
+          "id": "02-suffix",
+          "setup": "data = 'SW-12oops'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, False)\n"
+        },
+        {
+          "id": "03-case",
+          "setup": "data = 'sw-2'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, False)\n"
+        },
+        {
+          "id": "04-no number",
+          "setup": "data = 'SW-'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, False)\n"
+        },
+        {
+          "id": "05-newline",
+          "setup": "data = 'SW-1\\n'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, False)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "e6ac83e61ec7981acd653ae087780d7d6ded1edb2aab3ccca5eb70cc5d04b659"
+    },
+    {
+      "id": "py-strings-08",
+      "topic": "strings",
+      "number": 8,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Extract named fields",
+      "brief": "Parse an interface status line.",
+      "contract": [
+        "data has format \"<name> <up|down> <integer VLAN>\" with flexible whitespace. Return {name,up:bool,vlan:int}. Valid syntax is assumed."
+      ],
+      "focus": [
+        "split",
+        "conversion"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: extract named fields.",
+        "Parse the three fields first, then convert the status and VLAN into the required types.",
+        "Compare the implementation with case 02-whitespace. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = 'Gi0/1 up 10'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, {'name': 'Gi0/1', 'up': True, 'vlan': 10})\n"
+        },
+        {
+          "id": "02-whitespace",
+          "setup": "data = ' Gi0/2\\tdown 20 '\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, {'name': 'Gi0/2', 'up': False, 'vlan': 20})\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "dc0e16eaf9ba078817818f9e08b34e86de7122b10fd4e0850599e5ef89ba8aa7"
+    },
+    {
+      "id": "py-strings-09",
+      "topic": "strings",
+      "number": 9,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Quoted CSV field",
+      "brief": "Parse CSV rather than splitting commas.",
+      "contract": [
+        "data is a single CSV row with exactly name,description fields. Return the two strings using CSV quoting rules."
+      ],
+      "focus": [
+        "csv.reader"
+      ],
+      "starter": "# data is supplied by the checker. Set result to the required value.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: quoted csv field.",
+        "A comma inside a quoted field is data; use the CSV parser rather than a plain split.",
+        "Compare the implementation with case 03-empty. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = 'R1,\"Lab, bench A\"'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, ['R1', 'Lab, bench A'])\n"
+        },
+        {
+          "id": "02-quotes",
+          "setup": "data = 'S1,\"He said \"\"up\"\"\"'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, ['S1', 'He said \"up\"'])\n"
+        },
+        {
+          "id": "03-empty",
+          "setup": "data = 'R1,'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, ['R1', ''])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "27301f746e88c7bcbd7707b8b0d6c62261e6af19bfcc52ade1eeaebf9f867c94"
+    },
+    {
+      "id": "py-strings-10",
+      "topic": "strings",
+      "number": 10,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Decode JSON state",
+      "brief": "Translate JSON into Python data.",
+      "contract": [
+        "data is valid JSON text. Parse it and assign the resulting Python value to result. Do not use eval."
+      ],
+      "focus": [
+        "json.loads"
+      ],
+      "starter": "# data is supplied by the checker. Set result to the required value.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: decode json state.",
+        "Use the JSON parser; evaluating a string as Python code is not data parsing.",
+        "Compare the implementation with case 04-string. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = '{\"up\":true,\"latency\":null}'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, {'up': True, 'latency': None})\n"
+        },
+        {
+          "id": "02-array",
+          "setup": "data = '[1,2]'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [1, 2])\n"
+        },
+        {
+          "id": "03-boolean",
+          "setup": "data = 'false'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, False)\n"
+        },
+        {
+          "id": "04-string",
+          "setup": "data = '\"x\"'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'x')\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "d9891d311acb0e42a479295376b26c28be84d1de73daeff421a087ec1823d5b3"
+    },
+    {
+      "id": "py-strings-11",
+      "topic": "strings",
+      "number": 11,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Deterministic JSON",
+      "brief": "Serialize a dictionary consistently.",
+      "contract": [
+        "data is JSON-compatible dict. Return JSON with sorted keys, separators comma/colon without spaces, and literal Unicode preserved."
+      ],
+      "focus": [
+        "json.dumps"
+      ],
+      "starter": "# data is supplied by the checker. Set result to the required value.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: deterministic json.",
+        "Specify key ordering, separators and Unicode handling rather than relying on default presentation.",
+        "Compare the implementation with case 03-empty. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = {'b': 2, 'a': 1}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, '{\"a\":1,\"b\":2}')\n"
+        },
+        {
+          "id": "02-unicode",
+          "setup": "data = {'name': 'é'}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, '{\"name\":\"é\"}')\n"
+        },
+        {
+          "id": "03-empty",
+          "setup": "data = {}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, '{}')\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "62a297330d97b884ec05758e819bcc5dec1509997beebc709a216b60b2d767f3"
+    },
+    {
+      "id": "py-strings-12",
+      "topic": "strings",
+      "number": 12,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Count encoded bytes",
+      "brief": "Measure UTF-8 bytes.",
+      "contract": [
+        "data is text. Return its UTF-8 encoded byte count, not character count."
+      ],
+      "focus": [
+        "encode"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: count encoded bytes.",
+        "Encode to UTF-8 before measuring bytes; len on the original string counts characters.",
+        "Compare the implementation with case 04-mixed. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = 'abc'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 3)\n"
+        },
+        {
+          "id": "02-unicode",
+          "setup": "data = 'é'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 2)\n"
+        },
+        {
+          "id": "03-empty",
+          "setup": "data = ''\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 0)\n"
+        },
+        {
+          "id": "04-mixed",
+          "setup": "data = 'Aé'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 3)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "89e3c08b3cff134e3dde637455895043956a44e9c7928581c62b8323398aea44"
+    },
+    {
+      "id": "py-strings-13",
+      "topic": "strings",
+      "number": 13,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Parse a quantity and unit",
+      "brief": "Normalize supplied frequency units.",
+      "contract": [
+        "data is \"<number> <GHz|MHz>\" with exactly two whitespace tokens.",
+        "Return numeric MHz. Input is valid and finite. Unit names are case-sensitive."
+      ],
+      "focus": [
+        "unit normalization"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: parse a quantity and unit.",
+        "Parse value and unit independently, then choose the documented conversion factor.",
+        "Compare the implementation with case 03-zero. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = '7.25 GHz'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 7250.0)\n"
+        },
+        {
+          "id": "02-MHz",
+          "setup": "data = '950 MHz'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 950.0)\n"
+        },
+        {
+          "id": "03-zero",
+          "setup": "data = '0 GHz'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 0.0)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "e1582d6e7938fcc2276f6d56a2a547e1c1d2b624cd9a8f910ee7aeb79d3e89e1"
+    },
+    {
+      "id": "py-strings-14",
+      "topic": "strings",
+      "number": 14,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Ignore comments and blank lines",
+      "brief": "Clean a simple line-oriented format.",
+      "contract": [
+        "data is multiline text. Trim each line and keep nonempty lines not beginning with #. Preserve inline # characters."
+      ],
+      "focus": [
+        "splitlines",
+        "startswith"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: ignore comments and blank lines.",
+        "Filter only lines whose first nonspace character is the comment marker; retain inline markers.",
+        "Compare the implementation with case 03-CRLF. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = ' #comment\\nR1\\n\\n S1 #label '\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, ['R1', 'S1 #label'])\n"
+        },
+        {
+          "id": "02-only comments",
+          "setup": "data = '\\n#x'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [])\n"
+        },
+        {
+          "id": "03-CRLF",
+          "setup": "data = 'A\\r\\nB'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, ['A', 'B'])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "d98f94e5403c58029e028ca99dc27ae74b1e5567d1f3fc41a5612e5727575ebe"
+    },
+    {
+      "id": "py-strings-15",
+      "topic": "strings",
+      "number": 15,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Literal delimiter counting",
+      "brief": "Count literal strings without regex surprises.",
+      "contract": [
+        "data is {text,needle}; needle is nonempty. Return nonoverlapping literal occurrences, not regex matches."
+      ],
+      "focus": [
+        "literal versus regex"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: literal delimiter counting.",
+        "The needle is literal text, so regex metacharacters must not change its meaning.",
+        "Compare the implementation with case 04-absent. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = {'text': 'a.b.c', 'needle': '.'}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 2)\n"
+        },
+        {
+          "id": "02-brackets",
+          "setup": "data = {'text': '[x][x]', 'needle': '[x]'}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 2)\n"
+        },
+        {
+          "id": "03-nonoverlap",
+          "setup": "data = {'text': 'aaaa', 'needle': 'aa'}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 2)\n"
+        },
+        {
+          "id": "04-absent",
+          "setup": "data = {'text': 'abc', 'needle': 'z'}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 0)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "e1b86fb7329119b28cbc7672dac0afc77fc81d120af9c76896ee73b0ccfff217"
+    },
+    {
+      "id": "py-strings-16",
+      "topic": "strings",
+      "number": 16,
+      "version": "1.0.0",
+      "mode": "check",
+      "kind": "build",
+      "title": "Check: key-value export",
+      "brief": "Parse a small exported configuration.",
+      "contract": [
+        "data is lines \"key=value\". Ignore blank lines. Trim keys/values; split on first =.",
+        "Return dict. Later duplicate keys replace earlier ones. Values can contain =. All nonblank lines are valid."
+      ],
+      "focus": [
+        "parse",
+        "duplicates"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = 'a=1\\nb=x=y\\na=2'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, {'a': '2', 'b': 'x=y'})\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "data = ''\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, {})\n"
+        },
+        {
+          "id": "03-spaces",
+          "setup": "data = ' name = R1 '\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, {'name': 'R1'})\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "4223cbeb832c676dc1f00762b659758e309fdcbe18985c47c5abef098099bf1c"
+    },
+    {
+      "id": "py-strings-17",
+      "topic": "strings",
+      "number": 17,
+      "version": "1.0.0",
+      "mode": "check",
+      "kind": "build",
+      "title": "Check: first two octets as text",
+      "brief": "Validate and extract a MAC prefix.",
+      "contract": [
+        "data uses six colon-separated two-digit ASCII hex octets. Return first two lowercase octets joined by colon; invalid syntax returns None."
+      ],
+      "focus": [
+        "validation",
+        "regex"
+      ],
+      "starter": "# data is supplied by the checker. Set result to the required value.\nresult = None\n",
+      "hints": [],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = 'AA:BB:CC:DD:EE:FF'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'aa:bb')\n"
+        },
+        {
+          "id": "02-short",
+          "setup": "data = 'aa:bb:cc'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, None)\n"
+        },
+        {
+          "id": "03-invalid hex",
+          "setup": "data = 'GG:BB:CC:DD:EE:FF'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, None)\n"
+        },
+        {
+          "id": "04-suffix",
+          "setup": "data = 'AA:BB:CC:DD:EE:FFx'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, None)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "36825caccb293007b312321e243f43143c896c71727866c040a29e6a6a6114b9"
+    },
+    {
+      "id": "py-strings-18",
+      "topic": "strings",
+      "number": 18,
+      "version": "1.0.0",
+      "mode": "check",
+      "kind": "build",
+      "title": "Check: JSON inventory names",
+      "brief": "Extract a report field.",
+      "contract": [
+        "data is JSON array text containing records with name. Return a newline-joined string of names in order, with no final newline."
+      ],
+      "focus": [
+        "JSON",
+        "transformation"
+      ],
+      "starter": "# data is supplied by the checker. Set result to the required value.\nresult = None\n",
+      "hints": [],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = '[{\"name\":\"R1\"},{\"name\":\"S1\"}]'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'R1\\nS1')\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "data = '[]'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, '')\n"
+        },
+        {
+          "id": "03-unicode",
+          "setup": "data = '[{\"name\":\"é\"}]'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'é')\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "97807a0fb0f78272ec4ae7af0c09ae9507acbfbc369b0e7f7f522ea373412e7a"
+    }
+  ]
+}

@@ -1,0 +1,906 @@
+{
+  "id": "decisions",
+  "title": "Conditions & validation",
+  "outcome": "Make boundaries, missing evidence and decision order explicit.",
+  "prerequisites": [
+    "values"
+  ],
+  "steps": [
+    {
+      "title": "1. Express the rule",
+      "text": "Translate wording into a truth table before choosing operators. A value at a threshold may belong on either side; the contract decides.",
+      "code": "value = 20\nresult = \"high\" if value > 20 else \"within\""
+    },
+    {
+      "title": "2. Select one branch",
+      "text": "if/elif/else stops at the first matching branch. Put exceptional cases before ordinary categories.",
+      "code": "value = None\nif value is None:\n    status = \"unknown\"\nelif value < 5:\n    status = \"low\"\nelse:\n    status = \"ok\""
+    },
+    {
+      "title": "3. Combine conditions",
+      "text": "and requires both conditions; or accepts either; not reverses a boolean. Short-circuiting can protect a later expression from an invalid operation.",
+      "code": "value = None\nvalid = value is not None and value >= 0"
+    },
+    {
+      "title": "4. Validate types",
+      "text": "In Python bool is a subclass of int. Use type(value) is int when a protocol requires an integer and forbids booleans. Syntax validity is distinct from operational acceptability.",
+      "code": "print(isinstance(True, int))  # True\nprint(type(True) is int)     # False"
+    },
+    {
+      "title": "5. Prove the boundaries",
+      "text": "For every range, test just below, exactly at, and just above the boundary. Never label a device healthy because its observation is missing.",
+      "code": ""
+    }
+  ],
+  "references": [
+    {
+      "title": "Control flow",
+      "url": "https://docs.python.org/3/tutorial/controlflow.html"
+    },
+    {
+      "title": "Built-in types",
+      "url": "https://docs.python.org/3/library/stdtypes.html"
+    }
+  ],
+  "project": "kit-01",
+  "tasks": [
+    {
+      "id": "py-decisions-01",
+      "topic": "decisions",
+      "number": 1,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Budget boundary",
+      "brief": "Classify power against a budget.",
+      "contract": [
+        "data is [total,budget]. result is OVER only when total > budget, otherwise OK."
+      ],
+      "focus": [
+        "if",
+        "comparison"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: budget boundary.",
+        "Equality is within budget; draw the boundary before choosing greater-than versus greater-or-equal.",
+        "Compare the implementation with case 04-under. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = [81, 80]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'OVER')\n"
+        },
+        {
+          "id": "02-equal",
+          "setup": "data = [80, 80]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'OK')\n"
+        },
+        {
+          "id": "03-zero",
+          "setup": "data = [0, 0]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'OK')\n"
+        },
+        {
+          "id": "04-under",
+          "setup": "data = [79, 80]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'OK')\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "e75c5f908af830eee4f4cfd40adcd93fea2ecfadeb5442fb95df6a3d6b70d90d"
+    },
+    {
+      "id": "py-decisions-02",
+      "topic": "decisions",
+      "number": 2,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Three latency bands",
+      "brief": "Classify a supplied lab threshold.",
+      "contract": [
+        "data is nonnegative numeric latency. LOW for <10, MID for 10..49.999..., HIGH for >=50. These are exercise thresholds, not service guarantees."
+      ],
+      "focus": [
+        "elif",
+        "ordered boundaries"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: three latency bands.",
+        "Write down the outcomes at 9.999, 10, 49.999 and 50; make the branches cover every interval once.",
+        "Compare the implementation with case 04-fraction. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = 9\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'LOW')\n"
+        },
+        {
+          "id": "02-lower boundary",
+          "setup": "data = 10\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'MID')\n"
+        },
+        {
+          "id": "03-upper boundary",
+          "setup": "data = 50\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'HIGH')\n"
+        },
+        {
+          "id": "04-fraction",
+          "setup": "data = 49.5\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'MID')\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "26ec05bda44feb6a476ae8860ed89716a57eb2c0b7770050b00a4edeafc622f1"
+    },
+    {
+      "id": "py-decisions-03",
+      "topic": "decisions",
+      "number": 3,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Inclusive VLAN interval",
+      "brief": "Validate a VLAN identifier.",
+      "contract": [
+        "result is True exactly when data is an int (not bool) in 1..4094 inclusive."
+      ],
+      "focus": [
+        "chained comparison",
+        "type guard"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: inclusive vlan interval.",
+        "In Python bool is a subclass of int; a plain isinstance check alone also accepts True.",
+        "Compare the implementation with case 06-text. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = 1\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, True)\n"
+        },
+        {
+          "id": "02-last",
+          "setup": "data = 4094\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, True)\n"
+        },
+        {
+          "id": "03-low",
+          "setup": "data = 0\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, False)\n"
+        },
+        {
+          "id": "04-high",
+          "setup": "data = 4095\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, False)\n"
+        },
+        {
+          "id": "05-boolean",
+          "setup": "data = True\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, False)\n"
+        },
+        {
+          "id": "06-text",
+          "setup": "data = '10'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, False)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "b31cf65c0fb91e04b2751ba505de4a3731f176e4fc7c3f47ac4d2446033d12f5"
+    },
+    {
+      "id": "py-decisions-04",
+      "topic": "decisions",
+      "number": 4,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Expected service state",
+      "brief": "Evaluate both prerequisites.",
+      "contract": [
+        "data has link and registered booleans. result is True only when both are True."
+      ],
+      "focus": [
+        "and"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: expected service state.",
+        "The requirement needs both observations, so compare the truth table for and versus or.",
+        "Compare the implementation with case 04-neither. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = {'link': True, 'registered': True}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, True)\n"
+        },
+        {
+          "id": "02-no link",
+          "setup": "data = {'link': False, 'registered': True}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, False)\n"
+        },
+        {
+          "id": "03-unregistered",
+          "setup": "data = {'link': True, 'registered': False}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, False)\n"
+        },
+        {
+          "id": "04-neither",
+          "setup": "data = {'link': False, 'registered': False}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, False)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "afc9c19f897984e6d00ae164e3007d684bbb65f6dfd43532d3d696f1e52bd816"
+    },
+    {
+      "id": "py-decisions-05",
+      "topic": "decisions",
+      "number": 5,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Any fault",
+      "brief": "Combine independent alarms.",
+      "contract": [
+        "data is [power_alarm, temperature_alarm, link_alarm], all bool. result is True if any alarm is True."
+      ],
+      "focus": [
+        "or",
+        "any"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: any fault.",
+        "One alarm is sufficient; inspect the all-false case separately from mixed inputs.",
+        "Compare the implementation with case 03-last. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = [False, False, False]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, False)\n"
+        },
+        {
+          "id": "02-first",
+          "setup": "data = [True, False, False]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, True)\n"
+        },
+        {
+          "id": "03-last",
+          "setup": "data = [False, False, True]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, True)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "a799434c044b3c4eaf4b91ee2492a39476ee150c0eb2c6f7e8dba38060a489ec"
+    },
+    {
+      "id": "py-decisions-06",
+      "topic": "decisions",
+      "number": 6,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Unknown before healthy",
+      "brief": "Do not pass a missing observation.",
+      "contract": [
+        "data is None, True, or False. Return UNKNOWN, PASS, or FAIL respectively."
+      ],
+      "focus": [
+        "None",
+        "branch order"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: unknown before healthy.",
+        "Handle None explicitly before branching on boolean truth.",
+        "Compare the implementation with case 03-fault. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = None\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'UNKNOWN')\n"
+        },
+        {
+          "id": "02-healthy",
+          "setup": "data = True\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'PASS')\n"
+        },
+        {
+          "id": "03-fault",
+          "setup": "data = False\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'FAIL')\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "7fcb80e7923e6be07e46833d14c99db96fa09c9bb568b1ffde8b48f25c204fb0"
+    },
+    {
+      "id": "py-decisions-07",
+      "topic": "decisions",
+      "number": 7,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Short-circuit division",
+      "brief": "Avoid division by zero.",
+      "contract": [
+        "data is [numerator,denominator]. result is None for denominator 0; otherwise the numeric quotient."
+      ],
+      "focus": [
+        "guard clause"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: short-circuit division.",
+        "Guard the denominator before performing the division; do not calculate first and guard afterward.",
+        "Compare the implementation with case 04-negative. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = [10, 2]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 5.0)\n"
+        },
+        {
+          "id": "02-zero denominator",
+          "setup": "data = [0, 0]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, None)\n"
+        },
+        {
+          "id": "03-zero numerator",
+          "setup": "data = [0, 3]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 0.0)\n"
+        },
+        {
+          "id": "04-negative",
+          "setup": "data = [-6, 2]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, -3.0)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "ee5e2042cbbde04ad862b783c8f16a92ea50ac005539c2fe16b0db92b491a7ca"
+    },
+    {
+      "id": "py-decisions-08",
+      "topic": "decisions",
+      "number": 8,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Allowed device roles",
+      "brief": "Validate normalized role text.",
+      "contract": [
+        "data is text. Strip/lowercase it; result is True only for router, switch, server."
+      ],
+      "focus": [
+        "membership"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: allowed device roles.",
+        "Normalize once, then compare against a collection of allowed values.",
+        "Compare the implementation with case 04-empty. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = 'Router'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, True)\n"
+        },
+        {
+          "id": "02-spaces",
+          "setup": "data = ' switch '\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, True)\n"
+        },
+        {
+          "id": "03-unsupported",
+          "setup": "data = 'firewall'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, False)\n"
+        },
+        {
+          "id": "04-empty",
+          "setup": "data = ''\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, False)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "9096084f3269c007dcc877857f10d8df6cb347aa749bebd1a73d1b40f4420abc"
+    },
+    {
+      "id": "py-decisions-09",
+      "topic": "decisions",
+      "number": 9,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "repair",
+      "title": "Port is not a boolean",
+      "brief": "Validate a port field.",
+      "contract": [
+        "Return True only for integer (not bool) ports 1 through 65535."
+      ],
+      "focus": [
+        "type",
+        "range"
+      ],
+      "starter": "result = isinstance(data, int) and 1 <= data <= 65535\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: port is not a boolean.",
+        "Check the exact numeric type and both inclusive boundaries before accepting a port.",
+        "Compare the implementation with case 05-float. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = 443\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, True)\n"
+        },
+        {
+          "id": "02-bool",
+          "setup": "data = True\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, False)\n"
+        },
+        {
+          "id": "03-upper",
+          "setup": "data = 65535\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, True)\n"
+        },
+        {
+          "id": "04-above",
+          "setup": "data = 65536\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, False)\n"
+        },
+        {
+          "id": "05-float",
+          "setup": "data = 1.0\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, False)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "8c3880d957d1a85c2b6a36ab0c2998746d756fc0c443d65f7cafabf2b6e47521"
+    },
+    {
+      "id": "py-decisions-10",
+      "topic": "decisions",
+      "number": 10,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Freshness classification",
+      "brief": "Preserve stale versus missing.",
+      "contract": [
+        "data has age (None or nonnegative seconds) and limit (nonnegative seconds).",
+        "Return UNKNOWN for missing age, FRESH for age <=limit, else STALE."
+      ],
+      "focus": [
+        "ordered predicates"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: freshness classification.",
+        "Missing age, stale age and fresh age are three different states; equality is defined in the contract.",
+        "Compare the implementation with case 04-now. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = {'age': None, 'limit': 30}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'UNKNOWN')\n"
+        },
+        {
+          "id": "02-exact",
+          "setup": "data = {'age': 30, 'limit': 30}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'FRESH')\n"
+        },
+        {
+          "id": "03-expired",
+          "setup": "data = {'age': 31, 'limit': 30}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'STALE')\n"
+        },
+        {
+          "id": "04-now",
+          "setup": "data = {'age': 0, 'limit': 0}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'FRESH')\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "a751441311a335fc3f211337cf7f3c444b4c54360715320bdb8fb0f0828ebc28"
+    },
+    {
+      "id": "py-decisions-11",
+      "topic": "decisions",
+      "number": 11,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Priority escalation",
+      "brief": "Apply precedence instead of adding flags.",
+      "contract": [
+        "data has critical and warning bool. Return CRITICAL first, then WARNING, else NORMAL."
+      ],
+      "focus": [
+        "precedence"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: priority escalation.",
+        "Put the higher-priority branch first when both flags can be true.",
+        "Compare the implementation with case 03-normal. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = {'critical': True, 'warning': True}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'CRITICAL')\n"
+        },
+        {
+          "id": "02-warning",
+          "setup": "data = {'critical': False, 'warning': True}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'WARNING')\n"
+        },
+        {
+          "id": "03-normal",
+          "setup": "data = {'critical': False, 'warning': False}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'NORMAL')\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "9d431ea2f9285909b4a342857204c301c2b7ba9f494f1cd9320dd87f351cab4a"
+    },
+    {
+      "id": "py-decisions-12",
+      "topic": "decisions",
+      "number": 12,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Finite reading",
+      "brief": "Conversion success is not enough.",
+      "contract": [
+        "data is an int, float, bool, string, or None. Return True for finite nonnegative int/float only, excluding bool."
+      ],
+      "focus": [
+        "math.isfinite",
+        "validation"
+      ],
+      "starter": "# data is supplied by the checker. Set result to the required value.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: finite reading.",
+        "Parsing or numeric type alone does not exclude infinity and NaN; inspect math.isfinite.",
+        "Compare the implementation with case 06-nan. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = 0\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, True)\n"
+        },
+        {
+          "id": "02-negative",
+          "setup": "data = -1\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, False)\n"
+        },
+        {
+          "id": "03-text",
+          "setup": "data = 'nan'\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, False)\n"
+        },
+        {
+          "id": "04-missing",
+          "setup": "data = None\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, False)\n"
+        },
+        {
+          "id": "05-infinity",
+          "setup": "data=float(\"inf\")\n",
+          "check": "expect(result,False)\n"
+        },
+        {
+          "id": "06-nan",
+          "setup": "data=float(\"nan\")\n",
+          "check": "expect(result,False)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "d1b6695e97e953051932fd05370341e84688914cafde13dd7bf5e3f6011b41d6"
+    },
+    {
+      "id": "py-decisions-13",
+      "topic": "decisions",
+      "number": 13,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Empty versus absent",
+      "brief": "Distinguish a missing key from an empty value.",
+      "contract": [
+        "data is a dictionary. Return ABSENT when key name is missing, EMPTY when its value is \"\", otherwise PRESENT (including None)."
+      ],
+      "focus": [
+        "in",
+        "sentinel semantics"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: empty versus absent.",
+        "Test key membership separately from looking at its value.",
+        "Compare the implementation with case 04-name. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = {}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'ABSENT')\n"
+        },
+        {
+          "id": "02-blank",
+          "setup": "data = {'name': ''}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'EMPTY')\n"
+        },
+        {
+          "id": "03-present null",
+          "setup": "data = {'name': None}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'PRESENT')\n"
+        },
+        {
+          "id": "04-name",
+          "setup": "data = {'name': 'R1'}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'PRESENT')\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "04f54747bf1dc4430227c124dd39e45476bd7f200975c40f819ce861ab5e0dd4"
+    },
+    {
+      "id": "py-decisions-14",
+      "topic": "decisions",
+      "number": 14,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Approved change gate",
+      "brief": "Express a change gate.",
+      "contract": [
+        "data has approved, precheck, maintenance, emergency bool.",
+        "Return True exactly when approved and precheck are true and either maintenance or emergency is true."
+      ],
+      "focus": [
+        "boolean grouping"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: approved change gate.",
+        "Parenthesize the ordinary and emergency paths so an emergency does not skip unrelated required checks.",
+        "Compare the implementation with case 04-no window. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = {'approved': True, 'precheck': True, 'maintenance': False, 'emergency': True}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, True)\n"
+        },
+        {
+          "id": "02-not approved",
+          "setup": "data = {'approved': False, 'precheck': True, 'maintenance': True, 'emergency': True}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, False)\n"
+        },
+        {
+          "id": "03-precheck failed",
+          "setup": "data = {'approved': True, 'precheck': False, 'maintenance': True, 'emergency': False}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, False)\n"
+        },
+        {
+          "id": "04-no window",
+          "setup": "data = {'approved': True, 'precheck': True, 'maintenance': False, 'emergency': False}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, False)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "335510e3927dffd1660df909a7bda34fb313b1b57499b037b56a5abb7f6015e8"
+    },
+    {
+      "id": "py-decisions-15",
+      "topic": "decisions",
+      "number": 15,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Fallback must not erase zero",
+      "brief": "Choose a primary reading.",
+      "contract": [
+        "data has primary and fallback. Use fallback only if primary is None. Zero, False, and empty text remain valid primary values."
+      ],
+      "focus": [
+        "conditional expression"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: fallback must not erase zero.",
+        "False, zero and empty text are valid values here; only None selects the fallback.",
+        "Compare the implementation with case 03-boolean. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = {'primary': 0, 'fallback': 5}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 0)\n"
+        },
+        {
+          "id": "02-missing",
+          "setup": "data = {'primary': None, 'fallback': 5}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 5)\n"
+        },
+        {
+          "id": "03-boolean",
+          "setup": "data = {'primary': False, 'fallback': True}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, False)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "8e156bb4f9e491eb12479d2bf8686715851ae1b0d5c6ea67c469fafe36a24b67"
+    },
+    {
+      "id": "py-decisions-16",
+      "topic": "decisions",
+      "number": 16,
+      "version": "1.0.0",
+      "mode": "check",
+      "kind": "build",
+      "title": "Check: collection outcome",
+      "brief": "Report completeness honestly.",
+      "contract": [
+        "data has expected and observed nonnegative ints with observed <=expected.",
+        "Return EMPTY for expected=0; COMPLETE when observed=expected>0; PARTIAL when 0<observed<expected; NONE otherwise."
+      ],
+      "focus": [
+        "branch order"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = {'expected': 0, 'observed': 0}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'EMPTY')\n"
+        },
+        {
+          "id": "02-all",
+          "setup": "data = {'expected': 5, 'observed': 5}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'COMPLETE')\n"
+        },
+        {
+          "id": "03-partial",
+          "setup": "data = {'expected': 5, 'observed': 3}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'PARTIAL')\n"
+        },
+        {
+          "id": "04-none",
+          "setup": "data = {'expected': 5, 'observed': 0}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'NONE')\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "9905410717b859b6364739eb06dd51251a8cf155dfa44d3e5ceacdd9e0852516"
+    },
+    {
+      "id": "py-decisions-17",
+      "topic": "decisions",
+      "number": 17,
+      "version": "1.0.0",
+      "mode": "check",
+      "kind": "build",
+      "title": "Check: accept a measured value",
+      "brief": "Combine measurement policy.",
+      "contract": [
+        "data has value (number or None), min, max; min <=max.",
+        "Return UNKNOWN if value is None, PASS inside the inclusive interval, FAIL outside."
+      ],
+      "focus": [
+        "range",
+        "missing"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = {'value': None, 'min': 0, 'max': 5}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'UNKNOWN')\n"
+        },
+        {
+          "id": "02-lower",
+          "setup": "data = {'value': 0, 'min': 0, 'max': 5}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'PASS')\n"
+        },
+        {
+          "id": "03-upper",
+          "setup": "data = {'value': 5, 'min': 0, 'max': 5}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'PASS')\n"
+        },
+        {
+          "id": "04-outside",
+          "setup": "data = {'value': 6, 'min': 0, 'max': 5}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 'FAIL')\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "ac49e31ad7f358cc60f8ddf52c2361a347d62579a09cfb12aaf7d4326ba4bc1e"
+    },
+    {
+      "id": "py-decisions-18",
+      "topic": "decisions",
+      "number": 18,
+      "version": "1.0.0",
+      "mode": "check",
+      "kind": "build",
+      "title": "Check: role permission",
+      "brief": "Implement an explicit policy.",
+      "contract": [
+        "data has role (admin, operator, viewer, or other) and operation (read, collect, change, or other).",
+        "admin permits read/collect/change; operator permits read/collect; viewer only read; unknowns denied."
+      ],
+      "focus": [
+        "mapping policy"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = {'role': 'admin', 'operation': 'change'}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, True)\n"
+        },
+        {
+          "id": "02-operator denied",
+          "setup": "data = {'role': 'operator', 'operation': 'change'}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, False)\n"
+        },
+        {
+          "id": "03-viewer",
+          "setup": "data = {'role': 'viewer', 'operation': 'read'}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, True)\n"
+        },
+        {
+          "id": "04-unknown role",
+          "setup": "data = {'role': 'other', 'operation': 'read'}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, False)\n"
+        },
+        {
+          "id": "05-unknown operation",
+          "setup": "data = {'role': 'admin', 'operation': 'delete'}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, False)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "4b21984c04d42013d1f76788f130374882db6c7d0945e6d49ef3456fc4ce7a9c"
+    }
+  ]
+}

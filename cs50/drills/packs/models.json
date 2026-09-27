@@ -1,0 +1,737 @@
+{
+  "id": "models",
+  "title": "Objects, iterators & reusable components",
+  "outcome": "Represent state and stream data through well-defined Python interfaces.",
+  "prerequisites": [
+    "functions",
+    "files"
+  ],
+  "steps": [
+    {
+      "title": "1. Choose objects where useful",
+      "text": "A class packages state and operations. Do not add a class merely to use syntax. A dataclass can express a record with equality and a clear constructor.",
+      "code": "from dataclasses import dataclass\n@dataclass\nclass Reading:\n    name: str\n    value: float"
+    },
+    {
+      "title": "2. Keep instance state independent",
+      "text": "Mutable defaults must be created per instance. dataclasses.field(default_factory=list) creates a fresh list. Frozen records reject ordinary attribute assignment, but freezing is not deep immutability.",
+      "code": "from dataclasses import dataclass, field\n@dataclass\nclass Group:\n    names: list = field(default_factory=list)"
+    },
+    {
+      "title": "3. Iterators are consumable",
+      "text": "An iterable can provide an iterator. Iterators yield values until exhausted; generators express lazy iteration using yield. Do not promise a reusable list when returning a one-shot stream.",
+      "code": "def doubled(values):\n    for value in values:\n        yield value*2"
+    },
+    {
+      "title": "4. Small interfaces enable testing",
+      "text": "A collector can be any object implementing the method required by the contract. Use composition and explicit dependencies before elaborate inheritance.",
+      "code": ""
+    },
+    {
+      "title": "5. Test lifetime and reuse",
+      "text": "Test two instances, repeated calls, exhaustion, empty streams and cleanup. Output checks alone do not establish a good design; explain why the interface fits.",
+      "code": ""
+    }
+  ],
+  "references": [
+    {
+      "title": "Classes",
+      "url": "https://docs.python.org/3/tutorial/classes.html"
+    },
+    {
+      "title": "dataclasses",
+      "url": "https://docs.python.org/3/library/dataclasses.html"
+    },
+    {
+      "title": "itertools",
+      "url": "https://docs.python.org/3/library/itertools.html"
+    }
+  ],
+  "project": "kit-04",
+  "tasks": [
+    {
+      "id": "py-models-01",
+      "topic": "models",
+      "number": 1,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "A data record",
+      "brief": "Create a simple device record.",
+      "contract": [
+        "Define dataclass Device with fields name:str and site:str. Instances with equal field values compare equal."
+      ],
+      "focus": [
+        "dataclass"
+      ],
+      "starter": "from dataclasses import dataclass\n\n# Define Device.\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: a data record.",
+        "A dataclass can supply initialization and value equality from declared fields.",
+        "Compare the implementation with case 02-keyword constructor. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-fields",
+          "setup": "pass\n",
+          "check": "d=Device(\"R1\",\"A\")\nexpect(d.name,\"R1\")\nexpect(d.site,\"A\")\nassert d==Device(\"R1\",\"A\")\nassert d!=Device(\"R1\",\"B\")\n"
+        },
+        {
+          "id": "02-keyword constructor",
+          "setup": "pass\n",
+          "check": "expect(Device(site=\"B\",name=\"S1\").name,\"S1\")\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "9da48165f9806461a7890984d1e2113b171d734e9691da0065aeaa3a6a10b904"
+    },
+    {
+      "id": "py-models-02",
+      "topic": "models",
+      "number": 2,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Method uses instance data",
+      "brief": "Calculate from a record.",
+      "contract": [
+        "Define Equipment(quantity,watts), storing those attributes, with method total() returning quantity*watts."
+      ],
+      "focus": [
+        "__init__",
+        "instance method"
+      ],
+      "starter": "class Equipment:\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: method uses instance data.",
+        "Store the constructor values on self so each instance calculates from its own state.",
+        "Compare the implementation with case 03-independent instances. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(Equipment(4,18).total(), 72)\n"
+        },
+        {
+          "id": "02-zero",
+          "setup": "pass\n",
+          "check": "expect(Equipment(0,65).total(), 0)\n"
+        },
+        {
+          "id": "03-independent instances",
+          "setup": "pass\n",
+          "check": "a=Equipment(2,3)\nb=Equipment(5,6)\nexpect(a.total(),6)\nexpect(b.total(),30)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "2c22c248549d234b23297c881b67a50e917889d8d4dfc402d60bdec71a0ad501"
+    },
+    {
+      "id": "py-models-03",
+      "topic": "models",
+      "number": 3,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Default factory",
+      "brief": "Separate each site list.",
+      "contract": [
+        "Define dataclass Site with name:str and devices:list defaulting to a new empty list per instance."
+      ],
+      "focus": [
+        "default_factory"
+      ],
+      "starter": "from dataclasses import dataclass, field\n\n# Define Site.\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: default factory.",
+        "Use a default factory for a mutable field so instances do not share one list.",
+        "Compare the implementation with case 02-explicit list. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-separate lists",
+          "setup": "pass\n",
+          "check": "a=Site(\"A\");b=Site(\"B\")\na.devices.append(\"R1\")\nexpect(a.devices,[\"R1\"])\nexpect(b.devices,[])\n"
+        },
+        {
+          "id": "02-explicit list",
+          "setup": "pass\n",
+          "check": "expect(Site(\"A\",[\"R1\"]).devices,[\"R1\"])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "c86c2f5484ccee5afce5cf72020a46dc87bea500209f232d2cc5c37a2968ce7c"
+    },
+    {
+      "id": "py-models-04",
+      "topic": "models",
+      "number": 4,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Frozen observation",
+      "brief": "Make an observation record non-reassignable.",
+      "contract": [
+        "Define frozen dataclass Observation(name:str,value:float). Reassigning value must raise dataclasses.FrozenInstanceError."
+      ],
+      "focus": [
+        "frozen dataclass"
+      ],
+      "starter": "from dataclasses import dataclass\n\n# Define Observation.\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: frozen observation.",
+        "Frozen dataclasses reject ordinary attribute rebinding; test that behavior explicitly.",
+        "Compare the implementation with case 02-equality. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-frozen",
+          "setup": "from dataclasses import FrozenInstanceError\n",
+          "check": "r=Observation(\"rx\",1.0)\nexpect(r.value,1.0)\nraises(FrozenInstanceError,lambda:setattr(r,\"value\",2.0))\n"
+        },
+        {
+          "id": "02-equality",
+          "setup": "pass\n",
+          "check": "assert Observation(\"x\",0)==Observation(\"x\",0)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "f1ee1e0da15c05e2696cb5c86c8a4f213ca39e5c035a882024a03851082f5c6b"
+    },
+    {
+      "id": "py-models-05",
+      "topic": "models",
+      "number": 5,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Computed property",
+      "brief": "Expose derived state without duplicate storage.",
+      "contract": [
+        "Define Link(received,total) storing attributes. property fraction returns received/total, or None when total=0."
+      ],
+      "focus": [
+        "property"
+      ],
+      "starter": "class Link:\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: computed property.",
+        "A computed property reads the current attributes rather than storing a stale duplicate value.",
+        "Compare the implementation with case 03-recomputed. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(Link(3,4).fraction, 0.75)\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "pass\n",
+          "check": "expect(Link(0,0).fraction, None)\n"
+        },
+        {
+          "id": "03-recomputed",
+          "setup": "pass\n",
+          "check": "x=Link(1,4)\nx.received=2\nexpect(x.fraction,.5)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "8da746a6b9667c673d3b79cd6719cbda1566b6cd86e20f19cd50a760e9c946b3"
+    },
+    {
+      "id": "py-models-06",
+      "topic": "models",
+      "number": 6,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Validate construction",
+      "brief": "Reject invalid model data.",
+      "contract": [
+        "Define Port(number). Accept int 1..65535, excluding bool, otherwise raise ValueError. Store valid number in .number."
+      ],
+      "focus": [
+        "constructor validation"
+      ],
+      "starter": "class Port:\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: validate construction.",
+        "Validate the supplied fields before accepting an instance with unusable state.",
+        "Compare the implementation with case 02-invalid. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(Port(443).number, 443)\n"
+        },
+        {
+          "id": "02-invalid",
+          "setup": "pass\n",
+          "check": "raises(ValueError,lambda:Port(0))\nraises(ValueError,lambda:Port(True))\nraises(ValueError,lambda:Port(65536))\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "58432be3695d35e9fa5e5b9ebe15118d264ab3d0de9a64ab044a7a68c08774c9"
+    },
+    {
+      "id": "py-models-07",
+      "topic": "models",
+      "number": 7,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Alternative constructor",
+      "brief": "Build a model from a mapping.",
+      "contract": [
+        "Define DeviceRecord(name,site) and classmethod from_dict(data) using required keys name,site. Missing keys raise KeyError."
+      ],
+      "focus": [
+        "classmethod"
+      ],
+      "starter": "class DeviceRecord:\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: alternative constructor.",
+        "A classmethod receives cls; it can parse an alternate representation and return a normal instance.",
+        "Compare the implementation with case 02-missing. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-mapping",
+          "setup": "pass\n",
+          "check": "x=DeviceRecord.from_dict({\"name\":\"R1\",\"site\":\"A\"})\nassert isinstance(x,DeviceRecord)\nexpect(x.name,\"R1\")\nexpect(x.site,\"A\")\n"
+        },
+        {
+          "id": "02-missing",
+          "setup": "pass\n",
+          "check": "raises(KeyError,lambda:DeviceRecord.from_dict({\"name\":\"R1\"}))\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "652b854dd29b81931a03e233d5cd6f749402f54eee1560ef4285b19487eccef4"
+    },
+    {
+      "id": "py-models-08",
+      "topic": "models",
+      "number": 8,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Inject a backend object",
+      "brief": "Use an interface, not a concrete collector.",
+      "contract": [
+        "Define names_from(backend). Call backend.collect() once, returning names from its records. No network activity."
+      ],
+      "focus": [
+        "composition",
+        "injection"
+      ],
+      "starter": "def names_from(backend):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: inject a backend object.",
+        "Accept the backend as a dependency and invoke its documented method rather than constructing a hidden dependency.",
+        "Compare the implementation with case 02-empty backend. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-fake backend",
+          "setup": "class Fake:\n    def __init__(self):self.calls=0\n    def collect(self):\n        self.calls+=1\n        return [{\"name\":\"R1\"}]\n",
+          "check": "b=Fake()\nexpect(names_from(b),[\"R1\"])\nexpect(b.calls,1)\n"
+        },
+        {
+          "id": "02-empty backend",
+          "setup": "class Fake:\n    def collect(self):return []\n",
+          "check": "expect(names_from(Fake()),[])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "f6954502abd684c3a431cc5432f186827039b46ea0a6d130eff2f415e4564adf"
+    },
+    {
+      "id": "py-models-09",
+      "topic": "models",
+      "number": 9,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Generator transformation",
+      "brief": "Yield lazily.",
+      "contract": [
+        "Define doubled(values) as a generator yielding value*2. Calling it must not consume values until iteration begins."
+      ],
+      "focus": [
+        "yield",
+        "laziness"
+      ],
+      "starter": "def doubled(values):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: generator transformation.",
+        "Yield items as requested instead of returning a precomputed list.",
+        "Compare the implementation with case 02-empty. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-lazy",
+          "setup": "seen=[]\ndef source():\n    for x in [1,2]:\n        seen.append(x);yield x\n",
+          "check": "g=doubled(source())\nexpect(seen,[])\nexpect(next(g),2)\nexpect(seen,[1])\nexpect(list(g),[4])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "pass\n",
+          "check": "expect(list(doubled([])), [])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "0dac831592250a9492fe128e2479ed4523d321300f076329780e63f0d5331fe1"
+    },
+    {
+      "id": "py-models-10",
+      "topic": "models",
+      "number": 10,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Generator filtering",
+      "brief": "Skip missing values without materializing input.",
+      "contract": [
+        "Define present(values) yielding all values except None. Preserve zero and False."
+      ],
+      "focus": [
+        "generator filter"
+      ],
+      "starter": "def present(values):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: generator filtering.",
+        "Do not consume the entire input before producing the first matching item.",
+        "Compare the implementation with case 03-iterator. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(list(present(iter([0,None,False,2]))), [0, False, 2])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "pass\n",
+          "check": "expect(list(present([])), [])\n"
+        },
+        {
+          "id": "03-iterator",
+          "setup": "import collections.abc\n",
+          "check": "assert isinstance(present([1]),collections.abc.Iterator)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "851064e62392e30011f6c842fdeb33d1b0bbcaf5d5e02548fef04e955e970891"
+    },
+    {
+      "id": "py-models-11",
+      "topic": "models",
+      "number": 11,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Flatten a stream",
+      "brief": "Stream nested values.",
+      "contract": [
+        "Define flatten(groups), yielding one level of nested iterables in order. Return an iterator, not a list."
+      ],
+      "focus": [
+        "yield from"
+      ],
+      "starter": "def flatten(groups):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: flatten a stream.",
+        "Yield each inner value while preserving outer and inner iteration order.",
+        "Compare the implementation with case 03-iterator. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(list(flatten([[1,2],[],[3]])), [1, 2, 3])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "pass\n",
+          "check": "expect(list(flatten([])), [])\n"
+        },
+        {
+          "id": "03-iterator",
+          "setup": "import collections.abc\n",
+          "check": "assert isinstance(flatten([]),collections.abc.Iterator)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "a119d0bb5cbd0594267d4ec6d44ee3649dc1ee354562e3e3490596599ff36220"
+    },
+    {
+      "id": "py-models-12",
+      "topic": "models",
+      "number": 12,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Bounded batches from an iterator",
+      "brief": "Chunk without requiring len or slicing.",
+      "contract": [
+        "Define batches(values,size), returning an iterator of nonempty lists of at most size. size is positive int.",
+        "Consume values lazily; support one-shot iterators."
+      ],
+      "focus": [
+        "bounded streaming"
+      ],
+      "starter": "def batches(values, size):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: bounded batches from an iterator.",
+        "Build only one bounded batch at a time; emit a short final batch rather than discarding it.",
+        "Compare the implementation with case 03-lazy. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(list(batches(iter([1,2,3,4,5]),2)), [[1, 2], [3, 4], [5]])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "pass\n",
+          "check": "expect(list(batches(iter([]),3)), [])\n"
+        },
+        {
+          "id": "03-lazy",
+          "setup": "seen=[]\ndef source():\n    for x in range(5):\n        seen.append(x);yield x\n",
+          "check": "g=batches(source(),2)\nexpect(seen,[])\nexpect(next(g),[0,1])\nexpect(seen,[0,1])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "1141b8c721b8c8a06b56a3d86c4fd30d940b55516d3e9b75b2ad97f22a0ef4a7"
+    },
+    {
+      "id": "py-models-13",
+      "topic": "models",
+      "number": 13,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Read-only collection wrapper",
+      "brief": "Expose an iterable snapshot.",
+      "contract": [
+        "Define Inventory(names). Copy the supplied list. Support len(instance) and iter(instance) in stored order. Later mutation of the original list must not change the snapshot."
+      ],
+      "focus": [
+        "__iter__",
+        "__len__"
+      ],
+      "starter": "class Inventory:\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: read-only collection wrapper.",
+        "Take the specified snapshot of the input and expose iteration without allowing list mutation through the wrapper.",
+        "Compare the implementation with case 02-reusable. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-snapshot",
+          "setup": "names=[\"R1\"]\n",
+          "check": "x=Inventory(names)\nnames.append(\"S1\")\nexpect(len(x),1)\nexpect(list(x),[\"R1\"])\n"
+        },
+        {
+          "id": "02-reusable",
+          "setup": "pass\n",
+          "check": "x=Inventory([\"A\",\"B\"])\nexpect(list(x),[\"A\",\"B\"])\nexpect(list(x),[\"A\",\"B\"])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "e58723e3d07723db38954ee55a66f9e6e53a313886e72a337fdd79dc8e82a784"
+    },
+    {
+      "id": "py-models-14",
+      "topic": "models",
+      "number": 14,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Resource context manager",
+      "brief": "Clean up without suppressing failures.",
+      "contract": [
+        "Define Managed(resource). __enter__ returns the resource; __exit__ calls resource.close() exactly once and does not suppress exceptions."
+      ],
+      "focus": [
+        "context manager"
+      ],
+      "starter": "class Managed:\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: resource context manager.",
+        "Return the resource from enter and ensure exit handles cleanup without unintentionally suppressing exceptions.",
+        "Compare the implementation with case 02-exception. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-success",
+          "setup": "class R:\n    calls=0\n    def close(self):self.calls+=1\nr=R()\n",
+          "check": "with Managed(r) as value:\n    assert value is r\nexpect(r.calls,1)\n"
+        },
+        {
+          "id": "02-exception",
+          "setup": "class R:\n    calls=0\n    def close(self):self.calls+=1\nr=R()\n",
+          "check": "try:\n    with Managed(r):raise ValueError(\"x\")\nexcept ValueError:pass\nelse:raise AssertionError(\"exception suppressed\")\nexpect(r.calls,1)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "30790f293b0cdbf9d4658647d7551d2e6ac686a0e1db7bd5ca0599ea628be089"
+    },
+    {
+      "id": "py-models-15",
+      "topic": "models",
+      "number": 15,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Independent counter state",
+      "brief": "Use instance state, not a shared class attribute.",
+      "contract": [
+        "Define Counter() with add(amount=1) returning its new total. Initial total is zero; instances independent."
+      ],
+      "focus": [
+        "instance state"
+      ],
+      "starter": "class Counter:\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: independent counter state.",
+        "Put mutable counters on each instance rather than a shared class attribute.",
+        "Compare the implementation with case 02-zero. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-independent",
+          "setup": "pass\n",
+          "check": "a=Counter();b=Counter()\nexpect(a.add(),1)\nexpect(a.add(3),4)\nexpect(b.add(),1)\n"
+        },
+        {
+          "id": "02-zero",
+          "setup": "pass\n",
+          "check": "expect(Counter().add(0),0)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "a95f6eb20e780cf1d79f63885a74141b5e0427c97328f977ec7b1b9a10aa2887"
+    },
+    {
+      "id": "py-models-16",
+      "topic": "models",
+      "number": 16,
+      "version": "1.0.0",
+      "mode": "check",
+      "kind": "build",
+      "title": "Check: stable observation record",
+      "brief": "Create a typed, immutable record.",
+      "contract": [
+        "Define frozen dataclass Measurement(device:str, value:float, unit:str). Preserve fields and equality. Attribute reassignment must fail."
+      ],
+      "focus": [
+        "dataclass"
+      ],
+      "starter": "# Define Measurement.\n",
+      "hints": [],
+      "cases": [
+        {
+          "id": "01-record",
+          "setup": "from dataclasses import asdict,FrozenInstanceError\n",
+          "check": "m=Measurement(\"R1\",0.0,\"ms\")\nexpect(asdict(m),{\"device\":\"R1\",\"value\":0.0,\"unit\":\"ms\"})\nassert m==Measurement(\"R1\",0.0,\"ms\")\nraises(FrozenInstanceError,lambda:setattr(m,\"value\",1.0))\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "5509322df858e063f722f3eecad4e5f02638868ded3ff1e841892a6a65e9259c"
+    },
+    {
+      "id": "py-models-17",
+      "topic": "models",
+      "number": 17,
+      "version": "1.0.0",
+      "mode": "check",
+      "kind": "build",
+      "title": "Check: streaming running total",
+      "brief": "Produce results incrementally.",
+      "contract": [
+        "Define running_total(values) yielding each prefix sum. Empty input yields nothing. Must be lazy and support a one-shot iterator."
+      ],
+      "focus": [
+        "streaming"
+      ],
+      "starter": "def running_total(values):\n    pass\n",
+      "hints": [],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(list(running_total(iter([2,-1,4]))), [2, 1, 5])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "pass\n",
+          "check": "expect(list(running_total([])), [])\n"
+        },
+        {
+          "id": "03-lazy",
+          "setup": "seen=[]\ndef source():\n    seen.append(1);yield 2\n    seen.append(2);yield 3\n",
+          "check": "g=running_total(source())\nexpect(seen,[])\nexpect(next(g),2)\nexpect(seen,[1])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "11d0335288f8eca2286a0698697e2e7dd2be0aa8063c211492f26ff13ee0ef13"
+    },
+    {
+      "id": "py-models-18",
+      "topic": "models",
+      "number": 18,
+      "version": "1.0.0",
+      "mode": "check",
+      "kind": "build",
+      "title": "Check: adaptable report",
+      "brief": "Separate report logic from collection.",
+      "contract": [
+        "Define total_from(backend). Call backend.readings() once; it returns an iterable of numbers. Return their sum, zero for empty."
+      ],
+      "focus": [
+        "interface reuse"
+      ],
+      "starter": "def total_from(backend):\n    pass\n",
+      "hints": [],
+      "cases": [
+        {
+          "id": "01-backend",
+          "setup": "class Fake:\n    calls=0\n    def readings(self):\n        self.calls+=1\n        return iter([2,3])\n",
+          "check": "b=Fake()\nexpect(total_from(b),5)\nexpect(b.calls,1)\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "class Fake:\n    def readings(self):return iter([])\n",
+          "check": "expect(total_from(Fake()),0)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "5e9046b5837913138ad210e14e81931469ad8ff18e5ca502c17d7480c49ba9ae"
+    }
+  ]
+}

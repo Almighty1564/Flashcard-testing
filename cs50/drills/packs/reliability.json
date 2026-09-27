@@ -1,0 +1,802 @@
+{
+  "id": "reliability",
+  "title": "Exceptions & testing",
+  "outcome": "Handle faults explicitly and write tests that expose incorrect behavior.",
+  "prerequisites": [
+    "functions",
+    "decisions"
+  ],
+  "steps": [
+    {
+      "title": "1. Catch expected failures",
+      "text": "A failed conversion should not conceal a programming defect. Catch the specific expected exception, and keep the try block close to the operation that can fail.",
+      "code": "def parse_count(text):\n    try:\n        return int(text)\n    except ValueError:\n        return None"
+    },
+    {
+      "title": "2. Raise meaningful errors",
+      "text": "Return a normal result for a normal case; raise an exception for a contract violation. Exception chaining can retain the underlying cause when translating errors.",
+      "code": "def require_positive(value):\n    if value <= 0:\n        raise ValueError(\"value must be positive\")\n    return value"
+    },
+    {
+      "title": "3. Clean up on every path",
+      "text": "finally runs whether the operation returns or raises. Context managers express scoped resource ownership. Do not replace the original exception accidentally during cleanup.",
+      "code": "def run_and_close(operation, close):\n    try:\n        return operation()\n    finally:\n        close()"
+    },
+    {
+      "title": "4. Retry only the specified condition",
+      "text": "Retry transient failures only, with a bounded attempt count. In drills, fake callables replace devices; no sleep or live network access is required. Permanent failures propagate.",
+      "code": ""
+    },
+    {
+      "title": "5. Test a defect, not a happy screenshot",
+      "text": "A useful test accepts a correct implementation and rejects a seeded defect. Run your test against both. Passing these cases is evidence about tested behavior, not proof of exhaustive correctness.",
+      "code": ""
+    }
+  ],
+  "references": [
+    {
+      "title": "Errors and exceptions",
+      "url": "https://docs.python.org/3/tutorial/errors.html"
+    },
+    {
+      "title": "unittest",
+      "url": "https://docs.python.org/3/library/unittest.html"
+    }
+  ],
+  "project": "log-03",
+  "tasks": [
+    {
+      "id": "py-reliability-01",
+      "topic": "reliability",
+      "number": 1,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Expected parse failure",
+      "brief": "Parse a bounded integer input.",
+      "contract": [
+        "Define parse(text). Return int(text) for valid text, None for ValueError. Other exception types must propagate."
+      ],
+      "focus": [
+        "except ValueError"
+      ],
+      "starter": "def parse(text):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: expected parse failure.",
+        "Catch only the expected conversion exception; a broad except masks unrelated programming errors.",
+        "Compare the implementation with case 04-wrong type. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(parse(\"12\"), 12)\n"
+        },
+        {
+          "id": "02-invalid",
+          "setup": "pass\n",
+          "check": "expect(parse(\"bad\"), None)\n"
+        },
+        {
+          "id": "03-zero",
+          "setup": "pass\n",
+          "check": "expect(parse(\" 0 \"), 0)\n"
+        },
+        {
+          "id": "04-wrong type",
+          "setup": "pass\n",
+          "check": "raises(TypeError,lambda:parse(None))\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "2e188dd63938e2e9808a768656c463016d090d1157f666cd49c3c180126e0698"
+    },
+    {
+      "id": "py-reliability-02",
+      "topic": "reliability",
+      "number": 2,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Reject an invalid interval",
+      "brief": "Raise rather than silently reorder.",
+      "contract": [
+        "Define span(low,high). Return high-low if low<=high. Raise ValueError otherwise."
+      ],
+      "focus": [
+        "raise"
+      ],
+      "starter": "def span(low, high):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: reject an invalid interval.",
+        "Check the ordering of the endpoints before returning a difference.",
+        "Compare the implementation with case 03-invalid. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(span(2,5), 3)\n"
+        },
+        {
+          "id": "02-equal",
+          "setup": "pass\n",
+          "check": "expect(span(3,3), 0)\n"
+        },
+        {
+          "id": "03-invalid",
+          "setup": "pass\n",
+          "check": "raises(ValueError,lambda:span(5,2))\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "56be8753afcd5a53e4bf5ee555863f93b15175ea20c1ce67a787a574c9cd4b97"
+    },
+    {
+      "id": "py-reliability-03",
+      "topic": "reliability",
+      "number": 3,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Try/except/else behavior",
+      "brief": "Count valid tokens.",
+      "contract": [
+        "Define parse_all(tokens). Return {values:list[int],rejected:int}. Reject only tokens whose int conversion raises ValueError. Input tokens are strings. Preserve order."
+      ],
+      "focus": [
+        "else on try"
+      ],
+      "starter": "def parse_all(tokens):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: try/except/else behavior.",
+        "Keep successful values in order and increment the rejection count only for the specified parse failure.",
+        "Compare the implementation with case 03-all invalid. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(parse_all([\"1\",\"bad\",\"0\",\"-2\"]), {'values': [1, 0, -2], 'rejected': 1})\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "pass\n",
+          "check": "expect(parse_all([]), {'values': [], 'rejected': 0})\n"
+        },
+        {
+          "id": "03-all invalid",
+          "setup": "pass\n",
+          "check": "expect(parse_all([\"x\",\"y\"]), {'values': [], 'rejected': 2})\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "3321d7592d13ca82b06719991a6a7dce919c336d3235180a48a51118fc11b7e6"
+    },
+    {
+      "id": "py-reliability-04",
+      "topic": "reliability",
+      "number": 4,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Always release a resource",
+      "brief": "Guarantee cleanup.",
+      "contract": [
+        "Define guarded(operation,cleanup). Return operation() result. Always call cleanup() once, including when operation raises.",
+        "Propagate the original operation error. cleanup in supplied cases succeeds."
+      ],
+      "focus": [
+        "finally"
+      ],
+      "starter": "def guarded(operation, cleanup):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: always release a resource.",
+        "A finally block executes after success and failure; preserve the original result or exception.",
+        "Compare the implementation with case 02-failure. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-success",
+          "setup": "calls=[]\n",
+          "check": "expect(guarded(lambda:7,lambda:calls.append(\"closed\")),7)\nexpect(calls,[\"closed\"])\n"
+        },
+        {
+          "id": "02-failure",
+          "setup": "calls=[]\ndef fail(): raise ValueError(\"x\")\n",
+          "check": "raises(ValueError,lambda:guarded(fail,lambda:calls.append(\"closed\")))\nexpect(calls,[\"closed\"])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "e2c8b9d5a928c4f4d5da751aa549e10b728287df29419202f37178afa6a978a8"
+    },
+    {
+      "id": "py-reliability-05",
+      "topic": "reliability",
+      "number": 5,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Preserve an exception cause",
+      "brief": "Translate an integration error.",
+      "contract": [
+        "Define get_count(text). Return int(text). On ValueError raise RuntimeError(\"invalid count\") explicitly chained from the ValueError."
+      ],
+      "focus": [
+        "raise from"
+      ],
+      "starter": "def get_count(text):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: preserve an exception cause.",
+        "Use explicit exception chaining to retain the original conversion failure as the cause.",
+        "Compare the implementation with case 02-cause. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(get_count(\"3\"), 3)\n"
+        },
+        {
+          "id": "02-cause",
+          "setup": "pass\n",
+          "check": "try:\n    get_count(\"bad\")\nexcept RuntimeError as e:\n    expect(str(e),\"invalid count\")\n    assert isinstance(e.__cause__,ValueError)\nelse:\n    raise AssertionError(\"RuntimeError required\")\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "0df15ed8f79a7d45ff379a990b7c65610d6561403738a3308a6ec91fbf3e2874"
+    },
+    {
+      "id": "py-reliability-06",
+      "topic": "reliability",
+      "number": 6,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Bounded transient retries",
+      "brief": "Retry a fake collector.",
+      "contract": [
+        "Define retry(operation, attempts=3). attempts must be an int (not bool) >=1 or raise ValueError.",
+        "Call until success, retrying TimeoutError only. Re-raise the final TimeoutError if all attempts fail. No sleep."
+      ],
+      "focus": [
+        "bounded retry"
+      ],
+      "starter": "def retry(operation, attempts=3):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: bounded transient retries.",
+        "Bound the number of calls, validate the attempt count first, and retry only the specified transient failure.",
+        "Compare the implementation with case 04-invalid attempts. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-eventual success",
+          "setup": "calls=[]\ndef op():\n    calls.append(1)\n    if len(calls)<3: raise TimeoutError()\n    return 8\n",
+          "check": "expect(retry(op),8)\nexpect(len(calls),3)\n"
+        },
+        {
+          "id": "02-bounded",
+          "setup": "calls=[]\ndef op():\n    calls.append(1)\n    raise TimeoutError()\n",
+          "check": "raises(TimeoutError,lambda:retry(op,2))\nexpect(len(calls),2)\n"
+        },
+        {
+          "id": "03-permanent",
+          "setup": "calls=[]\ndef op():\n    calls.append(1)\n    raise ValueError()\n",
+          "check": "raises(ValueError,lambda:retry(op,3))\nexpect(len(calls),1)\n"
+        },
+        {
+          "id": "04-invalid attempts",
+          "setup": "pass\n",
+          "check": "raises(ValueError,lambda:retry(lambda:1,0))\nraises(ValueError,lambda:retry(lambda:1,True))\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "602b0ab9d39f0081b30b004e200cb8190429d1ae57d74d1f65b5c7643f178bc8"
+    },
+    {
+      "id": "py-reliability-07",
+      "topic": "reliability",
+      "number": 7,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "repair",
+      "title": "Do not swallow programming errors",
+      "brief": "Narrow an overly broad handler.",
+      "contract": [
+        "Define safe_ratio(a,b). Return quotient. Return None on ZeroDivisionError only. Other exceptions propagate."
+      ],
+      "focus": [
+        "specific exceptions"
+      ],
+      "starter": "def safe_ratio(a,b):\n    try:\n        return a/b\n    except Exception:\n        return None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: do not swallow programming errors.",
+        "Handle the documented arithmetic exception, not every error raised anywhere in the function.",
+        "Compare the implementation with case 03-wrong type. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(safe_ratio(6,2), 3.0)\n"
+        },
+        {
+          "id": "02-zero",
+          "setup": "pass\n",
+          "check": "expect(safe_ratio(6,0), None)\n"
+        },
+        {
+          "id": "03-wrong type",
+          "setup": "pass\n",
+          "check": "raises(TypeError,lambda:safe_ratio(\"x\",2))\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "5910a3454a928ec6d8e56b6c98c003c51f28415be3d28d3a21961d7ed1fbf01e"
+    },
+    {
+      "id": "py-reliability-08",
+      "topic": "reliability",
+      "number": 8,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Collect partial results",
+      "brief": "Keep failures beside successes.",
+      "contract": [
+        "Define collect(names,fetch). fetch(name) returns a value or raises TimeoutError.",
+        "Return {values:dict,failures:list}; failed names remain in input order. Other errors propagate. names unique."
+      ],
+      "focus": [
+        "partial failure"
+      ],
+      "starter": "def collect(names, fetch):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: collect partial results.",
+        "Record an unavailable observation separately while continuing with the remaining names.",
+        "Compare the implementation with case 03-permanent. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-partial",
+          "setup": "def fetch(n):\n    if n==\"B\": raise TimeoutError()\n    return 0\n",
+          "check": "expect(collect([\"A\",\"B\",\"C\"],fetch),{\"values\":{\"A\":0,\"C\":0},\"failures\":[\"B\"]})\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "pass\n",
+          "check": "expect(collect([],lambda n:1), {'values': {}, 'failures': []})\n"
+        },
+        {
+          "id": "03-permanent",
+          "setup": "def fail(n): raise KeyError(n)\n",
+          "check": "raises(KeyError,lambda:collect([\"A\"],fail))\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "ff81e901f365276ae5c2c6352c44548053842e623b70e6666ec284b39e1876d6"
+    },
+    {
+      "id": "py-reliability-09",
+      "topic": "reliability",
+      "number": 9,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Test a boundary defect",
+      "brief": "Write tests against a supplied function.",
+      "contract": [
+        "Define verify(candidate). candidate(value) should return True exactly for integers in [1,4094], including both endpoints. Inputs here are integers only.",
+        "Your function returns True if all your probes match that contract, False on mismatch or exception. It must reject the supplied boundary mutants."
+      ],
+      "focus": [
+        "test design",
+        "boundaries"
+      ],
+      "starter": "def verify(candidate):\n    # Probe candidate with representative and boundary inputs.\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: test a boundary defect.",
+        "Test the two endpoints and their immediate neighbors against the candidate, not only a middle value.",
+        "Compare the implementation with case 04-always false. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-correct",
+          "setup": "pass\n",
+          "check": "expect(verify(lambda v:1<=v<=4094), True)\n"
+        },
+        {
+          "id": "02-exclusive bug",
+          "setup": "pass\n",
+          "check": "expect(verify(lambda v:1<v<4094), False)\n"
+        },
+        {
+          "id": "03-always true",
+          "setup": "pass\n",
+          "check": "expect(verify(lambda v:True), False)\n"
+        },
+        {
+          "id": "04-always false",
+          "setup": "pass\n",
+          "check": "expect(verify(lambda v:False), False)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "1b207a5e7300f42674d2c8856833fe9520804120b074809474d01a49fd4cd7e4"
+    },
+    {
+      "id": "py-reliability-10",
+      "topic": "reliability",
+      "number": 10,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Test empty input behavior",
+      "brief": "Detect a broken average.",
+      "contract": [
+        "Define verify_mean(candidate). Correct candidate returns None for [], otherwise arithmetic mean.",
+        "Return True for a correct implementation, False on any failed probe or exception. Include empty and fractional cases."
+      ],
+      "focus": [
+        "regression tests"
+      ],
+      "starter": "def verify_mean(candidate):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: test empty input behavior.",
+        "Empty input and a fractional mean distinguish the seeded candidates better than an integer-only example.",
+        "Compare the implementation with case 03-empty crash. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-correct",
+          "setup": "pass\n",
+          "check": "expect(verify_mean(lambda x:sum(x)/len(x) if x else None), True)\n"
+        },
+        {
+          "id": "02-floor bug",
+          "setup": "pass\n",
+          "check": "expect(verify_mean(lambda x:sum(x)//len(x) if x else None), False)\n"
+        },
+        {
+          "id": "03-empty crash",
+          "setup": "pass\n",
+          "check": "expect(verify_mean(lambda x:sum(x)/len(x)), False)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "328e3df598df487a8a88c55e38d275601287bc2c04b4c645a4701a65b6e19ea5"
+    },
+    {
+      "id": "py-reliability-11",
+      "topic": "reliability",
+      "number": 11,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Detect input mutation",
+      "brief": "Test an ownership contract.",
+      "contract": [
+        "Define verify_sort(candidate). It must return ascending sorted values without changing its list argument. Return True/False after testing."
+      ],
+      "focus": [
+        "mutation tests"
+      ],
+      "starter": "def verify_sort(candidate):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: detect input mutation.",
+        "Keep a separate copy of the input before calling the candidate and compare it afterward.",
+        "Compare the implementation with case 03-unchanged bug. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-correct",
+          "setup": "pass\n",
+          "check": "expect(verify_sort(lambda x:sorted(x)), True)\n"
+        },
+        {
+          "id": "02-mutator",
+          "setup": "def bad(x):\n    x.sort()\n    return x\n",
+          "check": "expect(verify_sort(bad),False)\n"
+        },
+        {
+          "id": "03-unchanged bug",
+          "setup": "pass\n",
+          "check": "expect(verify_sort(lambda x:x), False)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "b9d04fc3d09a3099840c9b203bb5e0390315c036a8d2dc42b32bde57a6aa215a"
+    },
+    {
+      "id": "py-reliability-12",
+      "topic": "reliability",
+      "number": 12,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Reject truthiness fallback",
+      "brief": "Build a test for missing versus zero.",
+      "contract": [
+        "Define verify_default(candidate). Correct candidate(None) is 9; all other values returned unchanged.",
+        "Return True for correct behavior and False on failure. Include 0, False, and empty text."
+      ],
+      "focus": [
+        "test matrix"
+      ],
+      "starter": "def verify_default(candidate):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: reject truthiness fallback.",
+        "Use None, zero, False and empty text to expose a candidate that uses truthiness instead of missingness.",
+        "Compare the implementation with case 03-constant bug. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-correct",
+          "setup": "pass\n",
+          "check": "expect(verify_default(lambda x:9 if x is None else x), True)\n"
+        },
+        {
+          "id": "02-truthiness bug",
+          "setup": "pass\n",
+          "check": "expect(verify_default(lambda x:x or 9), False)\n"
+        },
+        {
+          "id": "03-constant bug",
+          "setup": "pass\n",
+          "check": "expect(verify_default(lambda x:9), False)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "a57dac65b2f8af97acad9a8af77210d322d0cf27d38db74cdcd23f598ca56bfe"
+    },
+    {
+      "id": "py-reliability-13",
+      "topic": "reliability",
+      "number": 13,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Separate validation from execution",
+      "brief": "Do not call the action on invalid input.",
+      "contract": [
+        "Define execute(value,action). value must be a nonnegative integer (not bool); otherwise raise ValueError before action runs.",
+        "For valid value, return action(value)."
+      ],
+      "focus": [
+        "fail before side effect"
+      ],
+      "starter": "def execute(value, action):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: separate validation from execution.",
+        "Validate before calling the action; a rejected input must not produce a side effect.",
+        "Compare the implementation with case 03-bool rejected. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(execute(2,lambda x:x+1), 3)\n"
+        },
+        {
+          "id": "02-not called",
+          "setup": "calls=[]\n",
+          "check": "raises(ValueError,lambda:execute(-1,lambda x:calls.append(x)))\nexpect(calls,[])\n"
+        },
+        {
+          "id": "03-bool rejected",
+          "setup": "pass\n",
+          "check": "raises(ValueError,lambda:execute(True,lambda x:x))\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "0b152a4f69f9a97f7bc28a3f50b0177c7de5e720b894f163772153e696b24d52"
+    },
+    {
+      "id": "py-reliability-14",
+      "topic": "reliability",
+      "number": 14,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Check exact response type",
+      "brief": "Reject bool pretending to be a count.",
+      "contract": [
+        "Define verified_count(fetch). Call fetch once. Return result only for int >=0, excluding bool; otherwise raise ValueError."
+      ],
+      "focus": [
+        "type validation"
+      ],
+      "starter": "def verified_count(fetch):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: check exact response type.",
+        "Store the single fetch result, then check its exact type and range without fetching again.",
+        "Compare the implementation with case 04-negative. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(verified_count(lambda:0), 0)\n"
+        },
+        {
+          "id": "02-boolean",
+          "setup": "pass\n",
+          "check": "raises(ValueError,lambda:verified_count(lambda:True))\n"
+        },
+        {
+          "id": "03-text",
+          "setup": "pass\n",
+          "check": "raises(ValueError,lambda:verified_count(lambda:\"2\"))\n"
+        },
+        {
+          "id": "04-negative",
+          "setup": "pass\n",
+          "check": "raises(ValueError,lambda:verified_count(lambda:-1))\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "04f8c6aaa8b6fd9f38045b6c53d6edeec8cd84ee6e7335a75e7c0e1a968c30d7"
+    },
+    {
+      "id": "py-reliability-15",
+      "topic": "reliability",
+      "number": 15,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "One independent call per record",
+      "brief": "Test call counts using an injected function.",
+      "contract": [
+        "Define map_once(values,transform). Return transformed values, preserving order. Call transform exactly once per input, including duplicates."
+      ],
+      "focus": [
+        "dependency test"
+      ],
+      "starter": "def map_once(values, transform):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: one independent call per record.",
+        "One loop over inputs should call the transform exactly once for each element, including repeats.",
+        "Compare the implementation with case 02-empty. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-calls",
+          "setup": "calls=[]\ndef op(x):\n    calls.append(x)\n    return x*2\n",
+          "check": "expect(map_once([1,1,3],op),[2,2,6])\nexpect(calls,[1,1,3])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "pass\n",
+          "check": "expect(map_once([],lambda x:x), [])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "ae792e0ca5ce5de87683abccebada88ea00df510930c3d3560488921918d837d"
+    },
+    {
+      "id": "py-reliability-16",
+      "topic": "reliability",
+      "number": 16,
+      "version": "1.0.0",
+      "mode": "check",
+      "kind": "build",
+      "title": "Check: structured collector status",
+      "brief": "Keep failed evidence explicit.",
+      "contract": [
+        "Define observe(fetch). Return {status:\"ok\",value:result} on success. On TimeoutError return {status:\"unknown\",value:None}. Other errors propagate."
+      ],
+      "focus": [
+        "unknown state"
+      ],
+      "starter": "def observe(fetch):\n    pass\n",
+      "hints": [],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(observe(lambda:0), {'status': 'ok', 'value': 0})\n"
+        },
+        {
+          "id": "02-timeout",
+          "setup": "def fetch():raise TimeoutError()\n",
+          "check": "expect(observe(fetch),{\"status\":\"unknown\",\"value\":None})\n"
+        },
+        {
+          "id": "03-other",
+          "setup": "def fetch():raise ValueError()\n",
+          "check": "raises(ValueError,lambda:observe(fetch))\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "aaecd4cf75402d9af92c239b1f7fd6bcf55af57f962523e4887151580a4534e9"
+    },
+    {
+      "id": "py-reliability-17",
+      "topic": "reliability",
+      "number": 17,
+      "version": "1.0.0",
+      "mode": "check",
+      "kind": "build",
+      "title": "Check: resource safety",
+      "brief": "Maintain cleanup across errors.",
+      "contract": [
+        "Define run(fetch,close). Return fetch() and always call close once, propagating fetch errors. close succeeds in these cases."
+      ],
+      "focus": [
+        "finally"
+      ],
+      "starter": "def run(fetch, close):\n    pass\n",
+      "hints": [],
+      "cases": [
+        {
+          "id": "01-ok",
+          "setup": "calls=[]\n",
+          "check": "expect(run(lambda:\"value\",lambda:calls.append(1)),\"value\")\nexpect(calls,[1])\n"
+        },
+        {
+          "id": "02-fail",
+          "setup": "calls=[]\ndef fail():raise RuntimeError()\n",
+          "check": "raises(RuntimeError,lambda:run(fail,lambda:calls.append(1)))\nexpect(calls,[1])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "b5afee4b07d3fb3d1689e6427fe945f6459ff2f14a079344810a79be40fb126e"
+    },
+    {
+      "id": "py-reliability-18",
+      "topic": "reliability",
+      "number": 18,
+      "version": "1.0.0",
+      "mode": "check",
+      "kind": "build",
+      "title": "Check: reject a false validator",
+      "brief": "Write an independent test for a stated contract.",
+      "contract": [
+        "Define verify_nonnegative(candidate). Correct candidate accepts finite nonnegative ints/floats, rejects booleans, None, text, and nonfinite values.",
+        "Return True only when your representative probes all match; catch candidate exceptions as failures."
+      ],
+      "focus": [
+        "test design"
+      ],
+      "starter": "def verify_nonnegative(candidate):\n    pass\n",
+      "hints": [],
+      "cases": [
+        {
+          "id": "01-correct",
+          "setup": "import math\ndef candidate(x): return type(x) in (int,float) and math.isfinite(x) and x>=0\n",
+          "check": "expect(verify_nonnegative(candidate),True)\n"
+        },
+        {
+          "id": "02-bool/infinity bug",
+          "setup": "pass\n",
+          "check": "expect(verify_nonnegative(lambda x:isinstance(x,(int,float)) and x>=0), False)\n"
+        },
+        {
+          "id": "03-always true",
+          "setup": "pass\n",
+          "check": "expect(verify_nonnegative(lambda x:True), False)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "f57250d64a491e47c44d19b716e7a2a1c108d59b634873cd28e063f569ad7485"
+    }
+  ]
+}

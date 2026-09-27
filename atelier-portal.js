@@ -34,7 +34,7 @@
       const url = new URL(raw, location.origin);
       if (url.origin !== location.origin) return null;
       const name = url.pathname.split('/').pop() || '';
-      const allowed = new Set(['tester.html','mod1.html','study.html','developer.html','podcast.html','mod1-calc.html','antenna-pattern.html','security.html','projects.html']);
+      const allowed = new Set(['tester.html','mod1.html','study.html','developer.html','podcast.html','mod1-calc.html','antenna-pattern.html','security.html','projects.html','practice.html']);
       if (!allowed.has(name)) return null;
       return url.pathname + url.search + url.hash;
     } catch (_) { return null; }

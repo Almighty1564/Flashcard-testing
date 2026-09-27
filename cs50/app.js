@@ -78,11 +78,16 @@
   }
   function route() {
     const p=new URLSearchParams(location.hash.slice(1));
-    currentView=['course','evidence','setup'].includes(p.get('view'))?p.get('view'):'course';
+    currentView=['journey','course','evidence','setup'].includes(p.get('view'))?p.get('view'):(p.has('unit')||p.has('task')?'course':'journey');
     activeUnit=C.units.find(u=>u.id===p.get('unit'))||C.units[0];
     activeTab=['theory','quiz','practice','project'].includes(p.get('tab'))?p.get('tab'):'theory';
     activeTask=activeUnit.tasks.find(t=>t.id===p.get('task'))||null;
     render();
+  }
+  function renderJourney() {
+    const completed=C.units.filter(u=>quizPassed(u)&&u.tasks.every(passed)).length;
+    const next=C.units.find(u=>!quizPassed(u)||u.tasks.some(t=>!passed(t)))||C.units[0];
+    $('#app').innerHTML=`<section class="hero"><div><span class="eyebrow">YOUR COURSE / ONE GUIDED PATH</span><h1>Learn. Practice.<br>Prove. Apply.</h1><p>Programming foundations, repeated Python practice, and useful communications projects. Start at the beginning or continue the stage you are ready for.</p></div></section><section class="card"><span class="eyebrow">START HERE / FOUNDATIONS</span><h2>${esc(next.title)}</h2><p>${completed}/12 Foundation sections completed in this browser workspace. Watch the matching lecture, then complete its exercises. Do not wait until the entire video is finished to write code.</p><button class="primary" data-action="continue">${completed?'Continue Foundations':'Start or continue learning'} →</button></section><div class="theory-grid"><section class="card"><span class="eyebrow">1 / LEARN THE FUNDAMENTALS</span><h2>Understand how programs work.</h2><p>Scratch → C → arrays → algorithms → memory → data structures → Python. Short quizzes and coding assignments accompany the lectures.</p><button data-unit="scratch">Open the first lesson</button><p class="small">Your original Foundation exercises and saved history remain intact.</p></section><section class="card"><span class="eyebrow">2 / PRACTICE PYTHON DEEPLY</span><h2>One concept. Many uses.</h2><p>12 topics, each with five learning steps and 15 varied coding drills. Functions, variables, collections, sorting, files, errors, models, addressing, and integrations.</p><a class="button primary" href="practice.html">Open Python practice →</a><p class="small">Begin after the Python introduction. Each later pack names its prerequisites.</p></section><section class="card"><span class="eyebrow">3 / CHECK UNDERSTANDING</span><h2>Solve a fresh problem.</h2><p>Three independent coding checks follow every Python drill pack. Documentation is allowed; tailored help is recorded. A quiz pass and an implementation pass are different evidence.</p><a class="button" href="practice.html#view=topic&topic=values&stage=check">See the knowledge-check stage</a></section><section class="card"><span class="eyebrow">4 / APPLY & MAINTAIN</span><h2>Build something useful.</h2><p>Use the linked project when its prerequisites are met. Work across files, write tests, inspect a failure, handle a changed requirement, and keep evidence of the result.</p><a class="button" href="projects.html">Open application projects →</a><p class="small">Continue SQL and web/Flask lessons as the projects need them.</p></section></div><section class="card"><h3>Know where the work happens</h3><p><b>Website:</b> lessons, specifications, saved drafts, hints, checks, and evidence.<br><b>Your computer:</b> write and execute Python, run the provided checker, and import its JSON report.</p><p class="small">Python drills and Project Studio share optional cloud evidence sync. Foundation coursework retains its separate browser history. No existing record is silently migrated or deleted.</p><div class="actions"><a class="button" href="practice.html#view=setup">Python setup instructions</a><button data-view="evidence">Foundation progress</button><a class="button" href="practice.html#view=history">Python evidence</a></div></section>`;
   }
   function statsHTML() {
     const done=tasks.filter(passed).length+C.units.filter(quizPassed).length,total=tasks.length+C.units.length;
@@ -92,12 +97,14 @@
   function render() {
     if(!C||!state)return;
     renderNav();
+    if(currentView==='journey')return renderJourney();
     if(currentView==='setup')return renderSetup();
     if(currentView==='evidence')return renderEvidence();
     if(activeTask)return renderTask(activeTask);
     const u=activeUnit, n=C.units.indexOf(u);
     $('#app').innerHTML=`<section class="hero"><div><span class="eyebrow">CS50 APPLIED / THEORY INTO PRACTICE</span><h1>Learn it.<br>Make it work.</h1><p>A programming course companion built around things you can actually make, repair, and explain.</p></div><div class="edition">12<small>SECTIONS</small></div></section>${statsHTML()}<div class="actions"><button class="primary" data-action="continue">Continue your path ↗</button><button data-action="review" ${dueUnits().length?'':'disabled'}>Open a due rebuild</button><a class="button quiet" href="${C.video}" target="_blank" rel="noopener noreferrer">Your lecture video ↗</a></div><div class="section-head"><div><span class="eyebrow">SECTION ${String(n).padStart(2,'0')}</span><h2>${esc(u.title)}</h2><p>${u.skills.map(esc).join(' · ')}</p></div><span class="tag">${level(u).text}</span></div><div class="tabs" aria-label="Lesson stages">${[['theory','01 Theory'],['quiz','02 Quiz'],['practice','03 Practice'],['project','04 Project']].map(([id,name])=>`<button data-tab="${id}" class="${activeTab===id?'active':''}" aria-pressed="${activeTab===id}">${name}</button>`).join('')}</div><div id="lesson"></div>`;
     if(activeTab==='theory')renderTheory();else if(activeTab==='quiz')renderQuiz();else renderTaskList(activeTab==='project');
+    if(u.id==='python')$('#lesson').insertAdjacentHTML('beforeend','<section class="card"><span class="eyebrow">NEXT / DEEP PYTHON PRACTICE</span><h3>Use each concept in different ways.</h3><p>The dedicated Python path adds 180 coding drills and 36 fresh checks, then links you into application projects.</p><a class="button primary" href="practice.html">Learn → Practice → Check → Apply</a></section>');
   }
   function renderTheory() {
     const u=activeUnit;

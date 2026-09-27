@@ -1,0 +1,839 @@
+{
+  "id": "loops",
+  "title": "Loops & iteration",
+  "outcome": "Process a collection reliably, preserving order and boundaries.",
+  "prerequisites": [
+    "values",
+    "decisions"
+  ],
+  "steps": [
+    {
+      "title": "1. Walk a sequence",
+      "text": "A for loop visits items. range(stop) excludes stop. Decide whether you need values, positions, or both.",
+      "code": "ports = [1, 4, 8]\nfor number, port in enumerate(ports, start=1):\n    print(number, port)"
+    },
+    {
+      "title": "2. Carry state",
+      "text": "An accumulator begins with an identity: zero for addition, [] for collected results. Initialize per-call state before the loop, not inside it.",
+      "code": "total = 0\nfor value in [2, 3, 5]:\n    total += value"
+    },
+    {
+      "title": "3. Stop or skip deliberately",
+      "text": "break stops the loop; continue skips one iteration. A while loop must move toward a terminating condition.",
+      "code": "remaining = 3\nwhile remaining > 0:\n    remaining -= 1"
+    },
+    {
+      "title": "4. Combine sequences",
+      "text": "zip pairs by position and normally stops at the shorter input. Validate equal lengths when the contract needs them. Nested loops create combinations; they are not a substitute for pairing.",
+      "code": "pairs = list(zip([\"R1\", \"R2\"], [10, 20]))"
+    },
+    {
+      "title": "5. Check empty and partial data",
+      "text": "The empty case is part of the contract. A loop that records no fault is not proof that any device was actually checked.",
+      "code": ""
+    }
+  ],
+  "references": [
+    {
+      "title": "Control flow",
+      "url": "https://docs.python.org/3/tutorial/controlflow.html"
+    },
+    {
+      "title": "Built-in functions",
+      "url": "https://docs.python.org/3/library/functions.html"
+    }
+  ],
+  "project": "kit-04",
+  "tasks": [
+    {
+      "id": "py-loops-01",
+      "topic": "loops",
+      "number": 1,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Sum readings",
+      "brief": "Accumulate integers.",
+      "contract": [
+        "data is a list of ints. Return their sum in result, zero for empty. Use a for loop for this drill (self-reviewed)."
+      ],
+      "focus": [
+        "for",
+        "accumulator"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: sum readings.",
+        "Initialize a running total before the loop and update it once per input.",
+        "Compare the implementation with case 04-single. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = [2, 4, 6]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 12)\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "data = []\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 0)\n"
+        },
+        {
+          "id": "03-mixed",
+          "setup": "data = [-2, 2]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 0)\n"
+        },
+        {
+          "id": "04-single",
+          "setup": "data = [5]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 5)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "5646b561982790cd1a3d717ee7990374f231914299541c3b876110790eb91ee5"
+    },
+    {
+      "id": "py-loops-02",
+      "topic": "loops",
+      "number": 2,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Select healthy devices",
+      "brief": "Filter without reordering.",
+      "contract": [
+        "data is a list of {name,up} dictionaries. result is names with up=True in input order."
+      ],
+      "focus": [
+        "filter",
+        "append"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: select healthy devices.",
+        "Inspect each record's up field while preserving the sequence of names.",
+        "Compare the implementation with case 03-none up. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = [{'name': 'B', 'up': True}, {'name': 'A', 'up': False}, {'name': 'C', 'up': True}]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, ['B', 'C'])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "data = []\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [])\n"
+        },
+        {
+          "id": "03-none up",
+          "setup": "data = [{'name': 'A', 'up': False}]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "30e26a7d936d82122e3edd71a0aef39e32101e4cc79fc218ef144e5e8b62d8d9"
+    },
+    {
+      "id": "py-loops-03",
+      "topic": "loops",
+      "number": 3,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Number the records",
+      "brief": "Use positions and values.",
+      "contract": [
+        "data is a list of names. result is [[1,name1],[2,name2],...]."
+      ],
+      "focus": [
+        "enumerate"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: number the records.",
+        "Use enumerate with an explicit starting number rather than repeatedly searching for positions.",
+        "Compare the implementation with case 03-duplicates. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = ['R1', 'R2']\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [[1, 'R1'], [2, 'R2']])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "data = []\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [])\n"
+        },
+        {
+          "id": "03-duplicates",
+          "setup": "data = ['A', 'A']\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [[1, 'A'], [2, 'A']])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "f85ae594d712ba8f4f92e74599faa3f8c05f548025c5aee94c0f12b6e98f0da1"
+    },
+    {
+      "id": "py-loops-04",
+      "topic": "loops",
+      "number": 4,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Pair interface names and VLANs",
+      "brief": "Preserve pairing.",
+      "contract": [
+        "data has names and vlans lists of equal length. result is a list of [name,vlan] pairs."
+      ],
+      "focus": [
+        "zip"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: pair interface names and vlans.",
+        "The lists are paired by position, not by every possible combination; inspect zip.",
+        "Compare the implementation with case 03-zero. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = {'names': ['Gi1', 'Gi2'], 'vlans': [10, 20]}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [['Gi1', 10], ['Gi2', 20]])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "data = {'names': [], 'vlans': []}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [])\n"
+        },
+        {
+          "id": "03-zero",
+          "setup": "data = {'names': ['x'], 'vlans': [0]}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [['x', 0]])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "da8fb4e5ce323be3dd01e9bfe444d891c9c8cbc76ebea52b90f2304b19c06046"
+    },
+    {
+      "id": "py-loops-05",
+      "topic": "loops",
+      "number": 5,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "First positive observation",
+      "brief": "Stop at the first match.",
+      "contract": [
+        "data is a list of ints. result is the first value >0, or None if absent."
+      ],
+      "focus": [
+        "break"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: first positive observation.",
+        "After the first match, stop scanning instead of overwriting it with a later positive value.",
+        "Compare the implementation with case 04-first not smallest. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = [-2, 0, 3, 8]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 3)\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "data = []\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, None)\n"
+        },
+        {
+          "id": "03-absent",
+          "setup": "data = [0, -2]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, None)\n"
+        },
+        {
+          "id": "04-first not smallest",
+          "setup": "data = [8, 3]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 8)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "5cc5e7a24a937a9ad9dfe0751554c7e96765aed08f11b5e5ee216550c3b39dee"
+    },
+    {
+      "id": "py-loops-06",
+      "topic": "loops",
+      "number": 6,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Skip missing readings",
+      "brief": "Preserve actual zeros.",
+      "contract": [
+        "data is a list of numbers and None. Sum only non-None values. Empty or all missing gives zero."
+      ],
+      "focus": [
+        "continue"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: skip missing readings.",
+        "Skip only None; zero is still a valid observation.",
+        "Compare the implementation with case 04-negative. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = [1, None, 0, 2]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 3)\n"
+        },
+        {
+          "id": "02-all missing",
+          "setup": "data = [None, None]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 0)\n"
+        },
+        {
+          "id": "03-empty",
+          "setup": "data = []\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 0)\n"
+        },
+        {
+          "id": "04-negative",
+          "setup": "data = [-1, 0]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, -1)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "67817e91a1e6700a92a2118974827027c6f9a31191c2f24dc1783c9e1db73345"
+    },
+    {
+      "id": "py-loops-07",
+      "topic": "loops",
+      "number": 7,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "repair",
+      "title": "Safe countdown",
+      "brief": "Repair the termination direction.",
+      "contract": [
+        "data is a nonnegative int. result is [data,data-1,...,1], empty for zero. Use a while loop."
+      ],
+      "focus": [
+        "while",
+        "termination"
+      ],
+      "starter": "result = []\nn = data\nwhile n > 0:\n    result.append(n)\n    n += 1\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: safe countdown.",
+        "Write down how the counter moves toward termination at every iteration.",
+        "Compare the implementation with case 03-single. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = 3\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [3, 2, 1])\n"
+        },
+        {
+          "id": "02-zero",
+          "setup": "data = 0\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [])\n"
+        },
+        {
+          "id": "03-single",
+          "setup": "data = 1\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [1])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "83dca10d54bf81538d3afc56b2a9e151d06dd828e8c1477ab872d010d0a4ccbf"
+    },
+    {
+      "id": "py-loops-08",
+      "topic": "loops",
+      "number": 8,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Adjacent changes",
+      "brief": "Compare neighboring readings.",
+      "contract": [
+        "data is a list of numbers. result contains data[i]-data[i-1] for i from 1 onward."
+      ],
+      "focus": [
+        "range",
+        "adjacency"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: adjacent changes.",
+        "Each difference needs the current and previous observation; there is no difference for the first item alone.",
+        "Compare the implementation with case 04-equal. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = [5, 8, 7]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [3, -1])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "data = []\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [])\n"
+        },
+        {
+          "id": "03-single",
+          "setup": "data = [2]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [])\n"
+        },
+        {
+          "id": "04-equal",
+          "setup": "data = [0, 0]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [0])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "91eec4dc269fac1e7cc7742c255dfe7e59a6be3c44b786e1018112cd8f67c813"
+    },
+    {
+      "id": "py-loops-09",
+      "topic": "loops",
+      "number": 9,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Flatten site lists",
+      "brief": "Visit two levels.",
+      "contract": [
+        "data is a list of lists. Flatten one level, preserving all values and duplicates."
+      ],
+      "focus": [
+        "nested loops"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: flatten site lists.",
+        "Use an outer iteration over groups and an inner iteration over the values within each group.",
+        "Compare the implementation with case 03-duplicates. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = [[1, 2], [], [3]]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [1, 2, 3])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "data = []\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [])\n"
+        },
+        {
+          "id": "03-duplicates",
+          "setup": "data = [[1], [1]]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [1, 1])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "f9aff0cf1a21986985abd41db202e64d704a3b3c513430a17f27e47f6817f130"
+    },
+    {
+      "id": "py-loops-10",
+      "topic": "loops",
+      "number": 10,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Build a link matrix",
+      "brief": "Create all combinations.",
+      "contract": [
+        "data has sources and destinations lists of text. result is [source,destination] pairs, sources outermost."
+      ],
+      "focus": [
+        "Cartesian product"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: build a link matrix.",
+        "Each source pairs with every destination; the outer loop determines which field changes slowest.",
+        "Compare the implementation with case 03-no destination. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = {'sources': ['A', 'B'], 'destinations': ['X', 'Y']}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [['A', 'X'], ['A', 'Y'], ['B', 'X'], ['B', 'Y']])\n"
+        },
+        {
+          "id": "02-no source",
+          "setup": "data = {'sources': [], 'destinations': ['X']}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [])\n"
+        },
+        {
+          "id": "03-no destination",
+          "setup": "data = {'sources': ['A'], 'destinations': []}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "4614971837896a86b107317aa20a06505fadc4b9928c51357603cdc0dd0fabcd"
+    },
+    {
+      "id": "py-loops-11",
+      "topic": "loops",
+      "number": 11,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Stable unique names",
+      "brief": "Deduplicate without losing encounter order.",
+      "contract": [
+        "data is a list of strings. result contains each distinct string once, in first-seen order."
+      ],
+      "focus": [
+        "set",
+        "loop state"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: stable unique names.",
+        "Use a membership collection for seen values and a separate list for the output order.",
+        "Compare the implementation with case 03-case-sensitive. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = ['B', 'A', 'B', 'C']\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, ['B', 'A', 'C'])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "data = []\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [])\n"
+        },
+        {
+          "id": "03-case-sensitive",
+          "setup": "data = ['A', 'a']\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, ['A', 'a'])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "42389556df57fcd377192b04ddfc83cc079ac0aac196b2e69873b303962d4ecb"
+    },
+    {
+      "id": "py-loops-12",
+      "topic": "loops",
+      "number": 12,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Chunk a work list",
+      "brief": "Divide work into batches.",
+      "contract": [
+        "data has items (list) and size (positive int). Return successive lists of at most size items. Do not pad."
+      ],
+      "focus": [
+        "range step",
+        "slicing"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: chunk a work list.",
+        "Advance by the chunk size; the final slice can legitimately contain fewer items.",
+        "Compare the implementation with case 03-large chunk. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = {'items': [1, 2, 3, 4, 5], 'size': 2}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [[1, 2], [3, 4], [5]])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "data = {'items': [], 'size': 3}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [])\n"
+        },
+        {
+          "id": "03-large chunk",
+          "setup": "data = {'items': [1, 2], 'size': 5}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [[1, 2]])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "51fa4d513c5bc636f4141d4206d7debec38307fc9e4d3951da5e1ea3146d951f"
+    },
+    {
+      "id": "py-loops-13",
+      "topic": "loops",
+      "number": 13,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Running maximum",
+      "brief": "Carry best-so-far.",
+      "contract": [
+        "data is numeric. Return maximum of each nonempty prefix. Empty input returns []."
+      ],
+      "focus": [
+        "accumulator",
+        "prefix"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: running maximum.",
+        "Carry forward the maximum observed so far; do not initialize it to zero when negatives are allowed.",
+        "Compare the implementation with case 03-negative. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = [3, 1, 5, 2]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [3, 3, 5, 5])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "data = []\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [])\n"
+        },
+        {
+          "id": "03-negative",
+          "setup": "data = [-5, -8, -2]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [-5, -5, -2])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "a58bbf38e99b38e27663a4404b41f2bfc9eedfc4e3ce508290e295195cfcc5b2"
+    },
+    {
+      "id": "py-loops-14",
+      "topic": "loops",
+      "number": 14,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Stop at sentinel",
+      "brief": "Ignore everything after STOP.",
+      "contract": [
+        "data is strings including possible STOP. Return all items strictly before the first exact STOP."
+      ],
+      "focus": [
+        "sentinel"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: stop at sentinel.",
+        "Stop before appending the sentinel; later values are outside the requested interval.",
+        "Compare the implementation with case 04-empty. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = ['A', 'STOP', 'B']\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, ['A'])\n"
+        },
+        {
+          "id": "02-first",
+          "setup": "data = ['STOP']\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [])\n"
+        },
+        {
+          "id": "03-absent",
+          "setup": "data = ['A', 'B']\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, ['A', 'B'])\n"
+        },
+        {
+          "id": "04-empty",
+          "setup": "data = []\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "8c0b5f586051bc7d6762f73bb0c8050019684e4d9a10ac36a1762f4d8c9bbf81"
+    },
+    {
+      "id": "py-loops-15",
+      "topic": "loops",
+      "number": 15,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Count consecutive failures",
+      "brief": "Track a streak.",
+      "contract": [
+        "data is booleans, True=success, False=failure. Return the longest consecutive failure count, zero for no failures."
+      ],
+      "focus": [
+        "state machine"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: count consecutive failures.",
+        "Track both the current failure streak and the longest streak; a success resets only the current one.",
+        "Compare the implementation with case 04-all failure. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = [False, False, True, False]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 2)\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "data = []\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 0)\n"
+        },
+        {
+          "id": "03-all success",
+          "setup": "data = [True, True]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 0)\n"
+        },
+        {
+          "id": "04-all failure",
+          "setup": "data = [False, False, False]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 3)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "561acce7b3e8ae2aa191555ba300b79103a652a431116ded221d178de5214f3b"
+    },
+    {
+      "id": "py-loops-16",
+      "topic": "loops",
+      "number": 16,
+      "version": "1.0.0",
+      "mode": "check",
+      "kind": "build",
+      "title": "Check: incomplete device names",
+      "brief": "Find which required devices were not observed.",
+      "contract": [
+        "data has expected (unique strings in required order) and observed (strings, possible duplicates). Return missing expected names in required order."
+      ],
+      "focus": [
+        "filter",
+        "sets"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = {'expected': ['C', 'A', 'B'], 'observed': ['A', 'A']}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, ['C', 'B'])\n"
+        },
+        {
+          "id": "02-none expected",
+          "setup": "data = {'expected': [], 'observed': ['A']}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [])\n"
+        },
+        {
+          "id": "03-complete",
+          "setup": "data = {'expected': ['A'], 'observed': ['A']}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, [])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "9a6587327cbf6ce3119c2ed1443eeef2abceb0396206b9e0f25e906232e46b53"
+    },
+    {
+      "id": "py-loops-17",
+      "topic": "loops",
+      "number": 17,
+      "version": "1.0.0",
+      "mode": "check",
+      "kind": "build",
+      "title": "Check: weighted total",
+      "brief": "Calculate total equipment consumption.",
+      "contract": [
+        "data contains dictionaries with quantity and watts, both nonnegative numbers. Return sum(quantity*watts), zero for empty."
+      ],
+      "focus": [
+        "loop",
+        "aggregation"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = [{'quantity': 2, 'watts': 30}, {'quantity': 3, 'watts': 5}]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 75)\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "data = []\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 0)\n"
+        },
+        {
+          "id": "03-zero",
+          "setup": "data = [{'quantity': 0, 'watts': 100}]\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 0)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "eff44de61aac1ec380681d9d729a044cd6fa2de80bd89c86164267a7d9e9b10c"
+    },
+    {
+      "id": "py-loops-18",
+      "topic": "loops",
+      "number": 18,
+      "version": "1.0.0",
+      "mode": "check",
+      "kind": "build",
+      "title": "Check: first mismatch position",
+      "brief": "Locate the first difference.",
+      "contract": [
+        "data has expected and observed lists. Return first differing zero-based index.",
+        "If shared prefix matches but lengths differ, return the shorter length. Identical lists return None."
+      ],
+      "focus": [
+        "enumerate",
+        "length"
+      ],
+      "starter": "# data is provided by the checker. Assign your answer to result.\nresult = None\n",
+      "hints": [],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "data = {'expected': [1, 2], 'observed': [1, 3]}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 1)\n"
+        },
+        {
+          "id": "02-shorter",
+          "setup": "data = {'expected': [1, 2], 'observed': [1]}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 1)\n"
+        },
+        {
+          "id": "03-equal empty",
+          "setup": "data = {'expected': [], 'observed': []}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, None)\n"
+        },
+        {
+          "id": "04-first",
+          "setup": "data = {'expected': [1], 'observed': [2]}\nbefore = __import__(\"copy\").deepcopy(data)\n",
+          "check": "expect(result, 0)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "script",
+      "tests_sha256": "6999e24410bc8fc41ff0131b2cd1e70ef6a7c53bb2b1fe7916cb7564f37aad13"
+    }
+  ]
+}

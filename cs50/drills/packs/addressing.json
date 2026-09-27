@@ -1,0 +1,793 @@
+{
+  "id": "addressing",
+  "title": "IP addressing & network data",
+  "outcome": "Use standard address models and retain routing context.",
+  "prerequisites": [
+    "functions",
+    "reliability",
+    "collections"
+  ],
+  "steps": [
+    {
+      "title": "1. Address, network or interface?",
+      "text": "ip_address models a host address. ip_network models a prefix. ip_interface represents an address together with its connected prefix. Choose the object that matches your question.",
+      "code": "import ipaddress\ni=ipaddress.ip_interface(\"192.0.2.17/24\")\nprint(i.ip)\nprint(i.network)"
+    },
+    {
+      "title": "2. Normalize explicitly",
+      "text": "strict=False allows ip_network to clear supplied host bits. strict=True rejects them. State which behavior is intended rather than silently changing input.",
+      "code": "import ipaddress\nprint(ipaddress.ip_network(\"192.0.2.17/24\",strict=False))"
+    },
+    {
+      "title": "3. Use scope and context",
+      "text": "Identical private addresses can exist in different routing contexts. Compare canonical addresses AND the explicit context. These drills never query real equipment.",
+      "code": ""
+    },
+    {
+      "title": "4. Avoid IPv4 assumptions",
+      "text": "IPv6 has no broadcast address in the IPv4 sense. hosts() handles special prefix cases such as IPv4 /31 according to the library contract. Read the documentation rather than subtracting two unconditionally.",
+      "code": ""
+    },
+    {
+      "title": "5. Treat results as defined checks",
+      "text": "An overlap check is a mathematical observation. Whether overlap is acceptable depends on the design. Exercises specify scope, permitted inputs and expected output.",
+      "code": ""
+    }
+  ],
+  "references": [
+    {
+      "title": "ipaddress library",
+      "url": "https://docs.python.org/3/library/ipaddress.html"
+    },
+    {
+      "title": "ipaddress HOWTO",
+      "url": "https://docs.python.org/3/howto/ipaddress.html"
+    }
+  ],
+  "project": "log-02",
+  "tasks": [
+    {
+      "id": "py-addressing-01",
+      "topic": "addressing",
+      "number": 1,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Parse either address family",
+      "brief": "Validate address syntax.",
+      "contract": [
+        "Define family(text). Return 4 or 6 for valid IP addresses, None on ValueError. Input is text."
+      ],
+      "focus": [
+        "ip_address"
+      ],
+      "starter": "def family(text):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: parse either address family.",
+        "ip_address validates and identifies both families; catch the documented parse failure.",
+        "Compare the implementation with case 04-prefix not address. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(family(\"192.0.2.1\"), 4)\n"
+        },
+        {
+          "id": "02-v6",
+          "setup": "pass\n",
+          "check": "expect(family(\"2001:db8::1\"), 6)\n"
+        },
+        {
+          "id": "03-invalid",
+          "setup": "pass\n",
+          "check": "expect(family(\"999.1.1.1\"), None)\n"
+        },
+        {
+          "id": "04-prefix not address",
+          "setup": "pass\n",
+          "check": "expect(family(\"192.0.2.1/24\"), None)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "fd96b2e11de5bec48dd5253e390d8db8065ff6fa1c8fa38a80d4de734cce4aa6"
+    },
+    {
+      "id": "py-addressing-02",
+      "topic": "addressing",
+      "number": 2,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Canonical IPv6",
+      "brief": "Normalize equivalent spellings.",
+      "contract": [
+        "Define canonical_ip(text). Return str(ipaddress.ip_address(text)); invalid text raises ValueError."
+      ],
+      "focus": [
+        "normalization"
+      ],
+      "starter": "def canonical_ip(text):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: canonical ipv6.",
+        "Use the address object's string form for canonical formatting instead of manual zero stripping.",
+        "Compare the implementation with case 03-invalid. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(canonical_ip(\"2001:0db8:0000:0000:0000:0000:0000:0001\"), '2001:db8::1')\n"
+        },
+        {
+          "id": "02-v4",
+          "setup": "pass\n",
+          "check": "expect(canonical_ip(\"192.0.2.10\"), '192.0.2.10')\n"
+        },
+        {
+          "id": "03-invalid",
+          "setup": "pass\n",
+          "check": "raises(ValueError,lambda:canonical_ip(\"x\"))\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "cf366e6d8194b63e3a42ad10837d69baa3707f3295dcd3493241737fae2c6f39"
+    },
+    {
+      "id": "py-addressing-03",
+      "topic": "addressing",
+      "number": 3,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Connected prefix",
+      "brief": "Keep address and prefix separate.",
+      "contract": [
+        "Define connected(cidr). Parse an interface and return {address,network}, both strings."
+      ],
+      "focus": [
+        "ip_interface"
+      ],
+      "starter": "def connected(cidr):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: connected prefix.",
+        "An interface retains a host address and its connected network as separate values.",
+        "Compare the implementation with case 02-v6. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(connected(\"192.0.2.17/24\"), {'address': '192.0.2.17', 'network': '192.0.2.0/24'})\n"
+        },
+        {
+          "id": "02-v6",
+          "setup": "pass\n",
+          "check": "expect(connected(\"2001:db8::7/64\"), {'address': '2001:db8::7', 'network': '2001:db8::/64'})\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "ad6baaed9e9e5bead8247ccca3ea05e16491f6d2f2bf5009c3a9a241cee042b0"
+    },
+    {
+      "id": "py-addressing-04",
+      "topic": "addressing",
+      "number": 4,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Strict prefix check",
+      "brief": "Reject host bits in a network declaration.",
+      "contract": [
+        "Define network(text). Return canonical network text using strict=True; host bits raise ValueError."
+      ],
+      "focus": [
+        "strict network"
+      ],
+      "starter": "def network(text):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: strict prefix check.",
+        "Strict network parsing rejects host bits instead of silently broadening the supplied address.",
+        "Compare the implementation with case 03-v6. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(network(\"192.0.2.0/24\"), '192.0.2.0/24')\n"
+        },
+        {
+          "id": "02-host bits",
+          "setup": "pass\n",
+          "check": "raises(ValueError,lambda:network(\"192.0.2.1/24\"))\n"
+        },
+        {
+          "id": "03-v6",
+          "setup": "pass\n",
+          "check": "expect(network(\"2001:db8::/64\"), '2001:db8::/64')\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "fc7683d18d4951437c317a46e1b023cbb97778019302ca61395aea1b07583870"
+    },
+    {
+      "id": "py-addressing-05",
+      "topic": "addressing",
+      "number": 5,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Explicit permissive normalization",
+      "brief": "Clear host bits only when requested.",
+      "contract": [
+        "Define normalize(text). Return canonical ip_network(text,strict=False)."
+      ],
+      "focus": [
+        "strict=False"
+      ],
+      "starter": "def normalize(text):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: explicit permissive normalization.",
+        "Permissive parsing intentionally removes host bits; make that behavior explicit.",
+        "Compare the implementation with case 03-v6. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(normalize(\"192.0.2.17/24\"), '192.0.2.0/24')\n"
+        },
+        {
+          "id": "02-subnet",
+          "setup": "pass\n",
+          "check": "expect(normalize(\"198.51.100.129/25\"), '198.51.100.128/25')\n"
+        },
+        {
+          "id": "03-v6",
+          "setup": "pass\n",
+          "check": "expect(normalize(\"2001:db8::9/64\"), '2001:db8::/64')\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "936b50194dc1e42b78b0dbf6f3c8c987e8a33d6a17b22fd62e80d58826dfe907"
+    },
+    {
+      "id": "py-addressing-06",
+      "topic": "addressing",
+      "number": 6,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Membership",
+      "brief": "Check the connected prefix.",
+      "contract": [
+        "Define member(address,network). Return whether address belongs to network. Cross-family returns False. Valid strict prefixes supplied."
+      ],
+      "focus": [
+        "membership"
+      ],
+      "starter": "def member(address, network):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: membership.",
+        "Check family compatibility before applying the containment operation.",
+        "Compare the implementation with case 04-network address membership. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(member(\"192.0.2.17\",\"192.0.2.0/24\"), True)\n"
+        },
+        {
+          "id": "02-outside",
+          "setup": "pass\n",
+          "check": "expect(member(\"192.0.3.1\",\"192.0.2.0/24\"), False)\n"
+        },
+        {
+          "id": "03-cross-family",
+          "setup": "pass\n",
+          "check": "expect(member(\"2001:db8::1\",\"192.0.2.0/24\"), False)\n"
+        },
+        {
+          "id": "04-network address membership",
+          "setup": "pass\n",
+          "check": "expect(member(\"192.0.2.0\",\"192.0.2.0/24\"), True)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "2a698a5e5f112980ea438d0b90c9f9ef030fbf2850a457dea80e58f2bbf1bc5a"
+    },
+    {
+      "id": "py-addressing-07",
+      "topic": "addressing",
+      "number": 7,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Overlapping prefixes",
+      "brief": "Detect mathematical overlap.",
+      "contract": [
+        "Define overlaps(left,right). Return overlap for same-family strict prefixes; False for different families."
+      ],
+      "focus": [
+        "overlaps"
+      ],
+      "starter": "def overlaps(left, right):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: overlapping prefixes.",
+        "Networks of different address families cannot overlap within this exercise.",
+        "Compare the implementation with case 03-cross-family. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(overlaps(\"192.0.2.0/24\",\"192.0.2.128/25\"), True)\n"
+        },
+        {
+          "id": "02-adjacent",
+          "setup": "pass\n",
+          "check": "expect(overlaps(\"192.0.2.0/25\",\"192.0.2.128/25\"), False)\n"
+        },
+        {
+          "id": "03-cross-family",
+          "setup": "pass\n",
+          "check": "expect(overlaps(\"192.0.2.0/24\",\"2001:db8::/64\"), False)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "a903082e44b42c0faa35e3ad6a7f28408bb71c1c56c9e76a6f40ee11382379be"
+    },
+    {
+      "id": "py-addressing-08",
+      "topic": "addressing",
+      "number": 8,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Number of addresses",
+      "brief": "Do not confuse total with usable hosts.",
+      "contract": [
+        "Define count_addresses(prefix). Return the total number of addresses, using num_addresses. Strict valid prefixes."
+      ],
+      "focus": [
+        "num_addresses"
+      ],
+      "starter": "def count_addresses(prefix):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: number of addresses.",
+        "num_addresses counts the entire prefix; do not subtract network/broadcast addresses unless asked.",
+        "Compare the implementation with case 03-v6. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(count_addresses(\"192.0.2.0/24\"), 256)\n"
+        },
+        {
+          "id": "02-point-to-point",
+          "setup": "pass\n",
+          "check": "expect(count_addresses(\"192.0.2.0/31\"), 2)\n"
+        },
+        {
+          "id": "03-v6",
+          "setup": "pass\n",
+          "check": "expect(count_addresses(\"2001:db8::/126\"), 4)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "fef6ac2b88f4abc0b79cfa8e088585378b093eb9e3d73751e16094acef751c45"
+    },
+    {
+      "id": "py-addressing-09",
+      "topic": "addressing",
+      "number": 9,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Host iteration special cases",
+      "brief": "Use library host semantics.",
+      "contract": [
+        "Define hosts(prefix). Return list of strings from ip_network(prefix).hosts().",
+        "Only IPv4 prefixes /29 through /32 are supplied; preserve numeric order."
+      ],
+      "focus": [
+        "hosts iterator"
+      ],
+      "starter": "def hosts(prefix):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: host iteration special cases.",
+        "Use the library's hosts iterator because /31 and /32 differ from ordinary subnet assumptions.",
+        "Compare the implementation with case 03-32. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(hosts(\"192.0.2.0/30\"), ['192.0.2.1', '192.0.2.2'])\n"
+        },
+        {
+          "id": "02-31",
+          "setup": "pass\n",
+          "check": "expect(hosts(\"192.0.2.0/31\"), ['192.0.2.0', '192.0.2.1'])\n"
+        },
+        {
+          "id": "03-32",
+          "setup": "pass\n",
+          "check": "expect(hosts(\"192.0.2.1/32\"), ['192.0.2.1'])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "8fde653666bdcb9e525f5ed3f8fda2b1aff0dd037f0dae0e38e4ab9f14e03dc4"
+    },
+    {
+      "id": "py-addressing-10",
+      "topic": "addressing",
+      "number": 10,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Numeric address sorting",
+      "brief": "Avoid lexical IP order.",
+      "contract": [
+        "Define sort_ips(addresses). Inputs all IPv4. Return original strings in increasing numeric address order, preserving duplicates."
+      ],
+      "focus": [
+        "address key"
+      ],
+      "starter": "def sort_ips(addresses):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: numeric address sorting.",
+        "An address object's numeric value supplies a meaningful order for IPv4 addresses.",
+        "Compare the implementation with case 03-duplicate. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(sort_ips([\"192.0.2.10\",\"192.0.2.2\"]), ['192.0.2.2', '192.0.2.10'])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "pass\n",
+          "check": "expect(sort_ips([]), [])\n"
+        },
+        {
+          "id": "03-duplicate",
+          "setup": "pass\n",
+          "check": "expect(sort_ips([\"192.0.2.2\",\"192.0.2.2\"]), ['192.0.2.2', '192.0.2.2'])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "0e39cad03685dd23cdae5dc8d8ee19a408ac2e1706d76589e782b2657142b019"
+    },
+    {
+      "id": "py-addressing-11",
+      "topic": "addressing",
+      "number": 11,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Gateway in connected prefix",
+      "brief": "Check a narrow declared rule.",
+      "contract": [
+        "Define same_subnet(interface,gateway). Return whether gateway is in the interface network and differs from the interface address.",
+        "This is only the stated check; it does not prove gateway reachability or full network-design validity."
+      ],
+      "focus": [
+        "context validation"
+      ],
+      "starter": "def same_subnet(interface, gateway):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: gateway in connected prefix.",
+        "This is only a membership-and-distinctness check, not proof of a usable real gateway.",
+        "Compare the implementation with case 03-outside. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(same_subnet(\"192.0.2.10/24\",\"192.0.2.1\"), True)\n"
+        },
+        {
+          "id": "02-self",
+          "setup": "pass\n",
+          "check": "expect(same_subnet(\"192.0.2.10/24\",\"192.0.2.10\"), False)\n"
+        },
+        {
+          "id": "03-outside",
+          "setup": "pass\n",
+          "check": "expect(same_subnet(\"192.0.2.10/24\",\"192.0.3.1\"), False)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "1be6a35c8fb9d877c7feb9c0f0ea13eba065dbf36805156e8376411a1d74dc9f"
+    },
+    {
+      "id": "py-addressing-12",
+      "topic": "addressing",
+      "number": 12,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Split into equal prefixes",
+      "brief": "Generate subnets.",
+      "contract": [
+        "Define subnet_list(prefix,new_prefix). Return string subnets from ip_network(prefix).subnets(new_prefix=new_prefix).",
+        "Small IPv4 networks supplied; invalid less-specific new_prefix raises ValueError."
+      ],
+      "focus": [
+        "subnets"
+      ],
+      "starter": "def subnet_list(prefix, new_prefix):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: split into equal prefixes.",
+        "Request the new prefix length through subnets and preserve its generated order.",
+        "Compare the implementation with case 03-invalid. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(subnet_list(\"192.0.2.0/24\",25), ['192.0.2.0/25', '192.0.2.128/25'])\n"
+        },
+        {
+          "id": "02-small",
+          "setup": "pass\n",
+          "check": "expect(subnet_list(\"192.0.2.0/30\",31), ['192.0.2.0/31', '192.0.2.2/31'])\n"
+        },
+        {
+          "id": "03-invalid",
+          "setup": "pass\n",
+          "check": "raises(ValueError,lambda:subnet_list(\"192.0.2.0/24\",23))\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "c744b36d089e4cbcf6de1925c48007f376d7ba03a3acbf51601cd355955ea8fd"
+    },
+    {
+      "id": "py-addressing-13",
+      "topic": "addressing",
+      "number": 13,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Collapse adjacent prefixes",
+      "brief": "Produce a minimal equivalent prefix list.",
+      "contract": [
+        "Define collapse(prefixes). All valid IPv4. Return strings from collapse_addresses in numeric order."
+      ],
+      "focus": [
+        "collapse_addresses"
+      ],
+      "starter": "def collapse(prefixes):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: collapse adjacent prefixes.",
+        "Collapse adjacent or contained networks through the library rather than concatenating strings.",
+        "Compare the implementation with case 03-contained. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(collapse([\"192.0.2.128/25\",\"192.0.2.0/25\"]), ['192.0.2.0/24'])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "pass\n",
+          "check": "expect(collapse([]), [])\n"
+        },
+        {
+          "id": "03-contained",
+          "setup": "pass\n",
+          "check": "expect(collapse([\"192.0.2.0/24\",\"192.0.2.0/25\"]), ['192.0.2.0/24'])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "07a78d416aa5ed0d8b2adae07ccfe780d3fc8e6e7c3b510af89660347588440b"
+    },
+    {
+      "id": "py-addressing-14",
+      "topic": "addressing",
+      "number": 14,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Canonical duplicate detection",
+      "brief": "Compare equivalent addresses within context.",
+      "contract": [
+        "Define duplicates(rows). Rows contain context and address. Canonicalize address; return sorted [context,canonical_address] pairs occurring more than once."
+      ],
+      "focus": [
+        "canonical keys"
+      ],
+      "starter": "def duplicates(rows):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: canonical duplicate detection.",
+        "Canonicalize the address and combine it with context before counting duplicates.",
+        "Compare the implementation with case 03-empty. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(duplicates([{ \"context\":\"A\",\"address\":\"2001:db8::1\"},{\"context\":\"A\",\"address\":\"2001:0db8:0:0:0:0:0:1\"}]), [['A', '2001:db8::1']])\n"
+        },
+        {
+          "id": "02-separate context",
+          "setup": "pass\n",
+          "check": "expect(duplicates([{ \"context\":\"A\",\"address\":\"192.0.2.1\"},{\"context\":\"B\",\"address\":\"192.0.2.1\"}]), [])\n"
+        },
+        {
+          "id": "03-empty",
+          "setup": "pass\n",
+          "check": "expect(duplicates([]), [])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "8c52b8e1554d2b06ef02c2895fc6e74ea271e2ebb556e53b1510b259ac740e95"
+    },
+    {
+      "id": "py-addressing-15",
+      "topic": "addressing",
+      "number": 15,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Network fields",
+      "brief": "Return a structured IPv4 description.",
+      "contract": [
+        "Define describe(prefix). Return {network,broadcast,prefixlen,total} for a strict IPv4 prefix. Strings for addresses, ints for length/count."
+      ],
+      "focus": [
+        "structured model"
+      ],
+      "starter": "def describe(prefix):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: network fields.",
+        "Use the network object's documented address, prefix-length and total-count fields.",
+        "Compare the implementation with case 02-small. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(describe(\"192.0.2.0/24\"), {'network': '192.0.2.0', 'broadcast': '192.0.2.255', 'prefixlen': 24, 'total': 256})\n"
+        },
+        {
+          "id": "02-small",
+          "setup": "pass\n",
+          "check": "expect(describe(\"192.0.2.4/30\"), {'network': '192.0.2.4', 'broadcast': '192.0.2.7', 'prefixlen': 30, 'total': 4})\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "d33defa899cec1828216034e063abab045f7e232642831802296bcf1894a5288"
+    },
+    {
+      "id": "py-addressing-16",
+      "topic": "addressing",
+      "number": 16,
+      "version": "1.0.0",
+      "mode": "check",
+      "kind": "build",
+      "title": "Check: interface-plan validity",
+      "brief": "Keep parse failures explicit.",
+      "contract": [
+        "Define validate(rows). Rows are {name,cidr}. Return {valid:list of names,invalid:list of names}, preserving order. A valid ip_interface string is accepted."
+      ],
+      "focus": [
+        "validation"
+      ],
+      "starter": "def validate(rows):\n    pass\n",
+      "hints": [],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(validate([{ \"name\":\"R1\",\"cidr\":\"192.0.2.10/24\"},{\"name\":\"S1\",\"cidr\":\"bad\"}]), {'valid': ['R1'], 'invalid': ['S1']})\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "pass\n",
+          "check": "expect(validate([]), {'valid': [], 'invalid': []})\n"
+        },
+        {
+          "id": "03-v6",
+          "setup": "pass\n",
+          "check": "expect(validate([{ \"name\":\"V6\",\"cidr\":\"2001:db8::1/64\"}]), {'valid': ['V6'], 'invalid': []})\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "8dfefbec9b36ffb2d94ccfc343f5f476d81ff4773fc01a4f93401982826bc1a5"
+    },
+    {
+      "id": "py-addressing-17",
+      "topic": "addressing",
+      "number": 17,
+      "version": "1.0.0",
+      "mode": "check",
+      "kind": "build",
+      "title": "Check: overlapping in one context",
+      "brief": "Scope overlap properly.",
+      "contract": [
+        "Define conflicts(rows). Each row has context, name (unique), prefix (strict valid).",
+        "For every pair sharing context and address family whose prefixes overlap, emit sorted [name1,name2]. Sort the pair list."
+      ],
+      "focus": [
+        "scoped overlap"
+      ],
+      "starter": "def conflicts(rows):\n    pass\n",
+      "hints": [],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(conflicts([{ \"context\":\"A\",\"name\":\"x\",\"prefix\":\"192.0.2.0/24\"},{\"context\":\"A\",\"name\":\"y\",\"prefix\":\"192.0.2.0/25\"},{\"context\":\"B\",\"name\":\"z\",\"prefix\":\"192.0.2.0/24\"}]), [['x', 'y']])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "pass\n",
+          "check": "expect(conflicts([]), [])\n"
+        },
+        {
+          "id": "03-adjacent",
+          "setup": "pass\n",
+          "check": "expect(conflicts([{ \"context\":\"A\",\"name\":\"x\",\"prefix\":\"192.0.2.0/25\"},{\"context\":\"A\",\"name\":\"y\",\"prefix\":\"192.0.2.128/25\"}]), [])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "8ff56c58c74bb35d6ce8688aa517c304c22c6818ce7452dcc4979a2940c2d486"
+    },
+    {
+      "id": "py-addressing-18",
+      "topic": "addressing",
+      "number": 18,
+      "version": "1.0.0",
+      "mode": "check",
+      "kind": "build",
+      "title": "Check: family-separated ordering",
+      "brief": "Combine IPv4 and IPv6 deterministically.",
+      "contract": [
+        "Define ordered(addresses). Canonicalize addresses, sort IPv4 first then IPv6, numeric within each family. Preserve duplicates."
+      ],
+      "focus": [
+        "mixed family keys"
+      ],
+      "starter": "def ordered(addresses):\n    pass\n",
+      "hints": [],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "pass\n",
+          "check": "expect(ordered([\"2001:db8::2\",\"192.0.2.10\",\"192.0.2.2\",\"2001:db8::1\"]), ['192.0.2.2', '192.0.2.10', '2001:db8::1', '2001:db8::2'])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "pass\n",
+          "check": "expect(ordered([]), [])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "d8260b6bd6007d847f2de610d73dfe40ed52a31c9d9e926277b873e20066b1e3"
+    }
+  ]
+}

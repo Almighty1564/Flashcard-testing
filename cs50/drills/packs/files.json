@@ -1,0 +1,748 @@
+{
+  "id": "files",
+  "title": "Files, paths & serialization",
+  "outcome": "Work on disposable files with explicit formats, encodings and ownership.",
+  "prerequisites": [
+    "reliability",
+    "strings"
+  ],
+  "steps": [
+    {
+      "title": "1. Work in a practice directory",
+      "text": "The tests create a temporary root and inject it as root. Implement the named callable using pathlib paths. Never point these learning scripts at production folders or credentials.",
+      "code": "from pathlib import Path\n# root is a temporary practice directory supplied by the checker."
+    },
+    {
+      "title": "2. Read and write explicitly",
+      "text": "Choose UTF-8 for text contracts. A with statement closes a file reliably. Keep append behavior distinct from replacement and exclusive creation.",
+      "code": "def read_text(path):\n    with open(path,encoding=\"utf-8\") as stream:\n        return stream.read()"
+    },
+    {
+      "title": "3. Respect paths",
+      "text": "Do not follow symlinks or accept traversal when the contract prohibits it. Path comparison needs resolved paths, not a string prefix test. These are local exercises, not a race-proof production filesystem service.",
+      "code": ""
+    },
+    {
+      "title": "4. Use real format parsers",
+      "text": "Use csv for quoted fields, json for structured objects, hashlib for content digests. Do not silently change source files while creating a report.",
+      "code": ""
+    },
+    {
+      "title": "5. Test non-happy cases",
+      "text": "Test empty, missing, duplicate and invalid content using disposable fixtures. Environment-specific permission semantics require review on the target operating system.",
+      "code": ""
+    }
+  ],
+  "references": [
+    {
+      "title": "pathlib",
+      "url": "https://docs.python.org/3/library/pathlib.html"
+    },
+    {
+      "title": "File I/O",
+      "url": "https://docs.python.org/3/tutorial/inputoutput.html#reading-and-writing-files"
+    },
+    {
+      "title": "csv",
+      "url": "https://docs.python.org/3/library/csv.html"
+    }
+  ],
+  "project": "fg-01",
+  "tasks": [
+    {
+      "id": "py-files-01",
+      "topic": "files",
+      "number": 1,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Read UTF-8 text",
+      "brief": "Read without modifying.",
+      "contract": [
+        "Define read_text(path). Return complete UTF-8 text unchanged. Missing files raise FileNotFoundError."
+      ],
+      "focus": [
+        "read_text"
+      ],
+      "starter": "def read_text(path):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: read utf-8 text.",
+        "Specify UTF-8 explicitly instead of relying on the operating system's default encoding.",
+        "Compare the implementation with case 03-missing. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-unicode",
+          "setup": "from pathlib import Path\np=root/\"a.txt\"\np.write_text(\"Aé\\n\",encoding=\"utf-8\")\n",
+          "check": "expect(read_text(p),\"Aé\\n\")\nexpect(p.read_text(encoding=\"utf-8\"),\"Aé\\n\")\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "from pathlib import Path\np=root/\"e\"\np.write_text(\"\")\n",
+          "check": "expect(read_text(p),\"\")\n"
+        },
+        {
+          "id": "03-missing",
+          "setup": "from pathlib import Path\n",
+          "check": "raises(FileNotFoundError,lambda:read_text(root/\"missing\"))\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "d91dc735493175fd2534f125074cea6cae66ed667f09c33e78abb74db48fc397"
+    },
+    {
+      "id": "py-files-02",
+      "topic": "files",
+      "number": 2,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Nonblank lines",
+      "brief": "Read lines and normalize their edges.",
+      "contract": [
+        "Define nonblank(path). Return trimmed nonempty UTF-8 lines in order."
+      ],
+      "focus": [
+        "splitlines"
+      ],
+      "starter": "def nonblank(path):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: nonblank lines.",
+        "Separate line boundaries from leading/trailing whitespace; apply the exact trimming rule in the contract.",
+        "Compare the implementation with case 02-empty. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-normal",
+          "setup": "from pathlib import Path\np=root/\"a\"\np.write_text(\" A \\n\\n B\\n\",encoding=\"utf-8\")\n",
+          "check": "expect(nonblank(p),[\"A\",\"B\"])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "from pathlib import Path\np=root/\"a\"\np.write_text(\"\")\n",
+          "check": "expect(nonblank(p),[])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "10de2066b058d6ba54b2572d72fb977caf518a05d258bb3ba8d3eb8dfd68afc6"
+    },
+    {
+      "id": "py-files-03",
+      "topic": "files",
+      "number": 3,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Write a report",
+      "brief": "Specify trailing newline.",
+      "contract": [
+        "Define write_report(path,lines). Write each supplied string followed by newline in UTF-8, replacing old content. Empty lines list creates an empty file. Return None."
+      ],
+      "focus": [
+        "write_text"
+      ],
+      "starter": "def write_report(path, lines):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: write a report.",
+        "Use the required final-newline convention, including the empty-output case.",
+        "Compare the implementation with case 02-empty. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-replace",
+          "setup": "from pathlib import Path\np=root/\"a\"\np.write_text(\"old\")\n",
+          "check": "expect(write_report(p,[\"A\",\"é\"]),None)\nexpect(p.read_text(encoding=\"utf-8\"),\"A\\né\\n\")\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "from pathlib import Path\np=root/\"e\"\n",
+          "check": "write_report(p,[])\nexpect(p.read_text(),\"\")\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "174cec9fd6eca7b68f375d3b6f19d19ef790f4afc61275f5465b24c6800e3c81"
+    },
+    {
+      "id": "py-files-04",
+      "topic": "files",
+      "number": 4,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Append an event",
+      "brief": "Preserve existing records.",
+      "contract": [
+        "Define append_line(path,line). Append line plus newline in UTF-8; create file if absent. Return None. Existing files in tests end with newline."
+      ],
+      "focus": [
+        "append mode"
+      ],
+      "starter": "def append_line(path, line):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: append an event.",
+        "Append mode adds data instead of truncating an existing file; inspect the original prefix afterward.",
+        "Compare the implementation with case 02-new. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-existing",
+          "setup": "from pathlib import Path\np=root/\"a\"\np.write_text(\"old\\n\")\n",
+          "check": "append_line(p,\"new\")\nexpect(p.read_text(),\"old\\nnew\\n\")\n"
+        },
+        {
+          "id": "02-new",
+          "setup": "from pathlib import Path\np=root/\"a\"\n",
+          "check": "append_line(p,\"é\")\nexpect(p.read_text(encoding=\"utf-8\"),\"é\\n\")\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "3ff1ff7e0c15d3e265a423f2e2e0b3eed35faa3ac87ebc8713dc0cc84e8736f8"
+    },
+    {
+      "id": "py-files-05",
+      "topic": "files",
+      "number": 5,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Exclusive creation",
+      "brief": "Do not overwrite existing output.",
+      "contract": [
+        "Define create(path,text). Write UTF-8 only if path is new; existing path raises FileExistsError and remains unchanged. Return None."
+      ],
+      "focus": [
+        "exclusive mode"
+      ],
+      "starter": "def create(path, text):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: exclusive creation.",
+        "Exclusive creation must fail when the destination exists instead of overwriting it.",
+        "Compare the implementation with case 02-existing. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-new",
+          "setup": "from pathlib import Path\np=root/\"a\"\n",
+          "check": "create(p,\"new\")\nexpect(p.read_text(),\"new\")\n"
+        },
+        {
+          "id": "02-existing",
+          "setup": "from pathlib import Path\np=root/\"a\"\np.write_text(\"keep\")\n",
+          "check": "raises(FileExistsError,lambda:create(p,\"new\"))\nexpect(p.read_text(),\"keep\")\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "ab11d516fde9d51eee9fff6a1f615bf5acf6c7afe4f93f0251c0fde12de4aa0d"
+    },
+    {
+      "id": "py-files-06",
+      "topic": "files",
+      "number": 6,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Top-level inventory",
+      "brief": "List ordinary files only.",
+      "contract": [
+        "Define names(folder). Return sorted basenames of regular, non-symlink files directly inside folder. Exclude directories; do not recurse."
+      ],
+      "focus": [
+        "iterdir",
+        "filter"
+      ],
+      "starter": "def names(folder):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: top-level inventory.",
+        "List only the requested directory depth, reject symlinks explicitly, then sort the names.",
+        "Compare the implementation with case 02-empty. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-mixed",
+          "setup": "from pathlib import Path\n(root/\"b\").write_text(\"\")\n(root/\"a\").write_text(\"\")\n(root/\"sub\").mkdir()\n(root/\"sub\"/\"x\").write_text(\"\")\n",
+          "check": "expect(names(root),[\"a\",\"b\"])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "from pathlib import Path\n",
+          "check": "expect(names(root),[])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "e5e67b6935b1075376ee2d303518bd0df78bf3db0eb3b7873484921af0e962eb"
+    },
+    {
+      "id": "py-files-07",
+      "topic": "files",
+      "number": 7,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "File size is bytes",
+      "brief": "Report byte length without decoding.",
+      "contract": [
+        "Define size(path). Return filesystem byte size as an int."
+      ],
+      "focus": [
+        "stat"
+      ],
+      "starter": "def size(path):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: file size is bytes.",
+        "File size measures bytes on disk; it is not the count of decoded characters.",
+        "Compare the implementation with case 03-empty. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-unicode",
+          "setup": "from pathlib import Path\np=root/\"a\"\np.write_bytes(\"é\".encode(\"utf-8\"))\n",
+          "check": "expect(size(p),2)\n"
+        },
+        {
+          "id": "02-binary",
+          "setup": "from pathlib import Path\np=root/\"a\"\np.write_bytes(bytes([0,255,1]))\n",
+          "check": "expect(size(p),3)\n"
+        },
+        {
+          "id": "03-empty",
+          "setup": "from pathlib import Path\np=root/\"a\"\np.write_bytes(b\"\")\n",
+          "check": "expect(size(p),0)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "b0f4aebf2a4cc24e7a86407c8a8175ef6b48a39be3279c616efd6cbc7cfd12f0"
+    },
+    {
+      "id": "py-files-08",
+      "topic": "files",
+      "number": 8,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "CSV inventory reader",
+      "brief": "Honor quoted commas.",
+      "contract": [
+        "Define load_csv(path). Read UTF-8 CSV with header name,description. Return list of dictionaries with those strings."
+      ],
+      "focus": [
+        "csv.DictReader"
+      ],
+      "starter": "def load_csv(path):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: csv inventory reader.",
+        "Use a DictReader or equivalent and convert only the documented numeric fields.",
+        "Compare the implementation with case 02-header only. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-quoted",
+          "setup": "from pathlib import Path\np=root/\"a.csv\"\np.write_text('name,description\\nR1,\"Bench, A\"\\n',encoding=\"utf-8\")\n",
+          "check": "expect(load_csv(p),[{\"name\":\"R1\",\"description\":\"Bench, A\"}])\n"
+        },
+        {
+          "id": "02-header only",
+          "setup": "from pathlib import Path\np=root/\"a.csv\"\np.write_text(\"name,description\\n\")\n",
+          "check": "expect(load_csv(p),[])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "283a066a33870669d3bde8a98bb4842cab86920782e483b177cebba18b621ccd"
+    },
+    {
+      "id": "py-files-09",
+      "topic": "files",
+      "number": 9,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "JSON state reader",
+      "brief": "Reject malformed syntax.",
+      "contract": [
+        "Define load_json(path). Read UTF-8 and return parsed JSON data. Invalid JSON raises json.JSONDecodeError."
+      ],
+      "focus": [
+        "json file"
+      ],
+      "starter": "def load_json(path):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: json state reader.",
+        "Read text in the stated encoding, then parse JSON; malformed JSON is an error, not empty data.",
+        "Compare the implementation with case 02-invalid. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-valid",
+          "setup": "from pathlib import Path\np=root/\"a\"\np.write_text('{\"up\":true,\"value\":null}')\n",
+          "check": "expect(load_json(p),{\"up\":True,\"value\":None})\n"
+        },
+        {
+          "id": "02-invalid",
+          "setup": "from pathlib import Path\nimport json\np=root/\"a\"\np.write_text(\"{\")\n",
+          "check": "raises(json.JSONDecodeError,lambda:load_json(p))\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "82ba8ed93be4687c7bb87859b645035069eeff187fc0906ed1ce4b0b0b9a23e3"
+    },
+    {
+      "id": "py-files-10",
+      "topic": "files",
+      "number": 10,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "JSON round trip",
+      "brief": "Write data another process can read.",
+      "contract": [
+        "Define save_json(path,value). Write UTF-8 JSON with sorted keys and ensure_ascii=False. Return None.",
+        "Formatting whitespace is unrestricted; parsed value must round-trip."
+      ],
+      "focus": [
+        "JSON serialization"
+      ],
+      "starter": "def save_json(path, value):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: json round trip.",
+        "Write a JSON representation and read it back; preserve data types rather than printing repr.",
+        "Compare the implementation with case 02-empty list. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-roundtrip",
+          "setup": "from pathlib import Path\nimport json\np=root/\"a\"\n",
+          "check": "save_json(p,{\"b\":None,\"a\":\"é\"})\nexpect(json.loads(p.read_text(encoding=\"utf-8\")),{\"a\":\"é\",\"b\":None})\nassert \"é\" in p.read_text(encoding=\"utf-8\")\n"
+        },
+        {
+          "id": "02-empty list",
+          "setup": "from pathlib import Path\nimport json\np=root/\"a\"\n",
+          "check": "save_json(p,[])\nexpect(json.loads(p.read_text()),[])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "af0e3a80b5bccec28830b5b26767c5b1a19de9c620bb6b7ec359b224332d7f44"
+    },
+    {
+      "id": "py-files-11",
+      "topic": "files",
+      "number": 11,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Content digest",
+      "brief": "Compare content independently of name.",
+      "contract": [
+        "Define digest_file(path). Return the lowercase SHA-256 hexadecimal digest of file bytes. Read in chunks for this drill (technique self-reviewed)."
+      ],
+      "focus": [
+        "hashlib",
+        "streaming"
+      ],
+      "starter": "def digest_file(path):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: content digest.",
+        "Update the hash in chunks and do not modify the file being measured.",
+        "Compare the implementation with case 02-empty. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-abc",
+          "setup": "from pathlib import Path\np=root/\"a\"\np.write_bytes(b\"abc\")\n",
+          "check": "expect(digest_file(p),\"ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad\")\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "from pathlib import Path\np=root/\"a\"\np.write_bytes(b\"\")\n",
+          "check": "expect(digest_file(p),\"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855\")\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "e34a9f354036a53c50de9fafda2ef46fc0283da286d7bad5e6d1d845efb5d90f"
+    },
+    {
+      "id": "py-files-12",
+      "topic": "files",
+      "number": 12,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Context-managed line count",
+      "brief": "Process a text stream.",
+      "contract": [
+        "Define count_lines(path). Return number of lines yielded when reading UTF-8 text, including blank lines. An unterminated final line counts."
+      ],
+      "focus": [
+        "stream iteration"
+      ],
+      "starter": "def count_lines(path):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: context-managed line count.",
+        "The with block should close the file even if processing fails.",
+        "Compare the implementation with case 03-terminated. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-blank lines",
+          "setup": "from pathlib import Path\np=root/\"a\"\np.write_text(\"A\\n\\nB\")\n",
+          "check": "expect(count_lines(p),3)\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "from pathlib import Path\np=root/\"a\"\np.write_text(\"\")\n",
+          "check": "expect(count_lines(p),0)\n"
+        },
+        {
+          "id": "03-terminated",
+          "setup": "from pathlib import Path\np=root/\"a\"\np.write_text(\"A\\n\")\n",
+          "check": "expect(count_lines(p),1)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "92ad56c08e74085c2f8670d2df942022d6db62de5157d82e31c89a26882c6c88"
+    },
+    {
+      "id": "py-files-13",
+      "topic": "files",
+      "number": 13,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "repair",
+      "title": "Path containment",
+      "brief": "Do not use a string prefix security check.",
+      "contract": [
+        "Define inside(base,candidate). Resolve both paths and return True when candidate equals base or is beneath it; otherwise False.",
+        "Files need not exist. This checks resolved containment only, not resistance to concurrent filesystem races."
+      ],
+      "focus": [
+        "resolve",
+        "relative_to"
+      ],
+      "starter": "def inside(base, candidate):\n    return str(candidate).startswith(str(base))\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: path containment.",
+        "Resolve and compare paths using the path hierarchy; a text prefix is not a containment check.",
+        "Compare the implementation with case 04-equal. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-child",
+          "setup": "from pathlib import Path\nbase=root/\"lab\"\n",
+          "check": "expect(inside(base,base/\"sub\"/\"a\"),True)\n"
+        },
+        {
+          "id": "02-prefix sibling",
+          "setup": "from pathlib import Path\nbase=root/\"lab\"\n",
+          "check": "expect(inside(base,root/\"lab-extra\"/\"a\"),False)\n"
+        },
+        {
+          "id": "03-parent escape",
+          "setup": "from pathlib import Path\nbase=root/\"lab\"\n",
+          "check": "expect(inside(base,base/\"..\"/\"outside\"),False)\n"
+        },
+        {
+          "id": "04-equal",
+          "setup": "from pathlib import Path\nbase=root/\"lab\"\n",
+          "check": "expect(inside(base,base),True)\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "1c7c41143c47bdd70ef189b17f1c94dd00e3669fc62ea15837506de5319a33ed"
+    },
+    {
+      "id": "py-files-14",
+      "topic": "files",
+      "number": 14,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Read only when present",
+      "brief": "Handle one expected filesystem error.",
+      "contract": [
+        "Define optional_text(path). Return UTF-8 content, or None only for FileNotFoundError. A directory must still raise IsADirectoryError."
+      ],
+      "focus": [
+        "specific filesystem errors"
+      ],
+      "starter": "def optional_text(path):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: read only when present.",
+        "Handle only FileNotFoundError for the fallback; other filesystem errors must remain visible.",
+        "Compare the implementation with case 03-directory. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-missing",
+          "setup": "from pathlib import Path\n",
+          "check": "expect(optional_text(root/\"missing\"),None)\n"
+        },
+        {
+          "id": "02-empty file",
+          "setup": "from pathlib import Path\np=root/\"a\"\np.write_text(\"\")\n",
+          "check": "expect(optional_text(p),\"\")\n"
+        },
+        {
+          "id": "03-directory",
+          "setup": "from pathlib import Path\n",
+          "check": "raises(IsADirectoryError,lambda:optional_text(root))\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "bc44b9f40264f8b413c646420ec14aedc3aa84a9bab49f9122fcc4eb3d27068b"
+    },
+    {
+      "id": "py-files-15",
+      "topic": "files",
+      "number": 15,
+      "version": "1.0.0",
+      "mode": "practice",
+      "kind": "build",
+      "title": "Parse JSON Lines",
+      "brief": "Process one record per nonblank line.",
+      "contract": [
+        "Define json_lines(path). Return parsed values for each nonblank UTF-8 line in order. Ignore blank lines; malformed JSON must raise JSONDecodeError."
+      ],
+      "focus": [
+        "stream parser"
+      ],
+      "starter": "def json_lines(path):\n    pass\n",
+      "hints": [
+        "Identify what must change and what must stay unchanged in this task: parse json lines.",
+        "Parse each nonblank line independently and preserve the first malformed-line exception.",
+        "Compare the implementation with case 03-invalid. Trace the supplied inputs and the exact return/output type before changing the code."
+      ],
+      "cases": [
+        {
+          "id": "01-records",
+          "setup": "from pathlib import Path\np=root/\"a\"\np.write_text('{\"x\":1}\\n\\n{\"x\":2}\\n')\n",
+          "check": "expect(json_lines(p),[{\"x\":1},{\"x\":2}])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "from pathlib import Path\np=root/\"a\"\np.write_text(\"\")\n",
+          "check": "expect(json_lines(p),[])\n"
+        },
+        {
+          "id": "03-invalid",
+          "setup": "from pathlib import Path\nimport json\np=root/\"a\"\np.write_text(\"{\\n\")\n",
+          "check": "raises(json.JSONDecodeError,lambda:json_lines(p))\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "c90c58fbfb60b1762ac39f2976b02a22a968fd6e8538fbf7dfb41a67d501bbb9"
+    },
+    {
+      "id": "py-files-16",
+      "topic": "files",
+      "number": 16,
+      "version": "1.0.0",
+      "mode": "check",
+      "kind": "build",
+      "title": "Check: extension report",
+      "brief": "Build a read-only filesystem summary.",
+      "contract": [
+        "Define by_extension(folder). Count top-level regular non-symlink files by lowercase final suffix, including dot; no suffix uses \"\". Return dict."
+      ],
+      "focus": [
+        "inventory"
+      ],
+      "starter": "def by_extension(folder):\n    pass\n",
+      "hints": [],
+      "cases": [
+        {
+          "id": "01-mixed",
+          "setup": "from pathlib import Path\n(root/\"A.TXT\").write_text(\"\")\n(root/\"b.txt\").write_text(\"\")\n(root/\"README\").write_text(\"\")\n(root/\"sub\").mkdir()\n",
+          "check": "expect(by_extension(root),{\".txt\":2,\"\":1})\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "from pathlib import Path\n",
+          "check": "expect(by_extension(root),{})\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "a7b93147c09909abb6fb24737d312d7c5198173b848d13677dd83b45e2f92126"
+    },
+    {
+      "id": "py-files-17",
+      "topic": "files",
+      "number": 17,
+      "version": "1.0.0",
+      "mode": "check",
+      "kind": "build",
+      "title": "Check: read port records",
+      "brief": "Combine CSV and type conversion.",
+      "contract": [
+        "Define port_records(path). Read name,port CSV and return {name:str,port:int} records. Valid port integer text is assumed; preserve order."
+      ],
+      "focus": [
+        "CSV transformation"
+      ],
+      "starter": "def port_records(path):\n    pass\n",
+      "hints": [],
+      "cases": [
+        {
+          "id": "01-rows",
+          "setup": "from pathlib import Path\np=root/\"a\"\np.write_text(\"name,port\\nR1,22\\nS1,443\\n\")\n",
+          "check": "expect(port_records(p),[{\"name\":\"R1\",\"port\":22},{\"name\":\"S1\",\"port\":443}])\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "from pathlib import Path\np=root/\"a\"\np.write_text(\"name,port\\n\")\n",
+          "check": "expect(port_records(p),[])\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "67e6c278c0f436b15997380aca81d2f84ef680701f2296d3e7485a2fe3f782fe"
+    },
+    {
+      "id": "py-files-18",
+      "topic": "files",
+      "number": 18,
+      "version": "1.0.0",
+      "mode": "check",
+      "kind": "build",
+      "title": "Check: source preservation",
+      "brief": "Export transformed data without changing source.",
+      "contract": [
+        "Define export_names(source,destination). source is JSON array of {name}. Write names sorted, each with newline, to destination in UTF-8. Empty source array produces an empty output.",
+        "Source and destination are distinct paths; original source bytes must stay identical."
+      ],
+      "focus": [
+        "read/transform/write"
+      ],
+      "starter": "def export_names(source, destination):\n    pass\n",
+      "hints": [],
+      "cases": [
+        {
+          "id": "01-preserved",
+          "setup": "from pathlib import Path\nsrc=root/\"source\"\ndst=root/\"out\"\nsrc.write_text('[{\"name\":\"B\"},{\"name\":\"A\"}]')\nbefore=src.read_bytes()\n",
+          "check": "export_names(src,dst)\nexpect(dst.read_text(),\"A\\nB\\n\")\nexpect(src.read_bytes(),before)\n"
+        },
+        {
+          "id": "02-empty",
+          "setup": "from pathlib import Path\nsrc=root/\"source\"\ndst=root/\"out\"\nsrc.write_text(\"[]\")\n",
+          "check": "export_names(src,dst)\nexpect(dst.read_text(),\"\")\n"
+        }
+      ],
+      "reflection": "Explain your approach, one boundary case, and one failure you repaired. For a requested technique, point to the relevant code.",
+      "entry": "callable",
+      "tests_sha256": "5731c188ced9a5b4f047d9d30712fcad5026e0eb9ae92b8a597609b6880ddaa7"
+    }
+  ]
+}
