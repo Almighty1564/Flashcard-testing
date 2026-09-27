@@ -1,0 +1,96 @@
+name: Obsidian bridge staging verification
+on:
+  push:
+    branches: ['fix/obsidian-note-sync']
+    paths: ['.github/t08-obsidian-release/**', '.github/workflows/t08-obsidian-release.yml']
+permissions:
+  contents: write
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Apply exact reviewed source patch
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import hashlib,json,lzma,subprocess
+          blob=b''.join(Path(f'.github/t08-obsidian-release/part{i}.xz').read_bytes() for i in range(5))
+          assert len(blob)==26192
+          assert hashlib.sha256(blob).hexdigest()=='8aa4209e839585d5c3d80b75e8bf5a4cc6af9b01206abec5e87c055941778625'
+          decoder=lzma.LZMADecompressor();raw=decoder.decompress(blob,max_length=500000)
+          assert decoder.eof and not decoder.unused_data and len(raw)==88300
+          pack=json.loads(raw)
+          assert pack['base_commit']=='65bb5b0ad42bba82c7575c7d477b278f3f2214dd'
+          allowed={'cs50/path/notebook.js','cs50/path/GUIDE.md','cs50/path.html','cs50/index.html','cs50/practice.html','cs50/projects.html','tests/course-path-browser.py','tests/obsidian-bridge.test.cjs','tests/obsidian-host.test.cjs','.github/workflows/obsidian-sync.yml','cs50/obsidian/package.py','cs50/obsidian/README.md','cs50/obsidian/SETUP.md','cs50/obsidian/styles.css','cs50/obsidian/build.py','cs50/obsidian/VERIFICATION.md','cs50/obsidian/manifest.json','cs50/obsidian/src/engine.cjs','cs50/obsidian/src/core.cjs','cs50/obsidian/src/transport.cjs','cs50/obsidian/src/plugin.cjs'}
+          generated={'cs50/obsidian/main.js','cs50/obsidian/tomato08-notebook-sync.zip','cs50/obsidian/SHA256SUMS.txt'}
+          assert len(pack['updates'])==21 and {e['path'] for e in pack['updates']}==allowed
+          assert set(pack['generated'])==generated
+          prepared=[]
+          for e in pack['updates']:
+              p=Path(e['path']);assert not p.is_symlink()
+              if p.exists() and hashlib.sha256(p.read_bytes()).hexdigest()==e['after']:continue
+              if e['before'] is None:
+                  assert not p.exists(),f'Unexpected existing path: {p}'
+                  result=e['content'].encode('utf-8')
+              else:
+                  old=p.read_bytes();assert hashlib.sha256(old).hexdigest()==e['before'],f'Unexpected base: {p}'
+                  lines=old.decode('utf-8').splitlines(keepends=True)
+                  for edit in reversed(e['edits']):lines[edit['start']:edit['stop']]=edit['lines']
+                  result=''.join(lines).encode('utf-8')
+              assert hashlib.sha256(result).hexdigest()==e['after'],f'After fingerprint mismatch: {p}'
+              prepared.append((p,result))
+          for p,result in prepared:p.parent.mkdir(parents=True,exist_ok=True);p.write_bytes(result)
+          for path in generated:assert not Path(path).is_symlink()
+          subprocess.run(['python','cs50/obsidian/build.py'],check=True)
+          subprocess.run(['python','cs50/obsidian/package.py'],check=True)
+          for path,digest in pack['generated'].items():assert hashlib.sha256(Path(path).read_bytes()).hexdigest()==digest,path
+          Path('/tmp/t08-obsidian-files.txt').write_text('\n'.join(sorted(p for p in allowed|generated if not p.startswith('.github/workflows/')))+'\n')
+          print('Applied 21 scoped source updates and verified three generated deliverables.')
+          PY
+      - name: Repository, bridge, host and local checker regressions
+        run: |
+          node --test tests/*.test.cjs podcast-media.test.mjs
+          node --check cs50/path/notebook.js
+          node --check cs50/obsidian/main.js
+          python tests/python-drills-runner.py
+      - name: Install native browser tools
+        run: |
+          python -m pip install playwright==1.57.0
+          python -m playwright install --with-deps chromium
+      - name: Course and notebook native browser integration
+        env:
+          T08_PATH_OUTPUT: /tmp/t08-obsidian-results
+          T08_TEST_OUTPUT: /tmp/t08-obsidian-results/studio
+          T08_DRILL_OUTPUT: /tmp/t08-obsidian-results/drills
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/t08-obsidian-results/studio /tmp/t08-obsidian-results/drills
+          python tests/course-path-browser.py 2>&1 | tee /tmp/t08-obsidian-results/path-test.log
+          python tests/project-studio-browser.py 2>&1 | tee /tmp/t08-obsidian-results/studio-test.log
+          python tests/python-drills-browser.py 2>&1 | tee /tmp/t08-obsidian-results/drill-test.log
+      - name: Commit verified application files to staging only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add --pathspec-from-file=/tmp/t08-obsidian-files.txt
+          if ! git diff --cached --quiet; then
+            git commit -m 'Add desktop Obsidian note sync and inline notebook connection'
+            git push origin HEAD:fix/obsidian-note-sync
+          fi
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: obsidian-bridge-staging-verification
+          path: /tmp/t08-obsidian-results
+          if-no-files-found: warn
+          retention-days: 7
