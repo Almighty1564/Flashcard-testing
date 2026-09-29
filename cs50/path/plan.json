@@ -4,27 +4,27 @@
     {
       "id": "basics",
       "title": "Programming foundations",
-      "description": "Understand programs before automating systems."
+      "description": "Acquire the mental model, then burn core mechanics into reliable recall."
     },
     {
       "id": "python",
       "title": "The Python toolkit",
-      "description": "Learn a concept, vary it, and solve fresh problems."
+      "description": "Rotate each Python tool through variation, failure, repair, alternatives, and combination."
     },
     {
       "id": "local",
       "title": "Useful local tools",
-      "description": "Combine the skills into real multi-file software."
+      "description": "Interleave automatic skills inside real multi-file problems without announcing which tool to use."
     },
     {
       "id": "systems",
       "title": "Data, services & interfaces",
-      "description": "Add persistence, reporting, and web integration."
+      "description": "Transfer the same primitives into persistence, services, interfaces, and unfamiliar constraints."
     },
     {
       "id": "capstone",
       "title": "Independent delivery",
-      "description": "Demonstrate, adapt, and hand over a working tool."
+      "description": "Prove retention, judgment, adaptation, and independent delivery."
     }
   ],
   "objectives": [
