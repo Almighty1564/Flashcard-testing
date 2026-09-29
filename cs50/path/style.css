@@ -9,3 +9,10 @@
 @media(prefers-reduced-motion:reduce){.course-path *, .t08-guided *{scroll-behavior:auto!important;animation:none!important;transition:none!important}}
 @media print{.path-header,.path-actions,.path-save,.path-toast,.t08-notebook,.path-note,button{display:none!important}.course-path{background:#fff;color:#111;padding:0!important}.graph-panel{display:none}.path-workarea{display:block}.path-card,.path-detail,.path-outline{background:#fff;color:#111}.path-outline{max-height:none}.path-phase:not([open]) ol{display:block}.path-node{display:block!important}.path-small{color:#333}}
 .t08-guided:not(.path-browse) .path-legacy-stages{display:none!important}.t08-guided #content>.hero{margin-top:12px}.t08-guided:not(.path-browse) #app>.hero{display:none}.t08-notebook button{font-family:inherit;font-size:11px;line-height:1.4;font-weight:600}
+
+/* Tomato08 mastery doctrine: automatic mechanics + 360-degree conceptual rotation. */
+.path-doctrine{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(300px,.9fr);gap:18px;padding:20px 22px;margin:18px 0 24px;border:1px solid var(--path-line);border-radius:10px;background:var(--path-panel)}
+.path-doctrine h2{font-size:18px;margin:6px 0 7px}.path-doctrine p{font-size:12px;color:var(--path-muted);margin:0}
+.path-doctrine-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px;align-content:start}.path-doctrine-grid span{font:700 9px/1.3 ui-monospace,Consolas,monospace;letter-spacing:.7px;color:var(--path-accent);border:1px solid var(--path-line);background:var(--path-bg);padding:7px 8px;border-radius:5px}
+.path-doctrine .path-doctrine-rule{grid-column:1/-1;padding-top:12px;border-top:1px solid var(--path-line);color:var(--path-text)}
+@media(max-width:760px){.path-doctrine{grid-template-columns:1fr}.path-doctrine-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
