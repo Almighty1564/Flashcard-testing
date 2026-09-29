@@ -2,7 +2,7 @@
 (function(root,factory){const api=factory();if(typeof module==='object'&&module.exports)module.exports=api;else root.T08PathCore=api;})(globalThis,function(){
  'use strict';
  const VERSION='1.0.0', STAGES=['foundation','practice','apply','review'];
- const LABELS={foundation:'Foundation',practice:'Practice',apply:'Apply',review:'Review & evidence'};
+ const LABELS={foundation:'1 · Acquire',practice:'2 · Burn in & rotate',apply:'3 · Integrate & operate',review:'4 · Retain & prove'};
  const stamp=e=>e.at||e.client_at||'';
  const sorted=events=>[...events].sort((a,b)=>stamp(a).localeCompare(stamp(b))||String(a.id).localeCompare(String(b.id)));
  const newest=events=>sorted(events).at(-1);
