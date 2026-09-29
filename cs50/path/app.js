@@ -60,8 +60,9 @@
     <header><span class="linear-step-number">${si+1}</span><div><span class="path-kicker">${esc(s.title)}</span><h2>${esc(s.title)}</h2><p>${esc(stageCopy[s.id])}</p></div><span class="linear-stage-count">${s.completed}/${s.items.length}</span></header>
     <ol class="linear-task-list">${s.items.map((item,i)=>`<li class="linear-task ${item.status}">
       <span class="task-index">${i+1}</span><div class="task-copy">
-      ${item.rule.type==='reflection'?`<strong>${esc(item.title)}</strong>`:`<a href="${esc(item.href)}">${esc(item.title)} <span aria-hidden="true">→</span></a>`}
+      ${item.rule.type==='reflection'?`<strong>${esc(item.title)}</strong>`:`<div class="linear-task-title">${esc(item.title)}</div>`}
       <small>${esc(item.where)}${item.delayed?' · delayed retention is tracked separately.':''}</small>
+      ${item.rule.type!=='reflection'?`<a class="linear-open-task" href="${esc(item.href)}"><span>OPEN STEP ${i+1}</span><b>${esc(item.title)}</b><span aria-hidden="true">→</span></a>`:''}
       ${item.provenance&&item.done?`<small>${esc(item.provenance)}</small>`:''}
       ${item.ack?`<div class="path-actions"><button data-ack="${item.rule.step}">${item.done?'Preparation recorded':'Mark preparation complete'}</button></div>`:''}
       ${item.rule.type==='reflection'?`<div class="path-note"><label for="reviewText">What worked, what failed, and what will you do differently?</label><textarea id="reviewText" maxlength="5000" placeholder="At least 40 characters.">${esc(p.reflection?.payload.text||'')}</textarea><button data-action="saveReflection">Save reflection</button><p class="path-note-status">${p.readyReview?'Ready to finish review after saving.':'Finish the required work above, then save this review.'}</p></div>`:''}
