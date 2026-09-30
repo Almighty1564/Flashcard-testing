@@ -1,0 +1,169 @@
+/* Scoped to the shared study renderer; does not restyle course pages or diagram-entry overlays. */
+body[data-atelier] #studyView.t08-study-layout .question-card {
+  padding: clamp(22px, 3vw, 36px);
+  container-type: inline-size;
+}
+body[data-atelier] #studyView.t08-study-layout .question-text {
+  font-family: var(--sans, system-ui, sans-serif);
+  font-size: clamp(22px, 2.1vw, 29px);
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -.02em;
+  overflow-wrap: anywhere;
+}
+body[data-atelier] #studyView.t08-study-layout .answer-box {
+  margin-top: 22px;
+  padding-top: 18px;
+  font: 17px/1.7 var(--sans, system-ui, sans-serif);
+  white-space: normal;
+}
+#studyView.t08-study-layout .t08-answer-label {
+  color: var(--muted);
+  font: 650 11px/1.4 var(--sans, system-ui, sans-serif);
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+#studyView.t08-study-layout .t08-answer-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  gap: 20px;
+}
+#studyView.t08-study-layout .t08-answer-copy {
+  min-width: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+#studyView.t08-study-layout .t08-study-figure {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
+  margin: 0;
+  min-width: 0;
+  max-width: 100%;
+  white-space: normal;
+}
+#studyView.t08-study-layout #questionImageWrap > .t08-study-figure { margin-top: 20px; }
+body[data-atelier] #studyView.t08-study-layout .t08-figure-open {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  max-width: 100%;
+  min-width: 44px;
+  min-height: 44px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  box-shadow: none;
+  cursor: zoom-in;
+}
+#studyView.t08-study-layout .t08-figure-open:focus-visible {
+  outline: 3px solid var(--accent);
+  outline-offset: 5px;
+}
+body[data-atelier] #studyView.t08-study-layout :is(.answer-image, .question-image) {
+  display: block;
+  margin: 0;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 360px;
+  object-fit: contain;
+  vertical-align: top;
+}
+#studyView.t08-study-layout .t08-study-figure figcaption {
+  color: var(--muted);
+  font: 12px/1.5 var(--sans, system-ui, sans-serif);
+  text-align: center;
+}
+#studyView.t08-study-layout .t08-media-error {
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+}
+#studyView.t08-study-layout .t08-media-error .t08-figure-open { display: none; }
+/* Wide view: a portrait diagram accompanies the entire text, never its last line. */
+@container (min-width: 640px) {
+  #studyView.t08-study-layout .t08-answer-with-text.t08-answer-with-media:not(.t08-wide-media) .t08-answer-grid {
+    grid-template-columns: minmax(0, 1fr) minmax(180px, 300px);
+    gap: clamp(24px, 4cqi, 44px);
+  }
+}
+@media (max-width: 850px) {
+  #studyView.t08-study-layout .t08-answer-with-text.t08-answer-with-media:not(.t08-wide-media) .t08-answer-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+/* Landscape diagrams keep the available row width instead of becoming tiny thumbnails. */
+body[data-atelier] #studyView.t08-study-layout .t08-wide-image :is(.answer-image, .question-image) { max-height: 440px; }
+#studyView.t08-study-layout :is(.choice-content, .match-source, .match-row, .drop-zone) {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+body[data-atelier] #studyView.t08-study-layout :is(.choice-image, .match-image) {
+  display: block;
+  width: auto;
+  height: auto;
+  max-width: 100%;
+  max-height: 280px;
+  margin: 12px 0 0;
+  vertical-align: top;
+  object-fit: contain;
+}
+body[data-atelier] #studyView.t08-study-layout .rating-row {
+  gap: 10px;
+  margin-top: 22px;
+}
+body[data-atelier] #studyView.t08-study-layout .rating-row button { min-height: 44px; }
+body[data-atelier] .t08-image-dialog {
+  width: min(1100px, calc(100vw - 32px));
+  max-width: calc(100vw - 32px);
+  max-height: calc(100vh - 32px);
+  max-height: calc(100dvh - 32px);
+  margin: auto;
+  padding: 18px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--panel, #161b22);
+  color: var(--text, #e6edf3);
+}
+.t08-image-dialog::backdrop { background: rgb(0 0 0 / .8); }
+.t08-image-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+body[data-atelier] .t08-image-header h2 { font: 600 16px/1.4 var(--sans, system-ui, sans-serif); margin: 0; }
+body[data-atelier] .t08-image-header button { min-height: 44px; }
+.t08-image-viewport {
+  display: flex;
+  justify-content: center;
+  overflow: auto;
+  max-height: calc(100vh - 140px);
+  max-height: calc(100dvh - 140px);
+}
+body[data-atelier] .t08-image-full {
+  display: block;
+  width: 100%;
+  height: calc(100vh - 150px);
+  height: calc(100dvh - 150px);
+  max-width: 100%;
+  max-height: calc(100vh - 150px);
+  max-height: calc(100dvh - 150px);
+  object-fit: contain;
+}
+@media (max-width: 520px) {
+  body[data-atelier] #studyView.t08-study-layout .question-card { padding: 20px; }
+  body[data-atelier] #studyView.t08-study-layout .question-text { font-size: 22px; }
+  body[data-atelier] #studyView.t08-study-layout .answer-box { font-size: 16px; }
+  body[data-atelier] #studyView.t08-study-layout .rating-row button { flex: 1 1 40%; min-width: 0; }
+}
+@media print {
+  #studyView.t08-study-layout .t08-study-figure figcaption { display: none; }
+  .t08-image-dialog { display: none !important; }
+}

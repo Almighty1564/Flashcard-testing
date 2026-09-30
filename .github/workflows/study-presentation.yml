@@ -1,0 +1,43 @@
+name: Study presentation checks
+on:
+  push:
+    branches: [main, 'fix/**']
+    paths: ['study-presentation.*', 'atelier-shell.js', 'mod1.html', 'theme.css', 'atelier.css', 'liquid-glass*.css', 'tests/study-presentation-browser.py', '.github/workflows/study-presentation.yml']
+  pull_request:
+    paths: ['study-presentation.*', 'atelier-shell.js', 'mod1.html', 'theme.css', 'atelier.css', 'liquid-glass*.css', 'tests/study-presentation-browser.py', '.github/workflows/study-presentation.yml']
+permissions:
+  contents: read
+jobs:
+  layout:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Existing regressions and syntax
+        run: |
+          node --test tests/*.test.cjs podcast-media.test.mjs
+          node --check study-presentation.js
+          node --check atelier-shell.js
+      - name: Install browser
+        run: |
+          python -m pip install playwright==1.57.0
+          python -m playwright install --with-deps chromium
+      - name: Study renderer, layout and interaction checks
+        env:
+          T08_LAYOUT_OUTPUT: /tmp/study-layout-results
+        run: python tests/study-presentation-browser.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: study-layout-results
+          path: /tmp/study-layout-results
+          retention-days: 7
+          if-no-files-found: warn

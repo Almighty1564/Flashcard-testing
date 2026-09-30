@@ -27,6 +27,17 @@
     document.head.appendChild(script);
   }
 
+  // Study-only text/media layout. It never writes question data or learner progress.
+  if (body.dataset.page === 'study') {
+    const style = document.createElement('link');
+    style.rel = 'stylesheet'; style.href = './study-presentation.css?v=20260930-1';
+    document.head.appendChild(style);
+    const presentation = document.createElement('script');
+    presentation.src = './study-presentation.js?v=20260930-1';
+    presentation.async = false;
+    document.head.appendChild(presentation);
+  }
+
   const main = document.querySelector('main.main') || document.querySelector('main') || document.querySelector('.wrap') || document.querySelector('#calcHost');
   const contentTarget = document.getElementById('atelierMain') || main;
   const sidebar = document.querySelector('#fcSidebar');
