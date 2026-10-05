@@ -2,12 +2,12 @@
 
 This is the original Flashcard-testing application with the Atelier design applied. It replaces the earlier sample-data personal-platform prototype in this folder. There are no fabricated modules, project lists, bills, or simulated progress in the application.
 
-Open the local review at **http://127.0.0.1:5500/** while its preview server is running. Use your existing Tomato08 username and password. A learner opens the module collection; a developer can choose the learner workspace or question studio. The app uses the existing Supabase project, so actions you take after signing in can affect real account data.
+Open the local review at **http://127.0.0.1:5500/** while its preview server is running. Use your existing Tomato08 username and password. Every signed-in account lands on Overview and chooses Communicator or DEV. Question Studio remains a role-restricted utility. The app uses the existing Supabase project, so actions you take after signing in can affect real account data.
 
 ## Included functionality
 
-- Live weather with clothing advice, local/US/world news slides, and US/European sports headlines on the learning page. See [BRIEFING.md](BRIEFING.md) for sources, privacy, behavior, and validation.
-- Existing sign-in, tester/developer routing, and sign-out.
+- Compact current weather on Overview; full weather and local/US/world/sports briefing on `weather.html`. See [BRIEFING.md](BRIEFING.md) for sources, privacy, behavior, and validation.
+- Existing sign-in and sign-out, server authorization, safe deep-link returns, and role-restricted authoring tools.
 - Published module collection with module search and recovery from loading errors.
 - Original flashcard, multiple-choice, multiple-select, numeric, diagram/image-entry, and matching question engines.
 - Original study scheduling, custom tests, card progress, test history, ranking, and question reporting.
@@ -31,7 +31,7 @@ The database changes are versioned under `supabase/migrations/`. The canonical d
 
 ## What changed in the visual layer
 
-`index.html` and `tester.html` are rebuilt around the Atelier design and the original `FC` APIs. `atelier-portal.js` connects those screens to the existing account and module workflows. `portal.css` styles the entry and collection screens.
+`index.html`, `tester.html`, `dev.html`, and `weather.html` use the minimal-focus Atelier workspace and original `FC` APIs. `atelier-portal.js` connects those screens to the existing account and module workflows. `workspace.css`, `workspace-nav.js`, and `workspace-weather.js` style and connect the new entry pages. Existing study and coding engines retain their dedicated layouts.
 
 `atelier.css` and `atelier-shell.js` apply the same design to the original inner pages. Existing study/developer controls and embedded export templates are preserved. Mobile navigation, keyboard focus, static form labels, error states, and reduced-motion support are included. The visual layer adds no continuous animation loop. Existing study/presence timers are retained; collection presence pauses when the tab is hidden.
 

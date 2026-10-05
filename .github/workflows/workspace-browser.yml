@@ -1,0 +1,58 @@
+name: Workspace browser regression
+on:
+  push:
+    branches: [main, 'ui/**']
+    paths:
+      - 'index.html'
+      - 'tester.html'
+      - 'dev.html'
+      - 'weather.html'
+      - 'workspace*'
+      - 'atelier-portal.js'
+      - 'security-auth.js'
+      - 'briefing*'
+      - 'assets/workspace/**'
+      - 'tests/workspace*'
+      - 'tests/briefing-browser.py'
+      - '.github/workflows/workspace-browser.yml'
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: pip install playwright==1.57.0
+      - run: python -m playwright install --with-deps chromium
+      - name: Unit tests and syntax
+        run: |
+          node --test tests/*.test.cjs podcast-media.test.mjs
+          node --check workspace-nav.js
+          node --check workspace-weather.js
+          node --check atelier-portal.js
+      - name: Overview, routing, authorization and responsive UI
+        run: python tests/workspace-browser.py
+        env:
+          T08_WORKSPACE_OUTPUT: /tmp/workspace-results
+      - name: Full weather controls
+        run: python tests/briefing-browser.py
+        env:
+          T08_WEATHER_OUTPUT: /tmp/weather-results
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: workspace-browser-results
+          path: |
+            /tmp/workspace-results
+            /tmp/weather-results
+          retention-days: 7

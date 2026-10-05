@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow"><meta name="referrer" content="strict-origin-when-cross-origin">
+<meta name="theme-color" content="#08131c"><meta name="description" content="Tomato08 Atelier: Communicator modules and DEV coding courses.">
+<title>Weather / Tomato08 Atelier</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2308131c'/%3E%3Ctext x='10' y='44' font-size='34' font-family='Georgia' fill='%23e697a5'%3E08%3C/text%3E%3C/svg%3E">
+<link rel="stylesheet" href="./briefing.css?v=1"><link rel="stylesheet" href="./briefing-weather.css?v=20260913-1"><link rel="stylesheet" href="./workspace.css?v=20261005-v3">
+<script src="./liquid-glass.js?v=20260912-1"></script>
+</head>
+<body class="w-page" data-atelier data-page="weather">
+<a class="w-skip" href="#content">Skip to content</a><div class="w-shell"><aside class="w-sidebar p-sidebar" id="workspaceNav" aria-label="Workspace navigation">
+<a class="w-brand" href="./index.html" aria-label="Tomato08 overview"><span class="w-monogram">t<span>08</span></span><span>ATELIER<small>BY TOMATO08</small></span></a>
+<nav class="w-navigation" aria-label="Learning and utilities">
+<a class="w-nav" href="./index.html" data-nav="portal"><span data-icon="home" aria-hidden="true"></span>Overview</a>
+<div class="w-nav-group"><a class="w-nav w-group-title" href="./tester.html" data-nav="modules"><span data-icon="radio" aria-hidden="true"></span>Communicator</a>
+<a class="w-nav w-child" href="./tester.html?module=mod1"><span aria-hidden="true">›</span>MOD 1</a>
+<a class="w-nav w-child" href="./tester.html?module=mod2"><span aria-hidden="true">›</span>MOD 2</a>
+<a class="w-nav w-child" href="./tester.html?module=mod3"><span aria-hidden="true">›</span>MOD 3</a></div>
+<div class="w-nav-group"><a class="w-nav w-group-title" href="./dev.html" data-nav="dev"><span data-icon="code" aria-hidden="true"></span>DEV (Coding)</a>
+<a class="w-nav w-child" href="./cs50/path.html"><span aria-hidden="true">›</span>CS50 Applied</a>
+<a class="w-nav w-child" href="./cs50/practice.html"><span aria-hidden="true">›</span>Practice</a>
+<a class="w-nav w-child" href="./cs50/projects.html"><span aria-hidden="true">›</span>Projects</a></div>
+<div class="w-nav-group"><span class="w-nav-label">Utilities</span>
+<a class="w-nav" href="./weather.html" data-nav="weather"><span data-icon="cloud" aria-hidden="true"></span>Weather</a>
+<a class="w-nav" href="./developer.html" data-developer hidden><span data-icon="edit" aria-hidden="true"></span>Question Studio</a>
+<a class="w-nav" href="./security.html" data-developer hidden><span data-icon="shield" aria-hidden="true"></span>Security activity</a></div>
+</nav>
+<div class="w-account"><span class="w-nav-label">Account</span><span id="sidebarAccount">Not signed in</span><button id="signOutBtn" class="w-nav" type="button" hidden><span data-icon="logout" aria-hidden="true"></span>Sign out</button></div>
+</aside>
+<div class="w-main"><header class="w-mobile-header"><button id="menuButton" type="button" aria-label="Open navigation" aria-controls="workspaceNav" aria-expanded="false"><span data-icon="menu" aria-hidden="true"></span></button><a href="./index.html">TOMATO08 / ATELIER</a><span class="w-mobile-label">Weather</span></header>
+<main id="content" tabindex="-1"><section id="gate" class="w-gate" aria-labelledby="accessTitle"><span class="w-eyebrow">TOMATO08 / ATELIER</span><h1 id="accessTitle">Sign in.</h1><p>Use your existing account.</p>
+<form id="signInForm"><label for="userInput">Username</label><input id="userInput" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+<label for="passInput">Password</label><input id="passInput" name="password" type="password" autocomplete="current-password" required>
+<button id="signInBtn" class="p-button primary" type="submit">Sign in <span aria-hidden="true">→</span></button><p id="gateError" class="p-error" role="alert"></p></form>
+<p class="w-security-note">Sign-ins record public IP, device information, and approximate location for account security.</p><p id="sessionStatus" role="status">Checking your session…</p></section><section id="modePicker" hidden aria-labelledby="pageTitle"><header class="w-heading"><div><span class="w-eyebrow">UTILITIES / WEATHER</span><h1 id="pageTitle">Weather.</h1></div></header><section aria-labelledby="briefingTitle" class="b-briefing" id="dailyBriefing">
+<header class="b-header">
+<div class="b-heading">
+<span class="b-kicker">WEATHER & NEWS</span>
+<h2 id="briefingTitle">Forecast & briefing.</h2>
+</div>
+<button aria-controls="briefingLocationDialog" aria-haspopup="dialog" class="b-location-button" id="briefingLocationButton" type="button"><span aria-hidden="true" class="b-location-pin">⌖</span><span id="briefingLocationLabel">Fayetteville, NC</span><span aria-hidden="true">⌄</span></button>
+</header>
+<div class="b-navigation">
+<div aria-label="Daily briefing sections" class="b-tabs" role="tablist">
+<button aria-controls="briefingPanel" aria-selected="true" class="b-tab" data-briefing-tab="weather" id="briefingTabWeather" role="tab" tabindex="0" type="button">Weather</button>
+<button aria-controls="briefingPanel" aria-selected="false" class="b-tab" data-briefing-tab="local" id="briefingTabLocal" role="tab" tabindex="-1" type="button">Local</button>
+<button aria-controls="briefingPanel" aria-selected="false" class="b-tab" data-briefing-tab="us" id="briefingTabUs" role="tab" tabindex="-1" type="button">United States</button>
+<button aria-controls="briefingPanel" aria-selected="false" class="b-tab" data-briefing-tab="world" id="briefingTabWorld" role="tab" tabindex="-1" type="button">World</button>
+<button aria-controls="briefingPanel" aria-selected="false" class="b-tab" data-briefing-tab="sports" id="briefingTabSports" role="tab" tabindex="-1" type="button">Sports</button>
+</div>
+<button aria-label="Weather units, currently Fahrenheit. Switch to Celsius." class="b-units" id="briefingUnits" type="button">°F <span aria-hidden="true">/ °C</span></button>
+</div>
+<div aria-busy="true" aria-labelledby="briefingTabWeather" class="b-panel" id="briefingPanel" role="tabpanel" tabindex="0">
+<div class="b-empty"><span class="b-kicker">WEATHER / FAYETTEVILLE</span><h3>Forecast</h3><p>Loading current conditions and your forecast…</p></div>
+</div>
+<footer class="b-footer">
+<div class="b-footnote"><span id="briefingUpdated">Waiting for an update</span><span aria-live="polite" class="b-status" id="briefingStatus" role="status"></span></div>
+<div class="b-footer-controls">
+<button aria-label="Refresh current briefing" class="b-icon-button" id="briefingRefresh" type="button"><span aria-hidden="true">↻</span></button>
+<span aria-hidden="true" class="b-control-divider"></span>
+<button aria-label="Previous briefing section" class="b-icon-button" id="briefingPrevious" type="button"><span aria-hidden="true">←</span></button>
+<button aria-label="Next briefing section" class="b-icon-button" id="briefingNext" type="button"><span aria-hidden="true">→</span></button>
+</div>
+</footer>
+</section>
+<dialog aria-describedby="briefingLocationHelp" aria-labelledby="briefingLocationTitle" class="b-location-dialog" id="briefingLocationDialog">
+<div class="b-dialog-heading"><div><span class="b-kicker">LOCATION</span><h2 id="briefingLocationTitle">Choose a location</h2></div><button aria-label="Close location settings" class="b-icon-button" id="briefingLocationClose" type="button">×</button></div>
+<p class="b-dialog-help" id="briefingLocationHelp">Choose a city for your weather and local headlines.</p>
+<form class="b-location-form" id="briefingLocationForm">
+<label for="briefingCitySearch">City or town</label>
+<div class="b-search-row"><input autocomplete="off" id="briefingCitySearch" maxlength="100" minlength="2" name="city" placeholder="Fayetteville, North Carolina" required="" type="search"/><button class="b-button" type="submit">Search</button></div>
+</form>
+<p aria-live="polite" class="b-location-status" id="briefingLocationStatus" role="status"></p>
+<ul aria-label="Matching locations" class="b-location-results" id="briefingLocationResults"></ul>
+<div class="b-location-alternative"><span>or</span></div>
+<button class="b-button b-geolocation" id="briefingUseLocation" type="button"><span aria-hidden="true">⌖</span>Use my location</button>
+<p class="b-privacy-note">Your browser asks permission first. Rounded coordinates go to <a href="https://www.bigdatacloud.com/docs/article/why-is-reverse-geocoding-api-free" rel="noopener noreferrer" target="_blank">BigDataCloud</a> to find your city and to Open-Meteo for weather. BigDataCloud uses location/IP pairs to improve geolocation. Only this browser remembers your selected area.</p><p class="b-privacy-note">City search: <a href="https://open-meteo.com/en/docs/geocoding-api" rel="noopener noreferrer" target="_blank">Open-Meteo / GeoNames</a>. News services receive your city name, never your coordinates or account details.</p><button class="b-reset-location" id="briefingResetLocation" type="button">Forget saved area · reset to Fayetteville</button>
+</dialog></section></main>
+<footer class="w-footer"><span>Tomato08 / Atelier</span></footer></div></div>
+<noscript><p class="w-noscript">JavaScript is required to sign in and use this workspace.</p></noscript>
+<script src="./workspace-nav.js?v=20261005-v3"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
+<script src="./supabase-config.js?v=9"></script><script src="./cloud.js?v=11"></script><script src="./security-auth.js?v=20260926-1"></script>
+<script src="./atelier-portal.js?v=20261005-v3"></script>
+<script src="./briefing-data.js?v=20260913-1"></script><script src="./briefing.js?v=20261005-v3"></script>
+</body></html>

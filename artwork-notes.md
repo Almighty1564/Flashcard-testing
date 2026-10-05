@@ -12,3 +12,10 @@ Exact generation prompt:
 > Lighting/mood: dramatic grazing museum light and precise shadows; sophisticated, quiet, powerful.
 > Color palette: titanium silver, deep cobalt blue, near-black blue gallery floor and backdrop, restrained vermilion edge glow.
 > Constraints: artwork only, no text, no logos, no UI, no watermark, no humans. Avoid generic rings, spheres, neon cyberpunk, space, planets, and satellites.
+
+
+## Minimal-focus workspace artwork
+
+- `assets/workspace/communicator.jpg`: Goldstone 70-m antenna, NASA/JPL-Caltech, PIA17792. Source: https://science.nasa.gov/photojournal/goldstone-70-m-antenna/ . Cropped/resized for a decorative card. No NASA endorsement is implied.
+- `assets/workspace/development.svg`: original vector illustration of a code editor, created for this interface. The example uses a private-range sample network in Python and is decorative only.
+- Both card assets are hosted with the website, not fetched from third parties at page load.

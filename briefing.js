@@ -5,7 +5,7 @@
   if (!D || !root) return;
   const $ = id => document.getElementById(id);
   const panel = $('briefingPanel'), tabs = Array.from(root.querySelectorAll('[data-briefing-tab]'));
-  const app = $('testerApp'), dialog = $('briefingLocationDialog');
+  const app = $('testerApp') || $('modePicker'), dialog = $('briefingLocationDialog');
   const PREFS_KEY = 'tomato08.briefing.preferences.v1';
   const NEWS_TTL = 15 * 60 * 1000, WEATHER_TTL = 15 * 60 * 1000;
   const e = v => String(v ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));

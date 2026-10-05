@@ -1,6 +1,6 @@
 # Daily briefing
 
-The learning-page artwork banner is replaced with live Weather, Local, United States, World, and Sports slides. The original module launcher and study workflows remain intact; **Start learning** now appears beside the module collection.
+Full Weather, Local, United States, World, and Sports sections now live on `weather.html`. Overview has a compact current-weather link; Communicator contains only its module collection and podcast.
 
 Fayetteville, North Carolina is the starting city. A selected city and temperature-unit preference stay in this browser. City search uses Open-Meteo's GeoNames-backed geocoder. **Use my location** requests browser permission only after a click, rounds coordinates to two decimal places, and uses BigDataCloud to identify the nearby city. The location dialog explains that provider's location/IP processing. No location, weather, or news data is written to Supabase, and no account token is sent to the briefing providers. Resetting the area removes saved preferences and restores Fayetteville.
 
@@ -20,7 +20,7 @@ News uses Google News RSS, [BBC RSS](https://support.bbc.co.uk/platform/feeds/Ne
 
 [rss2json's documented keyless API](https://rss2json.com/docs) converts RSS for browser access. This is an external service dependency, not an imported JavaScript library. Only `rss_url` is supplied; parameters requiring a key are omitted. The [provider's privacy policy](https://rss2json.com/privacy-policy) describes request/usage logging. Weather providers receive the selected area's coordinates; news providers receive city names or sports queries. All fetches omit cookies and referrers, and contain no Supabase keys or session tokens.
 
-Requests occur for the visible slide only, after the learning workspace opens. Results are cached in memory for 15 minutes. Manual refresh is throttled; hidden pages abort outstanding requests. Requests time out after 14 seconds. If refreshing a previously loaded feed fails, it retains its original timestamp and is marked as saved data. Provider-side caching can make headlines older than the time the app last checked the feed. A fresh page has no persistent headline/weather cache.
+Requests occur for the visible slide only, after the protected Weather page opens. Results are cached in memory for 15 minutes. Manual refresh is throttled; hidden pages abort outstanding requests. Requests time out after 14 seconds. If refreshing a previously loaded feed fails, it retains its original timestamp and is marked as saved data. Provider-side caching can make headlines older than the time the app last checked the feed. A fresh page has no persistent headline/weather cache.
 
 The US sports selection is supported by [Gallup's September 2026 survey](https://news.gallup.com/poll/714281/football-top-sport-soccer-inching.aspx). The European trio is a practical selection supported by a [pan-European live-sport survey](https://www.mastercard.com/news/europe/en/newsroom/press-releases/en/2022/january/mastercard-sport-economy-index-reveals-europe-set-for-60-boost-of-new-and-returning-fans-at-live-events-in-2022/); it is not presented as a definitive current ranking in every European country.
 
@@ -32,4 +32,8 @@ Local tests cover data validation and conversions, missing readings, clothing ad
 
 ## Maintenance
 
-`briefing-data.js` contains pure data adapters and forecast advice. `briefing.js` contains source URLs, caching, rendering, and UI behavior. `briefing.css` styles the panel; `tester.html` contains its accessible shell. There are no new npm packages or build steps. For a large audience, replace the public RSS converter with an owned, rate-limited feed service and a supported weather plan; the current adapters can remain the interface boundary.
+`briefing-data.js` contains pure data adapters and forecast advice. `briefing.js` contains source URLs, caching, rendering, and UI behavior. `briefing.css` styles the panel; `weather.html` contains its accessible shell. There are no new npm packages or build steps. For a large audience, replace the public RSS converter with an owned, rate-limited feed service and a supported weather plan; the current adapters can remain the interface boundary.
+
+## Minimal-focus Overview
+
+`workspace-weather.js` reads the same validated city/units preference and uses the existing weather adapters. Its separate session-storage cache contains public weather only. Missing current temperature shows “Weather unavailable”; stale cached values retain a visible saved-forecast label. Requests omit credentials and referrers. No automatic geolocation or new account-data writes are introduced.
