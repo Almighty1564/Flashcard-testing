@@ -1,21 +1,88 @@
-name: Minimal focus UI preview
+name: Minimal focus implementation verification
 on:
   push:
     branches: [ui/minimal-focus-v3]
+    paths:
+      - '.minimal-focus-apply.py'
+      - '.github/workflows/minimal-focus-preview.yml'
 permissions:
   contents: read
+concurrency:
+  group: minimal-focus-implementation
+  cancel-in-progress: true
 jobs:
-  preview:
+  verify:
+    if: github.ref == 'refs/heads/ui/minimal-focus-v3'
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      T08_WORKSPACE_OUTPUT: /tmp/workspace-results
+      T08_WEATHER_OUTPUT: /tmp/weather-results
+      T08_LAYOUT_OUTPUT: /tmp/study-layout-results
+      T08_PATH_OUTPUT: /tmp/course-path-results
     steps:
       - uses: actions/checkout@v4
         with:
-          persist-credentials: false
-      - name: Package source for local UI verification
-        run: git archive --format=zip -o "$RUNNER_TEMP/source.zip" HEAD
-      - uses: actions/upload-artifact@v4
+          ref: ui/minimal-focus-v3
+      - uses: actions/setup-node@v4
         with:
-          name: minimal-focus-source
-          path: ${{ runner.temp }}/source.zip
-          retention-days: 1
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: pip install playwright==1.57.0 Pillow
+      - run: python -m playwright install --with-deps chromium
+      - name: Apply inspected source with exact hash validation
+        run: python .minimal-focus-apply.py
+      - name: Unit tests and source syntax
+        run: |
+          node --test tests/*.test.cjs podcast-media.test.mjs
+          node --check workspace-nav.js
+          node --check workspace-weather.js
+          node --check atelier-portal.js
+          node --check atelier-shell.js
+          node --check briefing.js
+      - name: Workspace navigation, actual authorization adapter and responsive layouts
+        run: python tests/workspace-browser.py
+      - name: Existing full forecast and news controls
+        run: python tests/briefing-browser.py
+      - name: Existing study layout and grading
+        run: python tests/study-presentation-browser.py
+      - name: Existing coding path and notebook integration
+        run: python tests/course-path-browser.py
+      - name: Commit verified implementation to isolated branch only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          while IFS= read -r path; do git add -A -- "$path"; done < .git/minimal-focus-paths.txt
+          git diff --cached --check
+          git commit -m 'Implement minimal-focus Overview, Communicator and DEV workspaces; retire pointer'
+          git push origin HEAD:refs/heads/ui/minimal-focus-v3
+      - name: Package source without credentials or Git metadata
+        if: always()
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import os, subprocess, zipfile
+          names=subprocess.check_output(['git','ls-files','--cached','--others','--exclude-standard','-z']).decode().split('\0')
+          out=Path(os.environ['RUNNER_TEMP'])/'minimal-focus-source.zip'
+          with zipfile.ZipFile(out,'w',zipfile.ZIP_DEFLATED) as z:
+              for name in sorted(set(names)):
+                  p=Path(name)
+                  if not name or name.startswith('.minimal-focus') or '.git' in p.parts or '__pycache__' in p.parts or not p.is_file(): continue
+                  z.write(p,name)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: minimal-focus-verification
+          path: |
+            /tmp/workspace-results
+            /tmp/weather-results
+            /tmp/study-layout-results
+            /tmp/course-path-results
+            ${{ runner.temp }}/minimal-focus-source.zip
+          retention-days: 7
