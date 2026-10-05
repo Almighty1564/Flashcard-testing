@@ -32,8 +32,7 @@ for record in files:
     assert hashlib.sha256(data).hexdigest() == record['after'], 'Reconstruction mismatch: ' + str(p)
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_bytes(data)
-# Media-query change callbacks run on a later animation frame. Keep the assertion,
-# but wait for the actual expected DOM state rather than racing the browser.
+# Await the browser's responsive event instead of immediately asserting state.
 p = root / 'tests/workspace-browser.py'
 s = p.read_text()
 a = "        passed('Resizing to desktop resets drawer state'"
@@ -43,6 +42,12 @@ a = '    finally:\n        browser.close();server.shutdown()'
 assert s.count(a) == 1
 s = s.replace(a, "    except Exception:\n        try: page.screenshot(path=str(OUT/'failure.png'),full_page=True)\n        except Exception: pass\n        raise\n" + a)
 p.write_text(s)
+# The requested removal of motivational filler includes the podcast footer.
+p = root / 'podcast.html'
+data = p.read_bytes()
+slogan = b' <span>A little further, every day.</span>'
+assert data.count(slogan) == 1, 'Unexpected podcast footer'
+p.write_bytes(data.replace(slogan, b''))
 subprocess.run(['git','config','core.whitespace','trailing-space,space-before-tab,cr-at-eol'], check=True)
 url = 'https://assets.science.nasa.gov/dynamicimage/assets/science/psd/photojournal/pia/pia17/pia17792/PIA17792.jpg?crop=faces%2Cfocalpoint&fit=clip&h=3456&w=5184'
 request = urllib.request.Request(url, headers={'User-Agent':'Tomato08-Atelier-Artwork/1.0'})
@@ -56,7 +61,7 @@ image.save(asset, 'JPEG', quality=86, optimize=True, progressive=True)
 print('NASA/JPL-Caltech PIA17792 source SHA256:', hashlib.sha256(raw).hexdigest())
 print('Self-hosted artwork bytes:', asset.stat().st_size)
 cleanup = ['.minimal-focus-apply.py', '.github/workflows/minimal-focus-preview.yml'] + [p.name for p in parts]
-paths = [r['path'] for r in files] + ['assets/workspace/communicator.jpg'] + cleanup
+paths = [r['path'] for r in files] + ['assets/workspace/communicator.jpg', 'podcast.html'] + cleanup
 for name in cleanup:
     (root / name).unlink()
 (root / '.git/minimal-focus-paths.txt').write_text('\n'.join(paths) + '\n')
