@@ -1,0 +1,53 @@
+name: Lesson workspace regression
+on:
+  push:
+    branches: [main, 'ui/**']
+    paths: ['cs50/**', 'tests/lesson-*', 'tests/course-path-browser.py', 'tests/python-drills-browser.py', '.github/workflows/lesson-v4-build.yml']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      T08_LESSON_OUTPUT: /tmp/lesson-results
+      T08_PATH_OUTPUT: /tmp/course-results
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: pip install playwright==1.57.0
+      - run: python -m playwright install --with-deps chromium
+      - name: Unit tests and syntax
+        run: |
+          node --test tests/*.test.cjs podcast-media.test.mjs
+          node --check cs50/lesson/media.js
+          node --check cs50/lesson/workspace.js
+      - name: Lesson tools, grading and saved notebook
+        run: python tests/lesson-workspace-browser.py
+      - name: Player containment and responsive actions
+        run: python tests/lesson-geometry-browser.py
+      - name: Existing course and notebook
+        run: python tests/course-path-browser.py
+      - name: Existing Python practice
+        run: python tests/python-drills-browser.py
+      - name: Optional real public-provider verification
+        if: github.event_name == 'workflow_dispatch'
+        run: python tests/lesson-provider-browser.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lesson-workspace-results
+          path: |
+            /tmp/lesson-results
+            /tmp/course-results
+          retention-days: 7
