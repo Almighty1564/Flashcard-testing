@@ -32,6 +32,18 @@ for record in files:
     assert hashlib.sha256(data).hexdigest() == record['after'], 'Reconstruction mismatch: ' + str(p)
     p.parent.mkdir(parents=True, exist_ok=True)
     p.write_bytes(data)
+# Media-query change callbacks run on a later animation frame. Keep the assertion,
+# but wait for the actual expected DOM state rather than racing the browser.
+p = root / 'tests/workspace-browser.py'
+s = p.read_text()
+a = "        passed('Resizing to desktop resets drawer state'"
+assert s.count(a) == 1
+s = s.replace(a, "        expect(page.locator('#menuButton')).to_have_attribute('aria-expanded','false')\n" + a)
+a = '    finally:\n        browser.close();server.shutdown()'
+assert s.count(a) == 1
+s = s.replace(a, "    except Exception:\n        try: page.screenshot(path=str(OUT/'failure.png'),full_page=True)\n        except Exception: pass\n        raise\n" + a)
+p.write_text(s)
+subprocess.run(['git','config','core.whitespace','trailing-space,space-before-tab,cr-at-eol'], check=True)
 url = 'https://assets.science.nasa.gov/dynamicimage/assets/science/psd/photojournal/pia/pia17/pia17792/PIA17792.jpg?crop=faces%2Cfocalpoint&fit=clip&h=3456&w=5184'
 request = urllib.request.Request(url, headers={'User-Agent':'Tomato08-Atelier-Artwork/1.0'})
 with urllib.request.urlopen(request, timeout=60) as response:
