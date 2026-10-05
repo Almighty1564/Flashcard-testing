@@ -2,7 +2,7 @@ name: Lesson workspace implementation verification
 on:
   push:
     branches: [ui/lesson-workspace-v4]
-    paths: ['.lesson-v4-apply.py', '.github/workflows/lesson-v4-build.yml']
+    paths: ['.lesson-video-apply.py', '.github/workflows/lesson-v4-build.yml']
 permissions:
   contents: write
 concurrency:
@@ -15,14 +15,11 @@ jobs:
     env:
       PYTHONDONTWRITEBYTECODE: '1'
       T08_LESSON_OUTPUT: /tmp/lesson-results
-      T08_WORKSPACE_OUTPUT: /tmp/workspace-results
-      T08_WEATHER_OUTPUT: /tmp/weather-results
-      T08_LAYOUT_OUTPUT: /tmp/study-results
       T08_PATH_OUTPUT: /tmp/course-results
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ui/lesson-workspace-v4
+          ref: ${{ github.sha }}
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -31,29 +28,32 @@ jobs:
           python-version: '3.13'
       - run: pip install playwright==1.57.0
       - run: python -m playwright install --with-deps chromium
-      - name: Apply hash-checked source
-        run: python .lesson-v4-apply.py
+      - name: Apply scoped native-video update
+        if: hashFiles('.lesson-video-apply.py') != ''
+        run: python .lesson-video-apply.py
       - name: Unit tests and syntax
         run: |
           node --test tests/*.test.cjs podcast-media.test.mjs
           node --check cs50/lesson/media.js
           node --check cs50/lesson/workspace.js
-      - name: Lesson tabs, notebook, quiz and persistent editor lifecycle
+      - name: Lesson tabs, notes, grading and editor persistence
         run: python tests/lesson-workspace-browser.py
       - name: Existing course and notebook integration
         run: python tests/course-path-browser.py
       - name: Existing Python practice and Foundation navigation
         run: python tests/python-drills-browser.py
-      - name: Real external editor and official lecture provider
+      - name: Real Scratch project roundtrip and Harvard playback with captions
         run: python tests/lesson-provider-browser.py
-      - name: Commit verified source to feature branch only
+      - name: Commit tested source to feature branch only
         run: |
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          while IFS= read -r path; do git add -A -- "$path"; done < .git/lesson-v4-paths.txt
-          git diff --cached --check
-          git commit -m 'Implement Version 4 tabbed lesson workspace with embedded lecture, editor and existing notes'
-          git push origin HEAD:refs/heads/ui/lesson-workspace-v4
+          if [ -f .git/lesson-video-paths.txt ]; then
+            git config user.name 'github-actions[bot]'
+            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+            while IFS= read -r path; do git add -A -- "$path"; done < .git/lesson-video-paths.txt
+            git diff --cached --check
+            git commit -m 'Add verified direct Harvard video streaming and native captions to lesson workspace'
+            git push origin HEAD:refs/heads/ui/lesson-workspace-v4
+          fi
       - name: Package source and verification results
         if: always()
         run: |
@@ -65,7 +65,7 @@ jobs:
           with zipfile.ZipFile('/tmp/lesson-artifacts/source.zip','w',zipfile.ZIP_DEFLATED) as z:
               for name in sorted(set(names)):
                   p=Path(name)
-                  if not name or name.startswith('.lesson-v4') or name=='.github/workflows/lesson-v4-build.yml' or '.git' in p.parts or '__pycache__' in p.parts or not p.is_file(): continue
+                  if not name or name.startswith('.lesson-') or name.startswith('.github/workflows/lesson-') or '.git' in p.parts or '__pycache__' in p.parts or not p.is_file(): continue
                   z.write(p,name)
           for source in ['/tmp/lesson-results','/tmp/course-results']:
               p=Path(source)
@@ -74,6 +74,6 @@ jobs:
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: lesson-v4-verification
+          name: lesson-v4-direct-video-verification
           path: /tmp/lesson-artifacts
           retention-days: 7
