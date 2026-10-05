@@ -12,6 +12,57 @@
     python: 'Rl0ludWTLxs', sql: 'oqRU2So6Z2Y', ai: '-9bo8HlSxwQ',
     web: 'yYst7puZXjw', flask: 'am7POvSZ4GE', capstone: 'ApQTgFkf8TU'
   });
+  // Exact English sources resolved from official CS50x week pages, 2026-10-05.
+  const streams = Object.freeze({
+  "scratch": {
+    "video": "https://cdn.cs50.net/2025/fall/lectures/0/lecture0-720p.mp4",
+    "captions": "https://cdn.cs50.net/2025/fall/lectures/0/lang/en/lecture0.srt"
+  },
+  "c": {
+    "video": "https://cdn.cs50.net/2025/fall/lectures/1/lecture1-720p.mp4",
+    "captions": "https://cdn.cs50.net/2025/fall/lectures/1/lang/en/lecture1.srt"
+  },
+  "arrays": {
+    "video": "https://cdn.cs50.net/2025/fall/lectures/2/lecture2-720p.mp4",
+    "captions": "https://cdn.cs50.net/2025/fall/lectures/2/lang/en/lecture2.srt"
+  },
+  "algorithms": {
+    "video": "https://cdn.cs50.net/2025/fall/lectures/3/lecture3-720p.mp4",
+    "captions": "https://cdn.cs50.net/2025/fall/lectures/3/lang/en/lecture3.srt"
+  },
+  "memory": {
+    "video": "https://cdn.cs50.net/2025/fall/lectures/4/lecture4-720p.mp4",
+    "captions": "https://cdn.cs50.net/2025/fall/lectures/4/lang/en/lecture4.srt"
+  },
+  "structures": {
+    "video": "https://cdn.cs50.net/2025/fall/lectures/5/lecture5-720p.mp4",
+    "captions": "https://cdn.cs50.net/2025/fall/lectures/5/lang/en/lecture5.srt"
+  },
+  "python": {
+    "video": "https://cdn.cs50.net/2025/fall/lectures/6/lecture6-720p.mp4",
+    "captions": "https://cdn.cs50.net/2025/fall/lectures/6/lang/en/lecture6.srt"
+  },
+  "sql": {
+    "video": "https://cdn.cs50.net/2025/fall/lectures/7/lecture7-720p.mp4",
+    "captions": "https://cdn.cs50.net/2025/fall/lectures/7/lang/en/lecture7.srt"
+  },
+  "ai": {
+    "video": "https://cdn.cs50.net/2025/fall/lectures/ai/ai-720p.mp4",
+    "captions": "https://cdn.cs50.net/2025/fall/lectures/ai/lang/en/ai.srt"
+  },
+  "web": {
+    "video": "https://cdn.cs50.net/2025/fall/lectures/8/lecture8-720p.mp4",
+    "captions": "https://cdn.cs50.net/2025/fall/lectures/8/lang/en/lecture8.srt"
+  },
+  "flask": {
+    "video": "https://cdn.cs50.net/2025/fall/lectures/9/lecture9-720p.mp4",
+    "captions": "https://cdn.cs50.net/2025/fall/lectures/9/lang/en/lecture9.srt"
+  },
+  "capstone": {
+    "video": "https://cdn.cs50.net/2025/fall/lectures/10/lecture10-720p.mp4",
+    "captions": "https://cdn.cs50.net/2025/fall/lectures/10/lang/en/lecture10.srt"
+  }
+});
   const scratchEditor = 'https://scratchfoundation.github.io/scratch-gui/';
   function videoURL(unit, origin) {
     if (!Object.hasOwn(lectures, unit)) return null;
@@ -24,5 +75,13 @@
   function officialPlayer(unit) {
     return Object.hasOwn(lectures, unit) ? 'https://video.cs50.io/' + lectures[unit] : null;
   }
-  return Object.freeze({lectures, scratchEditor, videoURL, officialPlayer});
+  function streamURL(unit) { return Object.hasOwn(streams, unit) ? streams[unit].video : null; }
+  function captionsURL(unit) { return Object.hasOwn(streams, unit) ? streams[unit].captions : null; }
+  function captionsVTT(text) {
+    if (typeof text !== 'string' || text.length > 2000000) throw new TypeError('Invalid captions');
+    const clean = text.replace(/^\uFEFF/, '').replace(/\r\n?/g, '\n').trim();
+    if (!/\d{2}:\d{2}:\d{2},\d{3} --> /u.test(clean)) throw new TypeError('Unsupported captions');
+    return 'WEBVTT\n\n' + clean.replace(/(\d{2}:\d{2}:\d{2}),(\d{3})/gu, '$1.$2') + '\n';
+  }
+  return Object.freeze({lectures, scratchEditor, videoURL, officialPlayer, streamURL, captionsURL, captionsVTT});
 });

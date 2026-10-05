@@ -34,8 +34,8 @@
         <div class="lw-toolbar"><h2 id="lwToolTitle">Lecture video</h2><span id="lwToolLabel" class="lw-small">Official CS50 lecture</span><div class="lw-window-controls"><button id="lwMinimize" type="button" aria-label="Minimize current tool" aria-expanded="true">−</button><button id="lwMaximize" type="button" aria-label="Maximize current tool" aria-pressed="false">⛶</button></div></div>
         <div id="lwToolBody">
           <section id="lwPanel-lecture" role="tabpanel" aria-labelledby="lwTab-lecture" tabindex="0">
-            <div class="lw-video" id="lwVideoMount"><div class="lw-load-screen" id="lwVideoStart"><span class="lw-video-mark">CS50</span><h3 id="lwVideoTitle"></h3><button type="button" class="lw-primary" id="lwLoadVideo">Load lecture</button><p>Loads YouTube's embedded player here. Playback is not a course completion.</p></div></div>
-            <div class="lw-resource-foot"><span>Harvard CS50 · English</span><a id="lwVideoFallback" target="_blank" rel="noopener noreferrer">Open official player ↗</a></div>
+            <div class="lw-video" id="lwVideoMount"><div class="lw-load-screen" id="lwVideoStart"><span class="lw-video-mark">CS50</span><h3 id="lwVideoTitle"></h3><button type="button" class="lw-primary" id="lwLoadVideo">Load lecture</button><p>Stream the matching lecture here. Playback is not a course completion.</p></div></div>
+            <div class="lw-resource-foot"><label class="lw-video-source">Video source <select id="lwVideoSource"><option value="harvard">Harvard stream · 720p</option><option value="youtube">YouTube player</option></select></label><a id="lwVideoFallback" target="_blank" rel="noopener noreferrer">Open official player ↗</a></div><p id="lwVideoStatus" class="lw-media-status" role="status">Harvard CS50 · English. Media loads only when requested.</p>
           </section>
           <section id="lwPanel-scratch" role="tabpanel" aria-labelledby="lwTab-scratch" tabindex="0" hidden>
             <p class="lw-editor-note"><strong>Scratch standalone editor.</strong> Use File → Save to your computer to keep your .sb3 project. It is not saved to your Tomato08 or Scratch account.</p>
@@ -59,14 +59,15 @@
   let unit = null, theory = false, active = 'lecture', lastRender = null, queued = false;
   let video = null, scratch = null, approved = false, authRevision = 0, authAttached = false;
   let expanded = false, restoreFocus = null, inertNodes = [], notesClick = null, accountHome = null, notesHome = null;
-  let switching = 0, scratchTimer = null;
+  let switching = 0, scratchTimer = null, captionRequest = null, captionBlob = null;
   const minimized = new Set();
   const notebook = $('t08Notebook'), notesButton = $('courseNotesButton'), accountButton = $('accountButton');
   if (notesButton) { notesHome = notesButton.parentNode; notesClick = notesButton.onclick; }
   if (accountButton) accountHome = accountButton.parentNode;
 
   function pauseVideo() {
-    video?.contentWindow?.postMessage(JSON.stringify({event: 'command', func: 'pauseVideo', args: []}), 'https://www.youtube-nocookie.com');
+    if (video?.tagName === 'VIDEO') video.pause();
+    else video?.contentWindow?.postMessage(JSON.stringify({event: 'command', func: 'pauseVideo', args: []}), 'https://www.youtube-nocookie.com');
   }
   function say(text) { $('lwStorage').textContent = text; }
   function syncWindow() {
@@ -135,15 +136,35 @@
     $('lwMaximize').setAttribute('aria-pressed', String(next));
     if (next) $('lwMaximize').focus(); else if (restoreFocus?.isConnected) restoreFocus.focus();
   }
+  function disposeVideo() {
+    pauseVideo(); captionRequest?.abort(); captionRequest = null;
+    if (captionBlob) URL.revokeObjectURL(captionBlob); captionBlob = null;
+    if (video?.tagName === 'VIDEO') { video.removeAttribute('src'); video.load(); }
+    video?.remove(); video = null;
+    $('lwVideoStart').hidden = false;
+  }
+  async function loadCaptions(target, id) {
+    captionRequest = new AbortController();
+    try {
+      const response = await fetch(media.captionsURL(id), {credentials: 'omit', signal: captionRequest.signal, referrerPolicy: 'strict-origin-when-cross-origin'});
+      if (!response.ok) throw new Error('Captions unavailable');
+      const text = await response.text(); if (target !== video) return;
+      captionBlob = URL.createObjectURL(new Blob([media.captionsVTT(text)], {type: 'text/vtt'}));
+      const track = document.createElement('track'); track.kind = 'captions'; track.label = 'English'; track.srclang = 'en'; track.src = captionBlob;
+      target.append(track);
+    } catch (error) {
+      if (target === video && error.name !== 'AbortError') $('lwVideoStatus').textContent = 'Captions could not load. The official player and lesson page include English captions/transcript.';
+    }
+  }
   function clearMedia() {
-    pauseVideo(); clearTimeout(scratchTimer); video?.remove(); scratch?.remove(); video = null; scratch = null;
+    disposeVideo(); clearTimeout(scratchTimer); scratch?.remove(); scratch = null;
     $('lwVideoStart').hidden = false; $('lwScratchStart').hidden = false;
     $('lwScratchStatus').textContent = 'External editor loads only when requested.';
   }
   async function authorize() {
     const request = ++authRevision; approved = false;
     try { const profile = await window.FC?.requireUser?.(); if (request !== authRevision) return; approved = !!profile; }
-    catch (_) { if (request !== authRevision) return; approved = false; }
+    catch (_) { if (request !== authRevision) return; approved = false; return; } // A transient access-check failure must not discard an open project.
     if (!approved) clearMedia();
   }
   function mediaAllowed() {
@@ -153,11 +174,20 @@
   }
   function loadVideo() {
     if (!unit || video || !mediaAllowed()) return;
-    const url = media.videoURL(unit.id, location.origin); if (!url) return;
-    video = document.createElement('iframe'); video.id = 'lwVideoFrame'; video.title = 'Official CS50 lecture: ' + unit.title;
-    video.referrerPolicy = 'strict-origin-when-cross-origin';
-    video.allow = 'encrypted-media; picture-in-picture; fullscreen'; video.allowFullscreen = true;
+    const native = $('lwVideoSource').value === 'harvard';
+    const url = native ? media.streamURL(unit.id) : media.videoURL(unit.id, location.origin); if (!url) return;
+    video = document.createElement(native ? 'video' : 'iframe'); video.id = 'lwVideoFrame'; video.title = 'Official CS50 lecture: ' + unit.title;
+    if (native) {
+      video.controls = true; video.preload = 'metadata'; video.playsInline = true; video.crossOrigin = 'anonymous';
+      video.addEventListener('error', () => { $('lwVideoStatus').textContent = 'Stream unavailable. Choose YouTube player or open the official player.'; });
+      video.addEventListener('loadedmetadata', () => { $('lwVideoStatus').textContent = 'Harvard CS50 · English · 720p. Use the video controls to play.'; });
+    } else {
+      video.referrerPolicy = 'strict-origin-when-cross-origin';
+      video.allow = 'encrypted-media; picture-in-picture; fullscreen'; video.allowFullscreen = true;
+    }
     video.src = url; $('lwVideoMount').append(video); $('lwVideoStart').hidden = true;
+    $('lwVideoStatus').textContent = native ? 'Loading Harvard video stream…' : 'YouTube player. If unavailable, choose Harvard stream without leaving this page.';
+    if (native) loadCaptions(video, unit.id);
   }
   function loadScratch() {
     if (scratch || !mediaAllowed()) return;
@@ -199,7 +229,7 @@
     if (accountButton) (theory ? $('lwAccountSlot') : accountHome).append(accountButton);
     placeNotes();
     if (next !== unit) {
-      unit = next; video?.remove(); video = null; $('lwVideoStart').hidden = false;
+      unit = next; disposeVideo();
       $('lwTitle').textContent = unit.title; $('lwVideoTitle').textContent = unit.title;
       $('lwSection').textContent = 'Section ' + String(course.units.indexOf(unit)).padStart(2, '0') + ' · Foundation lesson';
       $('lwOfficialLesson').href = unit.source;
@@ -239,6 +269,7 @@
     }
     if (button.id === 'lwMenu') { const open = root.classList.toggle('lw-nav-open'); button.setAttribute('aria-expanded', String(open)); }
   });
+  $('lwVideoSource').addEventListener('change', () => { const loaded = !!video; disposeVideo(); if (loaded) loadVideo(); });
   root.querySelector('.lw-tablist').addEventListener('keydown', event => {
     if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
     const i = tabs.indexOf(event.target.dataset.lwTab); if (i < 0) return;

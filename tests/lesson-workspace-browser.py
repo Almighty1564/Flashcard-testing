@@ -31,6 +31,9 @@ with sync_playwright() as p:
     return r.continue_()
    if 'cdn.jsdelivr.net' in url:return r.fulfill(content_type='application/javascript',body='window.supabase={};')
    requests.append(url)
+   if url.startswith('https://cdn.cs50.net/'):
+    if url.endswith('.srt'):return r.fulfill(content_type='text/plain',headers={'Access-Control-Allow-Origin':'*'},body='1\n00:00:00,000 --> 00:00:03,000\nSynthetic test caption.\n')
+    return r.fulfill(status=204,headers={'Access-Control-Allow-Origin':'*'})
    if url.startswith('https://www.youtube-nocookie.com/embed/'):
     return r.fulfill(content_type='text/html',body='<html><body style="background:#080d15;color:white"><h1>External video transport fixture</h1><script>window.paused=false;addEventListener("message",e=>{try{if(JSON.parse(e.data).func==="pauseVideo")window.paused=true;}catch(_){}});</script></body></html>')
    if url=='https://scratchfoundation.github.io/scratch-gui/':
@@ -55,9 +58,10 @@ with sync_playwright() as p:
   page.locator('#lwMenu').click();check('Mobile navigation expands',page.locator('#lwMenu').get_attribute('aria-expanded')=='true');page.locator('#lwMenu').click()
   page.set_viewport_size({'width':1440,'height':950})
   page.locator('#lwLoadVideo').click();expect(page.locator('#lwVideoFrame')).to_be_visible()
-  check('Matching lecture loads in this page','/UuIEbpQms8o?' in page.locator('#lwVideoFrame').get_attribute('src'))
+  check('Matching lecture loads in this page','/0/lecture0-720p.mp4' in page.locator('#lwVideoFrame').get_attribute('src'))
+  page.locator('#lwVideoFrame').evaluate('(v)=>{window.__nativeElement=v;const pause=v.pause.bind(v);v.pause=()=>{window.__nativePause=true;pause();};}')
   page.locator('#lwTab-scratch').click();expect(page.locator('#lwPanel-scratch')).to_be_visible()
-  frame=page.locator('#lwVideoFrame').element_handle().content_frame();frame.wait_for_function('window.paused===true')
+  page.wait_for_function('window.__nativePause===true')
   check('Video is paused, not destroyed when changing tabs',page.locator('#lwVideoFrame').count()==1)
   page.locator('#lwLoadScratch').click();editor=page.frame_locator('#lwScratchFrame');editor.locator('#projectName').fill('Battery monitor');editor.locator('#blocks').fill('battery = 100')
   check('Scratch editor is isolated on another origin','allow-top-navigation' not in page.locator('#lwScratchFrame').get_attribute('sandbox'))
@@ -69,7 +73,7 @@ with sync_playwright() as p:
   page.locator('#lwMaximize').click();check('Maximize stays inside page with accessible restore',page.locator('#lwMaximize').get_attribute('aria-pressed')=='true');check('Unrelated navigation is inert while maximized',page.locator('.lw-sidebar').evaluate('(e)=>e.inert'))
   page.keyboard.press('Escape');check('Escape restores panel without reload',page.locator('#lwMaximize').get_attribute('aria-pressed')=='false' and editor.locator('#blocks').input_value()=='battery = 100')
   check('Restoring size restores keyboard access',not page.locator('.lw-sidebar').evaluate('(e)=>e.inert'))
-  page.locator('#lwTab-lecture').click();check('Returning to lecture preserves original iframe',sum('youtube-nocookie.com' in u for u in requests)==1)
+  page.locator('#lwTab-lecture').click();check('Returning to lecture preserves original iframe',page.evaluate('document.querySelector("#lwVideoFrame")===window.__nativeElement'))
   page.locator('#lwTab-lecture').focus();page.keyboard.press('ArrowRight');expect(page.locator('#lwTab-scratch')).to_have_attribute('aria-selected','true');page.keyboard.press('End');expect(page.locator('#lwTab-files')).to_have_attribute('aria-selected','true');check('Arrow keys, Home/End provide keyboard tab navigation')
   with page.expect_download() as d:page.locator('#lwDownloadInstructions').click()
   file=OUT/'scratch-lesson.md';d.value.save_as(str(file));check('Files tab downloads actual lesson requirements','Press space to reduce battery' in file.read_text())
@@ -87,6 +91,7 @@ with sync_playwright() as p:
   page.locator('#lwNext').click();expect(page.locator('#lwTitle')).to_contain_text('C');check('Next lesson changes the official lecture mapping',page.locator('#lwVideoFrame').count()==0 and 'SlqjA04_dpk' in page.locator('#lwVideoFallback').get_attribute('href'))
   page.locator('#lwPrevious').click();expect(page.locator('#lwTitle')).to_contain_text('Scratch')
   page.locator('#lwTab-scratch').click();check('Same-page lesson navigation preserves open project',editor.locator('#blocks').input_value()=='battery = 100')
+  page.locator('#lwTab-lecture').click();page.locator('#lwLoadVideo').click();page.locator('#lwVideoSource').select_option('youtube');check('Alternate embedded player stays in the same page','youtube-nocookie.com' in page.locator('#lwVideoFrame').get_attribute('src'));page.locator('#lwVideoSource').select_option('harvard')
   check('Viewing tools never awards credit',page.evaluate('CS50Lab.state.events.length')==0)
   page.locator('.lw-quick [data-action=seen]').click();expect(page.locator('#quizForm')).to_be_visible();check('Review button opens actual quiz, not a fake Mark Complete',page.evaluate('!!CS50Lab.state.seen.scratch') and page.evaluate('CS50Lab.state.events.length')==0)
   for q in page.evaluate('CS50Lab.curriculum.units[0].quiz'):

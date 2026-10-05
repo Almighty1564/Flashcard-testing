@@ -23,3 +23,6 @@ The editor iframe uses the Scratch Foundation's standalone GUI, documented at ht
 `node --test tests/lesson-workspace.test.cjs`
 
 `python tests/lesson-workspace-browser.py` exercises actual course/notebook code with synthetic authentication and synthetic third-party iframe transports. `python tests/lesson-provider-browser.py` separately verifies the real cross-origin editor and records the real video provider's result. No production accounts or database writes are used.
+
+## Direct video stream
+The default player uses Harvard's published English SDR 720p MP4 in a native HTML5 video element. YouTube remains a selectable embedded alternative. Both are click-to-load, pause when hidden, and award no course credit. Official English SRT captions convert to an in-memory VTT track; they are not rehosted or persisted. All 12 URLs were resolved from official CS50x week pages on 2026-10-05. Real playback, captions, and actual .sb3 download are checked independently of fixture tests.

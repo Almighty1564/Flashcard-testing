@@ -47,3 +47,17 @@ test('Unit-to-notebook identity matches the published plan', () => {
   const plan = JSON.parse(read('cs50/path/plan.json'));
   for(const item of plan.objectives.filter(n=>n.kind==='foundation')) assert(src.includes(item.ref+":'"+item.id+"'"));
 });
+
+test('Every native stream is an exact Harvard-hosted English SDR source', () => {
+  for (const unit of Object.keys(media.lectures)) {
+    const video = new URL(media.streamURL(unit));
+    assert.equal(video.origin,'https://cdn.cs50.net');
+    assert.match(video.pathname,/^\/2025\/fall\/lectures\/(?:[0-9]+|ai)\/(?:lecture[0-9]+|ai)-720p\.mp4$/);
+    assert.equal(new URL(media.captionsURL(unit)).origin,'https://cdn.cs50.net');
+  }
+  assert.equal(media.streamURL('__proto__'),null);
+});
+test('SRT timestamps convert to native WebVTT without executing content', () => {
+  assert.equal(media.captionsVTT('1\r\n00:00:01,200 --> 00:00:02,400\r\nExample caption.\r\n'), 'WEBVTT\n\n1\n00:00:01.200 --> 00:00:02.400\nExample caption.\n');
+  assert.throws(()=>media.captionsVTT('<html>Error</html>'));
+});
