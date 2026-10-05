@@ -115,8 +115,13 @@ test('unit conversion, weather advice and safe news links still work', () => {
   assert.equal(D.safeURL('javascript:alert(1)'),null);assert.equal(D.safeURL('https://example.com/a'),'https://example.com/a');
   assert.equal(D.normalizeNews({status:'ok',items:[{title:'Hello',link:'https://example.com/a',pubDate:'2026-09-13 12:00:00'}]},'Test')[0].title,'Hello');
 });
-test('HTML loads versioned assets without removing authentication or podcast scripts', () => {
-  const s=fs.readFileSync(path.join(__dirname,'../tester.html'),'utf8');
-  for(const f of ['briefing-weather.css?v=20260913-1','briefing-data.js?v=20260913-1','briefing.js?v=20260913-1','cloud.js?v=11','atelier-portal.js?v=5','./podcast.html']) assert.ok(s.includes(f));
-  assert.match(s,/<section id="testerApp" hidden/);
+test('full forecast moves to Weather while module authentication and podcast remain', () => {
+  const s=fs.readFileSync(path.join(__dirname,'../weather.html'),'utf8');
+  for(const f of ['briefing-weather.css?v=20260913-1','briefing-data.js?v=20260913-1','briefing.js?v=20261005-v3','cloud.js?v=11','atelier-portal.js?v=20261005-v3','security-auth.js']) assert.ok(s.includes(f),f);
+  assert.match(s,/<section id="modePicker" hidden/);
+  const modules=fs.readFileSync(path.join(__dirname,'../tester.html'),'utf8');
+  assert.ok(!modules.includes('id="dailyBriefing"'));
+  assert.match(modules,/<section id="testerApp" hidden/);
+  assert.ok(modules.includes('./podcast.html'));
+  assert.ok(modules.includes('security-auth.js'));
 });

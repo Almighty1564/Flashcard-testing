@@ -3,12 +3,12 @@
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="robots" content="noindex, nofollow"><meta name="referrer" content="strict-origin-when-cross-origin">
 <meta name="theme-color" content="#08131c"><meta name="description" content="Tomato08 Atelier: Communicator modules and DEV coding courses.">
-<title>Communicator / Tomato08 Atelier</title>
+<title>DEV / Tomato08 Atelier</title>
 <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='16' fill='%2308131c'/%3E%3Ctext x='10' y='44' font-size='34' font-family='Georgia' fill='%23e697a5'%3E08%3C/text%3E%3C/svg%3E">
 <link rel="stylesheet" href="./workspace.css?v=20261005-v3">
 <script src="./liquid-glass.js?v=20260912-1"></script>
 </head>
-<body class="w-page" data-atelier data-page="modules">
+<body class="w-page" data-atelier data-page="dev">
 <a class="w-skip" href="#content">Skip to content</a><div class="w-shell"><aside class="w-sidebar p-sidebar" id="workspaceNav" aria-label="Workspace navigation">
 <a class="w-brand" href="./index.html" aria-label="Tomato08 overview"><span class="w-monogram">t<span>08</span></span><span>ATELIER<small>BY TOMATO08</small></span></a>
 <nav class="w-navigation" aria-label="Learning and utilities">
@@ -28,12 +28,15 @@
 </nav>
 <div class="w-account"><span class="w-nav-label">Account</span><span id="sidebarAccount">Not signed in</span><button id="signOutBtn" class="w-nav" type="button" hidden><span data-icon="logout" aria-hidden="true"></span>Sign out</button></div>
 </aside>
-<div class="w-main"><header class="w-mobile-header"><button id="menuButton" type="button" aria-label="Open navigation" aria-controls="workspaceNav" aria-expanded="false"><span data-icon="menu" aria-hidden="true"></span></button><a href="./index.html">TOMATO08 / ATELIER</a><span class="w-mobile-label">Communicator</span></header>
-<main id="content" tabindex="-1"><section id="testerLock" class="w-gate" aria-labelledby="accessTitle"><span class="w-eyebrow">TOMATO08 / ATELIER</span><h1 id="accessTitle">Sign in.</h1><p>Use your existing account.</p>
-<form id="signInForm"><label for="testerUsernameInput">Username</label><input id="testerUsernameInput" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required>
-<label for="testerPasswordInput">Password</label><input id="testerPasswordInput" name="password" type="password" autocomplete="current-password" required>
-<button id="testerUnlockBtn" class="p-button primary" type="submit">Sign in <span aria-hidden="true">→</span></button><p id="testerLockError" class="p-error" role="alert"></p></form>
-<p class="w-security-note">Sign-ins record public IP, device information, and approximate location for account security.</p><p id="sessionStatus" role="status">Checking your session…</p></section><section id="testerApp" hidden aria-labelledby="pageTitle"><header class="w-heading"><div><span class="w-eyebrow">COMMUNICATIONS / MODULES</span><h1 id="pageTitle">Communicator.</h1></div></header><section id="moduleCollection" aria-labelledby="modulesTitle"><div class="p-section-heading"><div><h2 id="modulesTitle">Modules <span class="p-count" id="moduleCount">—</span></h2><a class="p-button primary" id="firstModuleLink" href="#moduleCollection" hidden>Open first module →</a></div><label class="p-filter"><span class="w-sr-only">Find a module</span><input id="moduleSearch" type="search" placeholder="Find a module…" autocomplete="off"></label></div><p class="w-sr-only" id="moduleStatus" role="status" aria-live="polite"></p><p id="requestedModuleStatus" role="status" hidden></p><div class="p-modules" id="modList" aria-busy="true"></div></section><p id="mod2PodcastLink" hidden><a class="p-button" href="./podcast.html">Module 2 podcast →</a></p></section></main>
+<div class="w-main"><header class="w-mobile-header"><button id="menuButton" type="button" aria-label="Open navigation" aria-controls="workspaceNav" aria-expanded="false"><span data-icon="menu" aria-hidden="true"></span></button><a href="./index.html">TOMATO08 / ATELIER</a><span class="w-mobile-label">DEV</span></header>
+<main id="content" tabindex="-1"><section id="gate" class="w-gate" aria-labelledby="accessTitle"><span class="w-eyebrow">TOMATO08 / ATELIER</span><h1 id="accessTitle">Sign in.</h1><p>Use your existing account.</p>
+<form id="signInForm"><label for="userInput">Username</label><input id="userInput" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+<label for="passInput">Password</label><input id="passInput" name="password" type="password" autocomplete="current-password" required>
+<button id="signInBtn" class="p-button primary" type="submit">Sign in <span aria-hidden="true">→</span></button><p id="gateError" class="p-error" role="alert"></p></form>
+<p class="w-security-note">Sign-ins record public IP, device information, and approximate location for account security.</p><p id="sessionStatus" role="status">Checking your session…</p></section><section id="modePicker" hidden aria-labelledby="pageTitle"><header class="w-heading"><div><span class="w-eyebrow">CODING / DEVELOPMENT</span><h1 id="pageTitle">DEV.</h1></div></header><div class="w-dev-grid">
+<a class="w-course" href="./cs50/path.html"><span class="w-course-index">01 / COURSE</span><span data-icon="code" aria-hidden="true"></span><h2>CS50 Applied</h2><p>Follow the existing course map, foundations, and objectives.</p><span class="w-course-link">Open course <span aria-hidden="true">→</span></span></a>
+<a class="w-course" href="./cs50/practice.html"><span class="w-course-index">02 / PRACTICE</span><span data-icon="terminal" aria-hidden="true"></span><h2>Practice</h2><p>Python drills, coding checks, and recorded results.</p><span class="w-course-link">Open practice <span aria-hidden="true">→</span></span></a>
+<a class="w-course" href="./cs50/projects.html"><span class="w-course-index">03 / PROJECTS</span><span data-icon="folder" aria-hidden="true"></span><h2>Projects</h2><p>Network automation projects and saved evidence.</p><span class="w-course-link">Open projects <span aria-hidden="true">→</span></span></a></div></section></main>
 <footer class="w-footer"><span>Tomato08 / Atelier</span></footer></div></div>
 <noscript><p class="w-noscript">JavaScript is required to sign in and use this workspace.</p></noscript>
 <script src="./workspace-nav.js?v=20261005-v3"></script>

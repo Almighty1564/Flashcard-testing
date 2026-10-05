@@ -46,7 +46,7 @@
   bar.innerHTML = '<div class="atelier-bar-start"><a class="atelier-wordmark" href="./index.html" aria-label="Atelier home">' +
     '<span class="atelier-monogram" aria-hidden="true">t08</span><span class="atelier-wordmark-text">ATELIER</span></a>' +
     '<span class="atelier-bar-label"></span></div><nav class="atelier-bar-nav" aria-label="Workspace">' +
-    '<a href="./index.html" data-atelier-home>Home</a><a href="./tester.html">Modules <span aria-hidden="true">↗</span></a></nav>';
+    '<a href="./index.html" data-atelier-home>Overview</a><a href="./tester.html">Communicator</a><a href="./dev.html">DEV</a></nav>';
   bar.querySelector('.atelier-bar-label').textContent = pageName;
 
   if (document.querySelector('main.main')) main.prepend(bar);

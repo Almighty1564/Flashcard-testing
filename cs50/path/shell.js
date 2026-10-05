@@ -8,7 +8,7 @@
  const account=header.querySelector('#accountButton,#account'),brand=header.querySelector('.brand');
  [...header.children].forEach(el=>{if(el!==account&&el!==brand)el.remove();});
  if(brand){brand.setAttribute('href','path.html');const text=brand.querySelector('span');if(text)text.innerHTML='TOMATO08<small>PROGRAMMING / NETWORK AUTOMATION</small>';}
- const nav=document.createElement('nav');nav.className='path-work-nav';nav.setAttribute('aria-label','Course navigation');nav.innerHTML='<a href="path.html">Course map</a><a href="path.html#view=progress">Progress</a><a href="path.html#view=tools">Tools</a>';header.insertBefore(nav,account);
+ const nav=document.createElement('nav');nav.className='path-work-nav';nav.setAttribute('aria-label','Course navigation');nav.innerHTML='<a href="../dev.html">DEV</a><a href="path.html">Course map</a><a href="path.html#view=progress">Progress</a><a href="path.html#view=tools">Tools</a>';header.insertBefore(nav,account);
  const notes=document.createElement('button');notes.type='button';notes.id='courseNotesButton';notes.textContent='Notes';header.insertBefore(notes,account);
  const bar=document.createElement('section');bar.className='path-orientation';bar.hidden=true;bar.setAttribute('aria-label','Current course objective');header.after(bar);
  const footer=document.createElement('div');footer.className='path-next-bar';footer.hidden=true;const host=document.getElementById('main');(document.getElementById('workspace')||document.querySelector('.layout')||host)?.after(footer);

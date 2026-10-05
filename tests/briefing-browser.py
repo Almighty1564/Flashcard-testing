@@ -1,11 +1,12 @@
 """Isolated real-browser component checks, using deterministic mock provider responses."""
 from pathlib import Path
-import json, subprocess, shutil, tempfile
+import json, subprocess, shutil, tempfile, os, re
 from playwright.sync_api import sync_playwright, expect
 ROOT=Path(__file__).resolve().parents[1]
-OUT=Path(tempfile.mkdtemp(prefix='tomato08-weather-tests-'))
-html=(ROOT/'tester.html').read_text()
-body=html[html.index('<section class="b-briefing"'):html.index('</dialog>')+9]
+OUT=Path(os.environ.get('T08_WEATHER_OUTPUT') or tempfile.mkdtemp(prefix='tomato08-weather-tests-'));OUT.mkdir(parents=True,exist_ok=True)
+html=(ROOT/'weather.html').read_text()
+start=re.search(r'<section\b[^>]*\bid="dailyBriefing"[^>]*>',html).start()
+body=html[start:html.index('</dialog>')+9]
 css=(ROOT/'briefing.css').read_text()+(ROOT/'briefing-weather.css').read_text()
 fixture_html='<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><style>'+css+'\nbody{margin:0;padding:12px;background:#191a1e}#testerApp{max-width:1080px;margin:0 auto}[hidden]{display:none!important}</style></head><body data-atelier><section id="testerApp" hidden>'+body+'</section></body></html>'
 raw=json.loads(subprocess.check_output(['node',str(ROOT/'tests/briefing-fixture.cjs')]))

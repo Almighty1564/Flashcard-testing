@@ -1,7 +1,9 @@
 /* Presentation adapter. FC remains the original shared data/auth layer. */
 (function () {
   'use strict';
-  const isModules = document.body.dataset.page === 'modules';
+  const page = document.body.dataset.page;
+  const isModules = page === 'modules';
+  const isPortal = page === 'portal';
   const byId = id => document.getElementById(id);
   const gate = byId(isModules ? 'testerLock' : 'gate');
   const app = byId(isModules ? 'testerApp' : 'modePicker');
@@ -12,12 +14,6 @@
   const signOutBtn = byId('signOutBtn');
   let modules = [], profile = null, heartbeat = null, busy = false, moduleRequest = 0;
   const escapeHTML = value => String(value ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-
-  const nav = byId('workspaceNav'), menu = byId('menuButton');
-  nav.classList.add('p-collapsible'); menu.classList.add('is-ready');
-  function closeNav() { nav.classList.remove('is-open'); menu.setAttribute('aria-expanded', 'false'); }
-  menu.addEventListener('click', () => { const open = nav.classList.toggle('is-open'); menu.setAttribute('aria-expanded', String(open)); if (open) nav.querySelector('nav a').focus(); });
-  document.addEventListener('keydown', e => { if (e.key === 'Escape' && nav.classList.contains('is-open')) { closeNav(); menu.focus(); } });
 
   function currentReturnPath() {
     return location.pathname + location.search + location.hash;
@@ -33,16 +29,16 @@
     try {
       const url = new URL(raw, location.origin);
       if (url.origin !== location.origin) return null;
-      const name = url.pathname.split('/').pop() || '';
-      const allowed = new Set(['tester.html','mod1.html','study.html','developer.html','podcast.html','mod1-calc.html','antenna-pattern.html','security.html','projects.html','practice.html','path.html']);
-      if (!allowed.has(name)) return null;
+      const routes = ['tester.html','mod1.html','study.html','developer.html','podcast.html','mod1-calc.html','antenna-pattern.html','security.html','dev.html','weather.html','cs50/index.html','cs50/path.html','cs50/practice.html','cs50/projects.html'];
+      const allowed = new Set(routes.map(route => new URL('./' + route, location.href).pathname));
+      if (!allowed.has(url.pathname)) return null;
       return url.pathname + url.search + url.hash;
     } catch (_) { return null; }
   }
   function destinationFor(profile) {
     const requested = safeReturnDestination();
     if (requested && /\/developer\.html(?:[?#]|$)/.test(requested) && profile?.role !== 'developer') return './tester.html';
-    return requested || './tester.html';
+    return requested;
   }
 
   function updateAccount(next) {
@@ -51,9 +47,10 @@
     document.querySelectorAll('[data-avatar]').forEach(el => { el.textContent = next?.username ? next.username.slice(0, 2).toUpperCase() : '08'; });
     const who = byId('whoami');
     if (who) who.textContent = next ? (next.username || 'Signed in') : '';
-    if (byId('sidebarAccount')) byId('sidebarAccount').textContent = next?.username ? 'Signed in as ' + next.username : 'Your learning workspace';
+    if (byId('sidebarAccount')) byId('sidebarAccount').textContent = next?.username ? 'Signed in as ' + next.username : 'Not signed in';
     if (byId('backToModes')) byId('backToModes').hidden = !next || next.role !== 'developer';
     signOutBtn.hidden = !next;
+    document.dispatchEvent(new CustomEvent('workspace:account', {detail:{signedIn:Boolean(next)}}));
   }
 
   function showGate(message, focus) {
@@ -67,16 +64,16 @@
 
   async function enter(next) {
     if (!next) {
-      if (isModules) { location.replace(loginUrl(currentReturnPath())); return; }
+      if (!isPortal) { location.replace(loginUrl(currentReturnPath())); return; }
       showGate('Please sign in to continue.');
       return;
     }
-    if (!isModules) {
-      location.replace(destinationFor(next));
-      return;
-    }
+    const destination = isPortal ? destinationFor(next) : null;
+    if (destination) { location.replace(destination); return; }
     updateAccount(next); gate.hidden = true; app.hidden = false; errorEl.textContent = '';
-    startHeartbeat(); await loadModules();
+    document.dispatchEvent(new CustomEvent('workspace:ready'));
+    startHeartbeat();
+    if (isModules) await loadModules();
   }
 
   function renderModules() {
@@ -85,7 +82,7 @@
     byId('moduleCount').textContent = String(modules.length);
     byId('moduleStatus').textContent = filtered.length + (filtered.length === 1 ? ' module' : ' modules') + (query ? ' matching your search.' : ' available.');
     if (!filtered.length) {
-      const title = query ? 'No matching modules' : 'Your collection starts here';
+      const title = query ? 'No matching modules' : 'No published modules';
       const copy = query ? 'Try a different name or clear your search.' : 'Published modules will appear here when they are ready.';
       byId('modList').innerHTML = '<div class="p-empty"><h3>' + title + '</h3><p>' + copy + '</p>' + (query ? '<button type="button" class="p-button" id="clearSearch">Clear search</button>' : '') + '</div>';
       byId('clearSearch')?.addEventListener('click', () => { byId('moduleSearch').value = ''; renderModules(); byId('moduleSearch').focus(); });
@@ -97,13 +94,21 @@
   async function loadModules() {
     const request = ++moduleRequest, list = byId('modList');
     list.setAttribute('aria-busy', 'true'); byId('firstModuleLink').hidden = true;
-    list.innerHTML = '<div class="p-empty"><h3>Opening your collection…</h3><p>Loading your published modules.</p></div>';
+    list.innerHTML = '<div class="p-empty"><h3>Loading modules…</h3><p>Loading your published modules.</p></div>';
     try {
       const result = await FC.listModules();
       if (request !== moduleRequest || !profile) return;
       modules = result.filter(m => m.is_published);
       if (byId('mod2PodcastLink')) byId('mod2PodcastLink').hidden = !modules.some(m => m.slug === 'mod2');
       renderModules();
+      const requested = new URLSearchParams(location.search).get('module');
+      if (requested) {
+        const key = text => String(text || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+        const match = modules.find(m => m.slug === requested || key(m.name) === key(requested));
+        if (match) { location.replace('./mod1.html?module=' + encodeURIComponent(match.slug)); return; }
+        const status = byId('requestedModuleStatus');
+        if (status) { status.hidden = false; status.textContent = 'That module is not currently published. Choose an available module below.'; }
+      }
       if (modules.length) { const first = byId('firstModuleLink'); first.href = './mod1.html?module=' + encodeURIComponent(modules[0].slug); first.hidden = false; }
     } catch (error) {
       if (request !== moduleRequest || !profile) return;
@@ -128,7 +133,7 @@
     signOutBtn.disabled = true;
     try {
       await FC.signOut(); user.value = ''; pass.value = '';
-      if (isModules) location.replace('./index.html'); else showGate('', true);
+      if (!isPortal) location.replace('./index.html'); else showGate('', true);
     } finally { signOutBtn.disabled = false; }
   });
   if (isModules) byId('moduleSearch').addEventListener('input', renderModules);
@@ -144,8 +149,9 @@
   window.addEventListener('pagehide', stopHeartbeat);
   window.addEventListener('pageshow', async e => {
     if (!e.persisted || !window.FC) return;
-    try { const next = await FC.requireUser(); if (next) await enter(next); else if (isModules) location.replace(loginUrl(currentReturnPath())); else showGate('Your session ended. Please sign in again.'); }
-    catch (_) { if (isModules) location.replace(loginUrl(currentReturnPath())); else showGate('Please sign in again.'); }
+    app.hidden = true;
+    try { const next = await FC.requireUser(); if (next) await enter(next); else if (!isPortal) location.replace(loginUrl(currentReturnPath())); else showGate('Your session ended. Please sign in again.'); }
+    catch (_) { if (!isPortal) location.replace(loginUrl(currentReturnPath())); else showGate('Please sign in again.'); }
   });
   (async function boot() {
     if (!window.FC) { showGate('The sign-in service could not load. Check your internet connection and reload this page.'); return; }
@@ -153,10 +159,10 @@
     try {
       const next = await FC.requireUser();
       if (next) await enter(next);
-      else if (isModules) location.replace(loginUrl(currentReturnPath()));
+      else if (!isPortal) location.replace(loginUrl(currentReturnPath()));
       else showGate('');
     } catch (error) {
-      if (isModules) location.replace(loginUrl(currentReturnPath()));
+      if (!isPortal) location.replace(loginUrl(currentReturnPath()));
       else showGate(error.message || 'Your session could not be checked. Please sign in.');
     } finally { submit.disabled = false; byId('sessionStatus').hidden = true; }
   })();
