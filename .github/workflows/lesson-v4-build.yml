@@ -1,15 +1,14 @@
-name: Lesson workspace implementation verification
+name: Lesson workspace regression
 on:
   push:
-    branches: [ui/lesson-workspace-v4]
-    paths: ['.lesson-video-apply.py', '.github/workflows/lesson-v4-build.yml']
+    branches: [main, 'ui/**']
+    paths: ['cs50/**', 'tests/lesson-*', 'tests/course-path-browser.py', 'tests/python-drills-browser.py', '.github/workflows/lesson-v4-build.yml']
+  pull_request:
+  workflow_dispatch:
 permissions:
-  contents: write
-concurrency:
-  group: lesson-v4-implementation
-  cancel-in-progress: false
+  contents: read
 jobs:
-  verify:
+  browser:
     runs-on: ubuntu-latest
     timeout-minutes: 12
     env:
@@ -19,7 +18,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ github.sha }}
+          persist-credentials: false
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
@@ -28,52 +27,27 @@ jobs:
           python-version: '3.13'
       - run: pip install playwright==1.57.0
       - run: python -m playwright install --with-deps chromium
-      - name: Apply scoped native-video update
-        if: hashFiles('.lesson-video-apply.py') != ''
-        run: python .lesson-video-apply.py
       - name: Unit tests and syntax
         run: |
           node --test tests/*.test.cjs podcast-media.test.mjs
           node --check cs50/lesson/media.js
           node --check cs50/lesson/workspace.js
-      - name: Lesson tabs, notes, grading and editor persistence
+      - name: Lesson tools, grading and saved notebook
         run: python tests/lesson-workspace-browser.py
-      - name: Existing course and notebook integration
+      - name: Player containment and responsive actions
+        run: python tests/lesson-geometry-browser.py
+      - name: Existing course and notebook
         run: python tests/course-path-browser.py
-      - name: Existing Python practice and Foundation navigation
+      - name: Existing Python practice
         run: python tests/python-drills-browser.py
-      - name: Real Scratch project roundtrip and Harvard playback with captions
+      - name: Optional real public-provider verification
+        if: github.event_name == 'workflow_dispatch'
         run: python tests/lesson-provider-browser.py
-      - name: Commit tested source to feature branch only
-        run: |
-          if [ -f .git/lesson-video-paths.txt ]; then
-            git config user.name 'github-actions[bot]'
-            git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-            while IFS= read -r path; do git add -A -- "$path"; done < .git/lesson-video-paths.txt
-            git diff --cached --check
-            git commit -m 'Add verified direct Harvard video streaming and native captions to lesson workspace'
-            git push origin HEAD:refs/heads/ui/lesson-workspace-v4
-          fi
-      - name: Package source and verification results
-        if: always()
-        run: |
-          mkdir -p /tmp/lesson-artifacts
-          python - <<'PY'
-          from pathlib import Path
-          import subprocess,zipfile,shutil
-          names=subprocess.check_output(['git','ls-files','--cached','--others','--exclude-standard','-z']).decode().split('\0')
-          with zipfile.ZipFile('/tmp/lesson-artifacts/source.zip','w',zipfile.ZIP_DEFLATED) as z:
-              for name in sorted(set(names)):
-                  p=Path(name)
-                  if not name or name.startswith('.lesson-') or name.startswith('.github/workflows/lesson-') or '.git' in p.parts or '__pycache__' in p.parts or not p.is_file(): continue
-                  z.write(p,name)
-          for source in ['/tmp/lesson-results','/tmp/course-results']:
-              p=Path(source)
-              if p.exists(): shutil.copytree(p,Path('/tmp/lesson-artifacts')/p.name,dirs_exist_ok=True)
-          PY
       - uses: actions/upload-artifact@v4
         if: always()
         with:
-          name: lesson-v4-direct-video-verification
-          path: /tmp/lesson-artifacts
+          name: lesson-workspace-results
+          path: |
+            /tmp/lesson-results
+            /tmp/course-results
           retention-days: 7
