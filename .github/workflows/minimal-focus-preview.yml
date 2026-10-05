@@ -53,11 +53,14 @@ jobs:
         run: python tests/study-presentation-browser.py
       - name: Existing coding path and notebook integration
         run: python tests/course-path-browser.py
-      - name: Commit verified implementation to isolated branch only
+      - name: Commit verified source to isolated branch only
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          while IFS= read -r path; do git add -A -- "$path"; done < .git/minimal-focus-paths.txt
+          while IFS= read -r path; do
+            case "$path" in .github/workflows/*) continue ;; esac
+            git add -A -- "$path"
+          done < .git/minimal-focus-paths.txt
           git diff --cached --check
           git commit -m 'Implement minimal-focus Overview, Communicator and DEV workspaces; retire pointer'
           git push origin HEAD:refs/heads/ui/minimal-focus-v3
