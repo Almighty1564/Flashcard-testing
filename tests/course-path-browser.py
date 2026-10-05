@@ -1,4 +1,4 @@
-"""Native connected-map/notebook integration. Real browser storage; synthetic Auth/cloud only."""
+"""Native linear-course/notebook integration. Real storage; synthetic Auth/cloud only."""
 from pathlib import Path
 import json,threading,http.server,time,tempfile,os
 from urllib.parse import urlparse,parse_qs
@@ -33,17 +33,27 @@ try:
      q=parse_qs(urlparse(req.url).query);rows=[r for r in REMOTE if all(r.get(k)==v[0] for k,v in q.items() if k not in ('a','b'))];out={'data':rows[int(q.get('a',['0'])[0]):int(q.get('b',['99999'])[0])+1],'error':None}
     route.fulfill(content_type='application/json',body=json.dumps(out))
    ctx.route('**/__mockCloud*',cloud);return ctx
+  def choose_objective(page,node_id):
+   overview=page.locator('.linear-overview')
+   if not overview.evaluate('e=>e.open'):overview.locator(':scope > summary').click()
+   target=page.locator('.path-node[data-node="'+node_id+'"]')
+   phase=page.locator('.path-phase').filter(has=target)
+   if not phase.evaluate('e=>e.open'):phase.locator(':scope > summary').click()
+   target.focus();page.keyboard.press('Enter')
+   wait_ready(page,'T08CoursePath.selected.id==='+json.dumps(node_id))
   ctx=context();page=ctx.new_page();errors=[];page.on('pageerror',lambda e:errors.append(str(e)));page.on('dialog',lambda d:d.accept())
   page.goto(ORIGIN+'/cs50/index.html');page.locator('#objectiveDetail').wait_for();wait_ready(page,'window.T08CoursePath?.data.map.nodes.length===39');check('Default entrance redirects to connected map',page.url.endswith('/cs50/path.html'))
   check('All 39 objectives are available through the outline',page.locator('.path-node').count()==39)
-  check('Next action starts Scratch, not an unrelated project','01 / Scratch' in page.locator('.path-summary').inner_text())
-  page.locator('.path-node[data-node="cs-structures"]').click();wait_ready(page,'T08CoursePath.selected.id==="cs-structures"');check('Three prerequisite lines converge into data structures',page.locator('.graph-edge.related').count()==4)
-  check('Unfinished prerequisites warn but do not block the activity','Recommended first:' in page.locator('#objectiveDetail').inner_text() and page.locator('#objectiveDetail .task-copy a').first.is_enabled())
-  page.locator('[data-action="whole"]').click();check('Full graph has all 39 cards',page.locator('.graph-node').count()==39)
-  page.locator('[data-action="zoomOut"]').click();page.locator('[data-action="fit"]').click();check('Map zoom and fit controls work')
-  page.locator('[data-action="whole"]').click();page.screenshot(path=str(OUT/'course-map-desktop.png'),full_page=True)
-  page.locator('.graph-node[data-node="cs-arrays"]').focus();page.keyboard.press('Enter');wait_ready(page,'T08CoursePath.selected.id==="cs-arrays"');check('Graph cards are keyboard navigable')
-  page.locator('#objectiveDetail [data-stage="review"]').click();page.locator('#reviewText').fill('I can explain array bounds, but this is a reflection without a completed implementation.');page.locator('[data-action="saveReflection"]').click();wait_ready(page,'T08CoursePath.progress.get("cs-arrays").reflection');check('Reflection without implementation cannot complete the objective',not page.evaluate('T08CoursePath.progress.get("cs-arrays").complete'))
+  check('Default course begins with Scratch','Scratch' in page.locator('.linear-course-head h1').inner_text())
+  check('Existing linear Foundation, Practice, Apply and Review sequence is preserved',page.locator('.linear-stage').evaluate_all('els=>els.map(e=>e.id)')==['stage-foundation','stage-practice','stage-apply','stage-review'])
+  check('Course header returns to the new DEV workspace',page.locator('header nav a[href="../dev.html"]').count()==1)
+  choose_objective(page,'cs-structures')
+  check('Data structures retains its three prerequisite dependencies',page.evaluate('T08CoursePath.selected.requires.length')==3 and page.locator('#objectiveDetail .path-warning a').count()==3)
+  check('Unfinished prerequisites warn but do not block the activity','Builds on unfinished work:' in page.locator('#objectiveDetail').inner_text() and page.locator('#objectiveDetail .task-copy a').first.is_enabled())
+  check('Every activity keeps a real assignment link',page.locator('.linear-open-task').count()>0 and page.locator('.linear-open-task').evaluate_all('els=>els.every(a=>a.getAttribute("href") && a.getAttribute("href")!=="#")'))
+  page.screenshot(path=str(OUT/'course-linear-desktop.png'),full_page=True)
+  choose_objective(page,'cs-arrays');check('Course outline is keyboard navigable')
+  page.locator('#reviewText').fill('I can explain array bounds, but this is a reflection without a completed implementation.');page.locator('[data-action="saveReflection"]').click();wait_ready(page,'T08CoursePath.progress.get("cs-arrays").reflection');check('Reflection without implementation cannot complete the objective',not page.evaluate('T08CoursePath.progress.get("cs-arrays").complete'))
   page.locator('#notesButton').click();wait_ready(page,'window.T08Notebook?.ledger');page.locator('#nbNew').click();page.locator('#nbText').wait_for(state='visible');page.locator('#nbTitle').fill('Array reasoning');page.locator('#nbText').fill('An array contains elements. See [[Memory notes]].\n\n```python\nvalues = [1, 2, 3]\n```');page.locator('#nbSave').click();wait_ready(page,'!T08Notebook.dirty && T08Notebook.notes.some(n=>n.title==="Array reasoning")');nid=page.evaluate('T08Notebook.current.id');check('Notebook saves actual account-isolated revisions')
   check('Note is associated with selected topic',page.evaluate('T08Notebook.current.topics.includes("cs-arrays")'))
   page.locator('#nbObsidian summary').click()
@@ -65,7 +75,7 @@ try:
   page.locator('#nbBacklinks [data-note]').click();wait_ready(page,'T08Notebook.current.title==="Array reasoning"');check('Old title link resolves after rename','Memory notes' in page.locator('#nbLinks').inner_text())
   page.locator('#nbText').fill('<img src=x onerror="window.__executed=true">\n\n[[Memory notes]]');page.locator('#nbPreviewButton').click();check('Preview treats HTML as text rather than executable markup',page.locator('#nbPreview img').count()==0 and page.evaluate('window.__executed===undefined'))
   page.locator('#nbSave').click();wait_ready(page,'!T08Notebook.dirty');page.locator('#nbClose').click();page.reload();page.locator('#objectiveDetail').wait_for();page.locator('#notesButton').click();page.locator('#nbText').wait_for();check('Notebook survives real page reload','<img src=x' in page.locator('#nbText').input_value())
-  page.locator('#nbText').fill('Updated reasoning, saved automatically before course navigation.');page.locator('#nbClose').click();page.locator('.path-node[data-node="cs-c"]').click();page.locator('#objectiveDetail .task-copy a').first.click();page.locator('#lesson').wait_for();page.locator('#courseNotesButton').wait_for();check('Foundation assignment has the shared course header',page.locator('header a',has_text='Course map').count()==1)
+  page.locator('#nbText').fill('Updated reasoning, saved automatically before course navigation.');page.locator('#nbClose').click();choose_objective(page,'cs-c');page.locator('#objectiveDetail .task-copy a').first.click();page.locator('#lesson').wait_for();page.locator('#courseNotesButton').wait_for();check('Foundation assignment has the shared course header',page.locator('header a',has_text='Course map').count()==1)
   page.locator('#courseNotesButton').click();wait_ready(page,'T08Notebook.notes.some(n=>n.title==="Array reasoning")');page.locator('#nbList [data-note="'+nid+'"]').click();check('Same notebook is accessible beside Foundation lessons','Updated reasoning' in page.locator('#nbText').input_value())
   page.locator('#nbClose').click();page.goto(ORIGIN+'/cs50/practice.html#view=topic&topic=functions&stage=learn');page.locator('#workspace').wait_for(state='visible');page.locator('#courseNotesButton').wait_for();page.locator('#courseNotesButton').click();wait_ready(page,'T08Notebook.notes.length===2');check('Same notebook is accessible beside Python practice')
   page.locator('#nbList [data-note="'+nid+'"]').click();page.locator('#nbLinkTopic').click();wait_ready(page,'T08Notebook.current.topics.includes("py-functions")');check('One note can attach to multiple course objectives')
@@ -86,6 +96,11 @@ try:
   denied=context(approved=False).new_page();denied.goto(ORIGIN+'/cs50/path.html');wait_ready(denied,'document.querySelector("#gateMessage").textContent.includes("Sign in with")');check('Unauthenticated account cannot open map evidence',denied.locator('#main').is_hidden())
   page.locator('#nbClose').click();page.locator('#accountButton').click();page.locator('#signout').click();page.locator('#gate').wait_for(state='visible');check('Signout removes rendered course and notebook data',page.locator('#content').inner_text()=='' and page.locator('#nbText').input_value()=='')
   check('No uncaught application exceptions',not errors);browser.close()
+except Exception:
+ try:page.screenshot(path=str(OUT/'failure.png'),full_page=True)
+ except Exception:pass
+ (OUT/'partial-results.json').write_text(json.dumps({'checks':checks,'errors':errors},indent=2))
+ raise
 finally:server.shutdown()
 (OUT/'results.json').write_text(json.dumps({'passed':len(checks),'checks':checks,'scope':'Native Chromium; actual HTTP, CSP, IndexedDB, reload and downloads. Auth/cloud mocked; not production-account verification.'},indent=2))
 print('CONNECTED COURSE / NOTEBOOK:',len(checks),'passed')
