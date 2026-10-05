@@ -1,0 +1,79 @@
+name: Lesson workspace implementation verification
+on:
+  push:
+    branches: [ui/lesson-workspace-v4]
+    paths: ['.lesson-v4-apply.py', '.github/workflows/lesson-v4-build.yml']
+permissions:
+  contents: write
+concurrency:
+  group: lesson-v4-implementation
+  cancel-in-progress: false
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    env:
+      PYTHONDONTWRITEBYTECODE: '1'
+      T08_LESSON_OUTPUT: /tmp/lesson-results
+      T08_WORKSPACE_OUTPUT: /tmp/workspace-results
+      T08_WEATHER_OUTPUT: /tmp/weather-results
+      T08_LAYOUT_OUTPUT: /tmp/study-results
+      T08_PATH_OUTPUT: /tmp/course-results
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ui/lesson-workspace-v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: pip install playwright==1.57.0
+      - run: python -m playwright install --with-deps chromium
+      - name: Apply hash-checked source
+        run: python .lesson-v4-apply.py
+      - name: Unit tests and syntax
+        run: |
+          node --test tests/*.test.cjs podcast-media.test.mjs
+          node --check cs50/lesson/media.js
+          node --check cs50/lesson/workspace.js
+      - name: Lesson tabs, notebook, quiz and persistent editor lifecycle
+        run: python tests/lesson-workspace-browser.py
+      - name: Existing course and notebook integration
+        run: python tests/course-path-browser.py
+      - name: Existing Python practice and Foundation navigation
+        run: python tests/python-drills-browser.py
+      - name: Real external editor and official lecture provider
+        run: python tests/lesson-provider-browser.py
+      - name: Commit verified source to feature branch only
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          while IFS= read -r path; do git add -A -- "$path"; done < .git/lesson-v4-paths.txt
+          git diff --cached --check
+          git commit -m 'Implement Version 4 tabbed lesson workspace with embedded lecture, editor and existing notes'
+          git push origin HEAD:refs/heads/ui/lesson-workspace-v4
+      - name: Package source and verification results
+        if: always()
+        run: |
+          mkdir -p /tmp/lesson-artifacts
+          python - <<'PY'
+          from pathlib import Path
+          import subprocess,zipfile,shutil
+          names=subprocess.check_output(['git','ls-files','--cached','--others','--exclude-standard','-z']).decode().split('\0')
+          with zipfile.ZipFile('/tmp/lesson-artifacts/source.zip','w',zipfile.ZIP_DEFLATED) as z:
+              for name in sorted(set(names)):
+                  p=Path(name)
+                  if not name or name.startswith('.lesson-v4') or name=='.github/workflows/lesson-v4-build.yml' or '.git' in p.parts or '__pycache__' in p.parts or not p.is_file(): continue
+                  z.write(p,name)
+          for source in ['/tmp/lesson-results','/tmp/course-results']:
+              p=Path(source)
+              if p.exists(): shutil.copytree(p,Path('/tmp/lesson-artifacts')/p.name,dirs_exist_ok=True)
+          PY
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: lesson-v4-verification
+          path: /tmp/lesson-artifacts
+          retention-days: 7
