@@ -1,0 +1,49 @@
+name: Inline Communicator regression
+on:
+  push:
+    branches: [main, 'ui/communicator-inline-study']
+    paths: ['communicator-study*', 'tester.html', 'atelier-portal.js', 'tests/communicator*', '.github/workflows/communicator-study.yml']
+  pull_request:
+permissions:
+  contents: read
+concurrency:
+  group: communicator-study-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: pip install playwright==1.57.0
+      - run: python -m playwright install --with-deps chromium
+      - name: Existing unit regressions and syntax
+        run: |
+          node --test tests/*.test.cjs podcast-media.test.mjs
+          node --check communicator-study.js
+          node --check communicator-study-embed.js
+          node --check atelier-portal.js
+      - name: In-place study, original handlers, backups, account boundaries and mobile
+        run: python tests/communicator-study-browser.py
+        env:
+          T08_COMMUNICATOR_OUTPUT: /tmp/communicator-results
+      - name: Original standalone study renderer remains functional
+        run: python tests/study-presentation-browser.py
+        env:
+          T08_LAYOUT_OUTPUT: /tmp/study-results
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: communicator-study-results
+          path: |
+            /tmp/communicator-results
+            /tmp/study-results
+          retention-days: 7
