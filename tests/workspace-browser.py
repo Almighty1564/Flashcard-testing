@@ -34,6 +34,9 @@ MOCK = r'''
  window.FC={
   usernameToEmail:u=>u.trim() ? u+'@example.invalid':'',
   getProfile:async()=>read().signedIn ? profile():null,
+  getSession:async()=>read().signedIn?{user:profile()}:null,studLabel:()=>'',
+  loadBank:async slug=>({module:{id:slug,slug,name:'Module fixture'},groups:[],cards:[]}),
+  loadProgress:async()=>({progress:{},mastery:{},totalReviews:0}),memorizedRank:async()=>null,
   signOut:async()=>{write({...read(),signedIn:false});},
   listModules:async()=>{if(read().moduleFail)throw Error('Fixture offline');return modules;},
   client:{
@@ -137,11 +140,12 @@ with sync_playwright() as p:
         passed('Communicator loads published modules only, without briefing or coding promo',page.locator('#dailyBriefing,#cs50AppliedEntry').count()==0 and 'Unpublished' not in page.locator('#modList').inner_text())
         page.locator('#moduleSearch').fill('MOD 2')
         expect(page.locator('#modList .p-module')).to_have_count(1)
-        passed('Module search and original study links preserved',page.locator('#modList a').get_attribute('href')=='./mod1.html?module=module-two')
+        passed('Module search and original study links preserved',page.locator('#modList a').get_attribute('href')=='./tester.html?module=module-two')
         page.locator('#moduleSearch').fill('');page.screenshot(path=str(OUT/'communicator-desktop.png'),full_page=True)
         goto(page,'tester.html?module=mod2',None)
-        page.wait_for_url('**/mod1.html?module=module-two')
-        passed('Sidebar resolves actual published module slugs rather than guessing filenames')
+        page.wait_for_url('**/tester.html?module=mod2')
+        page.wait_for_function('document.querySelector("#cwStudyFrame")?.contentWindow.location.search==="?module=module-two"')
+        passed('Sidebar resolves actual published module slugs inside the same tester page')
         goto(page,'tester.html?module=missing','testerApp')
         expect(page.locator('#requestedModuleStatus')).to_be_visible()
         passed('Unavailable module request leaves a usable collection, not a redirect loop')
