@@ -50,7 +50,7 @@
     if (byId('sidebarAccount')) byId('sidebarAccount').textContent = next?.username ? 'Signed in as ' + next.username : 'Not signed in';
     if (byId('backToModes')) byId('backToModes').hidden = !next || next.role !== 'developer';
     signOutBtn.hidden = !next;
-    document.dispatchEvent(new CustomEvent('workspace:account', {detail:{signedIn:Boolean(next)}}));
+    document.dispatchEvent(new CustomEvent('workspace:account', {detail:{signedIn:Boolean(next),userId:next?.id||null}}));
   }
 
   function showGate(message, focus) {
@@ -87,7 +87,7 @@
       byId('modList').innerHTML = '<div class="p-empty"><h3>' + title + '</h3><p>' + copy + '</p>' + (query ? '<button type="button" class="p-button" id="clearSearch">Clear search</button>' : '') + '</div>';
       byId('clearSearch')?.addEventListener('click', () => { byId('moduleSearch').value = ''; renderModules(); byId('moduleSearch').focus(); });
     } else {
-      byId('modList').innerHTML = filtered.map((m, i) => '<a class="p-module" href="./mod1.html?module=' + encodeURIComponent(m.slug) + '"><div class="p-module-top"><span class="p-module-icon" aria-hidden="true">▤</span><span>MODULE / ' + String(i + 1).padStart(2, '0') + '</span></div><h3>' + escapeHTML(m.name) + '</h3><p>' + escapeHTML(m.description || 'Flashcards, practice tests, and your saved progress.') + '</p><div class="p-module-link">Open module <span aria-hidden="true">↗</span></div></a>').join('');
+      byId('modList').innerHTML = filtered.map((m, i) => '<a class="p-module" href="' + (window.T08Communicator ? './tester.html' : './mod1.html') + '?module=' + encodeURIComponent(m.slug) + '"><div class="p-module-top"><span class="p-module-icon" aria-hidden="true">▤</span><span>MODULE / ' + String(i + 1).padStart(2, '0') + '</span></div><h3>' + escapeHTML(m.name) + '</h3><p>' + escapeHTML(m.description || 'Flashcards, practice tests, and your saved progress.') + '</p><div class="p-module-link">Open module <span aria-hidden="true">↗</span></div></a>').join('');
     }
   }
 
@@ -101,6 +101,11 @@
       modules = result.filter(m => m.is_published);
       if (byId('mod2PodcastLink')) byId('mod2PodcastLink').hidden = !modules.some(m => m.slug === 'mod2');
       renderModules();
+      if (window.T08Communicator) {
+        if (modules.length) { const first = byId('firstModuleLink'); first.href = './tester.html?module=' + encodeURIComponent(modules[0].slug); first.hidden = false; }
+        window.T08Communicator.setModules(modules);
+        return;
+      }
       const requested = new URLSearchParams(location.search).get('module');
       if (requested) {
         const key = text => String(text || '').toLowerCase().replace(/[^a-z0-9]/g, '');
