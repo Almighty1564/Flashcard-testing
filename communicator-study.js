@@ -194,6 +194,14 @@
       location.replace('./index.html?return='+encodeURIComponent(location.pathname+location.search));
     }
   });
+  // Never restore a cached study document before the original account gate revalidates.
+  function suspendWorkspace() {
+    destroyFrame();study.hidden=true;tools.hidden=true;app.hidden=true;
+    selected=null;published=[];accountId=null;menu.open=true;
+    document.body.classList.remove('cw-studying');
+  }
+  window.addEventListener('pagehide',suspendWorkspace);
+  window.addEventListener('pageshow',event=>{if(event.persisted)suspendWorkspace();});
   window.addEventListener('popstate',()=>route(true));
   window.T08Communicator=Object.freeze({setModules(items){published=items.filter(m=>m.is_published&&typeof m.slug==='string');route();}});
 })();
