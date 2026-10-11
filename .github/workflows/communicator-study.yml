@@ -35,6 +35,10 @@ jobs:
         run: python tests/communicator-study-browser.py
         env:
           T08_COMMUNICATOR_OUTPUT: /tmp/communicator-results
+      - name: Restored sessions, pending saves and settled mobile geometry
+        run: python tests/communicator-lifecycle-browser.py
+        env:
+          T08_COMMUNICATOR_OUTPUT: /tmp/communicator-results
       - name: Original standalone study renderer remains functional
         run: python tests/study-presentation-browser.py
         env:
