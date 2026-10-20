@@ -276,8 +276,8 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
 .swipe-flashcard-mode .question-meta{margin-bottom:12px}
 .swipe-stage{position:relative;overflow:hidden;padding:6px 5px;min-height:345px}
 .swipe-card{--swipe-strength:0;position:relative;isolation:isolate;border:1px solid #304859;border-radius:20px;background:#0b1520;min-height:325px;padding:24px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:22px;cursor:grab;touch-action:none;user-select:none;will-change:transform;transition:transform .22s ease,border-color .15s,box-shadow .15s;overflow:hidden}
-.swipe-card::before{content:"";position:absolute;inset:0;z-index:-1;opacity:var(--swipe-strength);pointer-events:none;transition:opacity .1s}
-.swipe-card.dragging{transition:none;cursor:grabbing}.swipe-card.dragging::before{transition:none}
+.swipe-card::before{content:"";position:absolute;inset:0;z-index:0;opacity:var(--swipe-strength);pointer-events:none;transition:opacity .1s}
+.swipe-card>*{position:relative;z-index:1}.swipe-card.dragging{transition:none;cursor:grabbing}.swipe-card.dragging::before{transition:none}
 .swipe-card.swipe-dismiss{transition:transform .21s ease-in}.swipe-card.revealed{border-color:#1674b9}
 .swipe-card[data-direction="wrong"]{border-color:#ff344a;box-shadow:0 0 calc(26px * var(--swipe-strength)) rgba(255,52,74,.48)}
 .swipe-card[data-direction="wrong"]::before{background:radial-gradient(ellipse at 50% 30%,rgba(255,35,62,.75),rgba(105,12,31,.55) 60%,rgba(40,5,14,.35))}
@@ -854,9 +854,12 @@ function renderCard(){
     <span class="badge">${esc(typeLabel(currentCard.type))}</span>
     <span class="badge">${session.cursor+1}/${session.queue.length}</span>
   `;
-  document.getElementById("questionText").textContent=currentCard.question?.text||"";
+  const isSwipeFlashcard=currentCard.type==="flashcard";
+  document.getElementById("studyView").classList.toggle("swipe-flashcard-mode",isSwipeFlashcard);
+  // Flashcards render the question inside the swipe card, never in the legacy header.
+  document.getElementById("questionText").textContent=isSwipeFlashcard?"":(currentCard.question?.text||"");
   const qi=currentCard.question?.image;
-  document.getElementById("questionImageWrap").innerHTML=(qi && currentCard.type!=="image-entry")?`<img class="question-image" src="${qi}" alt="Question image">`:"";
+  document.getElementById("questionImageWrap").innerHTML=(!isSwipeFlashcard && qi && currentCard.type!=="image-entry")?`<img class="question-image" src="${qi}" alt="Question image">`:"";
   renderVisual();
   renderInteraction();
 }
