@@ -2,6 +2,14 @@
 (function () {
   'use strict';
   if (document.body.dataset.page !== 'modules' || !document.getElementById('testerApp')) return;
+  // Keep the loader and embedded HTML on the same release, including cache keys.
+  const release = new URL(document.currentScript?.src || location.href, location.href).searchParams.get('v') || '20261020-swipe-v6';
+  const studyURL = slug => {
+    const url = new URL('./mod1.html', location.href);
+    url.searchParams.set('module', slug);
+    url.searchParams.set('ui', release);
+    return url.href;
+  };
   const $ = id => document.getElementById(id);
   const nav = $('workspaceNav'), app = $('testerApp');
   const menu = document.createElement('details');
@@ -41,7 +49,7 @@
     <p class="cw-small">Uses your existing module progress and backup format.</p></div></details>`;
   menu.after(tools);
   const study = document.createElement('section');
-  study.id = 'cwStudy'; study.hidden = true; study.setAttribute('aria-labelledby','cwTitle');
+  study.id = 'cwStudy'; study.dataset.uiRelease = release; study.hidden = true; study.setAttribute('aria-labelledby','cwTitle');
   study.innerHTML = `<div class="cw-breadcrumb"><a href="./tester.html">Communicator</a><span aria-hidden="true">/</span><span id="cwCrumb"></span></div>
     <header class="w-heading cw-heading"><div><h1 id="cwTitle" tabindex="-1">Study</h1><p id="cwSubtitle"></p><p id="cwSaveStatus" role="status" aria-live="polite"></p></div></header>
     <div id="cwLoading" class="p-empty" role="status">Loading your module…</div><div id="cwError" class="p-empty" role="alert" hidden><h2>Module could not be opened</h2><p id="cwErrorText"></p><button id="cwRetry" type="button" class="p-button">Try again</button> <a class="p-button" id="cwStandalone" href="./mod1.html">Open standalone study page</a></div>
@@ -49,7 +57,7 @@
   app.after(study);
   let published = [], accountId = null, selected = null, mounted = null, bridge = null;
   let frame = null, generation = 0, lastSnapshot = null, lastGroups = '', readyTimer = null;
-  const scriptURL = new URL('./communicator-study-embed.js?v=20261011-1', location.href).href;
+  const scriptURL = new URL('./communicator-study-embed.js?v='+encodeURIComponent(release), location.href).href;
   const normalize = value => String(value || '').toLowerCase().replace(/[^a-z0-9]/g, '');
   const resolve = slug => published.find(m => m.slug === slug || normalize(m.name) === normalize(slug));
   const actionIds = new Set(['ringBtn','unlockBtn','customPickBtn','customWeakBtn','customUntestedBtn','customAllCardsBtn','calcBtn','exportBtn','importBtn']);
@@ -109,7 +117,7 @@
     if (mounted===module.slug && frame) { frame.hidden=false;bridge?.refresh();syncTheme();return; }
     destroyFrame();mounted=module.slug;const token=generation;
     $('cwLoading').hidden=false;$('cwError').hidden=true;$('cwSubtitle').textContent='Loading questions and progress…';$('cwSaveStatus').textContent='';
-    $('cwStandalone').href='./mod1.html?module='+encodeURIComponent(module.slug);
+    $('cwStandalone').href=studyURL(module.slug);
     tools.querySelectorAll('[data-study-action]').forEach(b=>{b.disabled=true;});$('cwGroupList').replaceChildren();$('cwGroupCount').textContent='';$('cwPercent').textContent='0%';$('cwSeen').textContent='Loading progress…';$('cwRingSegments').replaceChildren();delete $('cwRingSegments').dataset.signature;for(let i=0;i<5;i++)$('cwCount'+i).textContent='0';
     frame=document.createElement('iframe');frame.id='cwStudyFrame';frame.title=module.name+' testing workspace';frame.hidden=true;frame.referrerPolicy='same-origin';
     frame.addEventListener('load',()=>{
@@ -134,7 +142,7 @@
       }catch(_){fail('The study frame could not be accessed securely. Use the standalone study link.');}
     });
     $('cwFrameHost').append(frame);
-    frame.contentWindow.location.replace(new URL('./mod1.html?module='+encodeURIComponent(module.slug)+'&ui=swipe-20261020-v5',location.href).href);
+    frame.contentWindow.location.replace(studyURL(module.slug));
     readyTimer=setTimeout(()=>{if(token===generation&&!bridge)fail('Loading is taking longer than expected. Retry when your connection is available.');},25000);
   }
   function show(module, focus=false) {
