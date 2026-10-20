@@ -134,7 +134,7 @@
       }catch(_){fail('The study frame could not be accessed securely. Use the standalone study link.');}
     });
     $('cwFrameHost').append(frame);
-    frame.contentWindow.location.replace(new URL('./mod1.html?module='+encodeURIComponent(module.slug),location.href).href);
+    frame.contentWindow.location.replace(new URL('./mod1.html?module='+encodeURIComponent(module.slug)+'&ui=swipe-20261020-v5',location.href).href);
     readyTimer=setTimeout(()=>{if(token===generation&&!bridge)fail('Loading is taking longer than expected. Retry when your connection is available.');},25000);
   }
   function show(module, focus=false) {
