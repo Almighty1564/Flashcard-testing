@@ -272,24 +272,30 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
 <script src="./liquid-glass.js?v=20260912-1"></script>
 <style>
 .swipe-stage{position:relative;overflow:hidden;padding:12px 8px;min-height:270px}
-.swipe-card{position:relative;border:1px solid var(--line);border-radius:20px;background:var(--panel2);min-height:245px;padding:24px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:18px;cursor:grab;touch-action:none;user-select:none;will-change:transform;transition:transform .22s ease,border-color .15s}
+.swipe-card{--swipe-strength:0;position:relative;isolation:isolate;border:1px solid var(--line);border-radius:20px;background:var(--panel2);min-height:245px;padding:24px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:18px;cursor:grab;touch-action:none;user-select:none;will-change:transform;transition:transform .22s ease,border-color .15s,box-shadow .15s;overflow:hidden}
+.swipe-card::before{content:"";position:absolute;inset:0;z-index:-1;opacity:var(--swipe-strength);pointer-events:none;transition:opacity .1s}
 .swipe-card.dragging{transition:none;cursor:grabbing}
+.swipe-card.dragging::before{transition:none}
 .swipe-card.swipe-dismiss{transition:transform .19s ease-in}
 .swipe-card.revealed{border-color:var(--accent)}
-.swipe-card[data-direction="wrong"]{border-color:var(--bad)}
-.swipe-card[data-direction="guessed"]{border-color:var(--warn)}
-.swipe-card[data-direction="correct"]{border-color:var(--good)}
-.swipe-card[data-direction="confident"]{border-color:var(--accent)}
+.swipe-card[data-direction="wrong"]{border-color:#ff344a;box-shadow:0 0 calc(26px * var(--swipe-strength)) rgba(255,52,74,.48)}
+.swipe-card[data-direction="wrong"]::before{background:radial-gradient(ellipse at 50% 30%,rgba(255,35,62,.55),rgba(105,12,31,.42) 55%,rgba(40,5,14,.24))}
+.swipe-card[data-direction="guessed"]{border-color:#ffc400;box-shadow:0 0 calc(26px * var(--swipe-strength)) rgba(255,196,0,.45)}
+.swipe-card[data-direction="guessed"]::before{background:radial-gradient(ellipse at 50% 30%,rgba(255,190,0,.48),rgba(95,63,0,.4) 55%,rgba(39,27,0,.2))}
+.swipe-card[data-direction="correct"]{border-color:#00e65b;box-shadow:0 0 calc(26px * var(--swipe-strength)) rgba(0,230,91,.48)}
+.swipe-card[data-direction="correct"]::before{background:radial-gradient(ellipse at 50% 30%,rgba(0,228,80,.5),rgba(0,90,40,.4) 55%,rgba(0,30,18,.2))}
+.swipe-card[data-direction="confident"]{border-color:#00aaff;box-shadow:0 0 calc(26px * var(--swipe-strength)) rgba(0,170,255,.48)}
+.swipe-card[data-direction="confident"]::before{background:radial-gradient(ellipse at 50% 30%,rgba(0,158,255,.52),rgba(0,55,120,.4) 55%,rgba(0,18,45,.2))}
 .swipe-label{font-size:11px;letter-spacing:.12em;color:var(--muted);font-weight:700}
 .swipe-answer{font-size:19px;line-height:1.5;overflow-wrap:anywhere;max-width:100%}
 .swipe-answer img{max-width:100%;height:auto;border-radius:12px;pointer-events:none}
 .swipe-hint,.swipe-legend{font-size:12px;color:var(--muted);text-align:center}
 .swipe-legend[hidden],.swipe-answer[hidden]{display:none}
-.swipe-direction{font-size:15px;font-weight:800;letter-spacing:.08em}
-.swipe-card[data-direction="wrong"] .swipe-direction{color:var(--bad)}
-.swipe-card[data-direction="guessed"] .swipe-direction{color:var(--warn)}
-.swipe-card[data-direction="correct"] .swipe-direction{color:var(--good)}
-.swipe-card[data-direction="confident"] .swipe-direction{color:var(--accent)}
+.swipe-direction{font-size:20px;font-weight:800;letter-spacing:.04em;min-height:25px;text-shadow:0 0 15px currentColor}
+.swipe-card[data-direction="wrong"] .swipe-direction{color:#ff5266}
+.swipe-card[data-direction="guessed"] .swipe-direction{color:#ffd43b}
+.swipe-card[data-direction="correct"] .swipe-direction{color:#42ff8b}
+.swipe-card[data-direction="confident"] .swipe-direction{color:#47c5ff}
 @media(max-width:420px){.swipe-card{min-height:270px;padding:17px}}
 @media(prefers-reduced-motion:reduce){.swipe-card{transition:none}}
 </style></head>
@@ -1046,7 +1052,7 @@ function renderFlashcard(el){
   </div></div><div class="swipe-legend" hidden>← Wrong &nbsp; ↓ Guessed &nbsp; → Correct &nbsp; ↑ Confident</div>`;
   const card=el.querySelector("#swipeCard"),legend=el.querySelector(".swipe-legend"),direction=card.querySelector(".swipe-direction");
   let revealed=false,done=false,start=null,suppressClick=false;
-  const labels={wrong:"← WRONG",guessed:"↓ GUESSED",correct:"→ CORRECT",confident:"↑ CONFIDENT"};
+  const labels={wrong:"✕  Wrong  ←",guessed:"↓  ?  Guessed",correct:"✓  Correct  →",confident:"↑  ◉  Confident"};
   function reveal(){
     if(revealed||done)return;
     revealed=true;
@@ -1060,7 +1066,7 @@ function renderFlashcard(el){
   }
   function reset(){
     card.style.transform="";card.classList.remove("dragging");
-    direction.textContent="";card.removeAttribute("data-direction");
+    direction.textContent="";card.removeAttribute("data-direction");card.style.removeProperty("--swipe-strength");
   }
   function grade(value,dx=0,dy=0){
     if(!revealed||done)return;
@@ -1068,6 +1074,7 @@ function renderFlashcard(el){
     card.classList.remove("dragging");
     card.dataset.direction=value;
     direction.textContent=labels[value];
+    card.style.setProperty("--swipe-strength","1");
     card.style.transform=`translate(${dx||({wrong:-480,correct:480}[value]||0)}px,${dy||({confident:-480,guessed:480}[value]||0)}px) rotate(${dx>0?12:dx<0?-12:0}deg)`;
     card.classList.add("swipe-dismiss");
     setTimeout(()=>recordAndNext(value),190);
@@ -1094,7 +1101,9 @@ function renderFlashcard(el){
     card.style.transform=`translate(${start.dx}px,${start.dy}px) rotate(${Math.max(-12,Math.min(12,start.dx/18))}deg)`;
     const {dx,dy}=start;
     const value=Math.abs(dx)>Math.abs(dy)?(dx<0?"wrong":"correct"):(dy<0?"confident":"guessed");
-    card.dataset.direction=value;direction.textContent=Math.max(Math.abs(dx),Math.abs(dy))>20?labels[value]:"";
+    const magnitude=Math.max(Math.abs(dx),Math.abs(dy));
+    if(magnitude>12){card.dataset.direction=value;direction.textContent=labels[value];card.style.setProperty("--swipe-strength",String(Math.min(1,magnitude/105)));}
+    else{card.removeAttribute("data-direction");direction.textContent="";card.style.setProperty("--swipe-strength","0");}
   });
   card.addEventListener("pointerup",e=>{
     if(!start||e.pointerId!==start.id)return;
