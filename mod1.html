@@ -270,7 +270,19 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
 <link data-lg-stylesheet rel="stylesheet" href="./liquid-glass.css?v=20260912-1">
 <link data-lg-stylesheet rel="stylesheet" href="./liquid-glass-inner.css?v=20260912-1">
 <script src="./liquid-glass.js?v=20260912-1"></script>
-</head>
+<style>
+.swipe-card{border:1px solid var(--line);border-radius:20px;background:var(--panel2);min-height:245px;padding:24px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:18px;cursor:pointer;touch-action:none;user-select:none}
+.swipe-card.revealed{border-color:var(--accent)}
+.swipe-label{font-size:11px;letter-spacing:.12em;color:var(--muted);font-weight:700}
+.swipe-answer{font-size:19px;line-height:1.5;overflow-wrap:anywhere;max-width:100%}
+.swipe-answer img{max-width:100%;height:auto;border-radius:12px}
+.swipe-hint{font-size:12px;color:var(--muted)}
+.swipe-grades{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}
+.swipe-grades[hidden],.swipe-answer[hidden]{display:none}
+.swipe-grades button{padding:13px 3px;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--text);font-size:12px;font-weight:700}
+.swipe-grades button:nth-child(1){color:var(--bad)}.swipe-grades button:nth-child(2){color:var(--warn)}.swipe-grades button:nth-child(3){color:var(--good)}.swipe-grades button:nth-child(4){color:var(--accent)}
+@media(max-width:420px){.swipe-card{min-height:270px;padding:17px}.swipe-grades{gap:4px}.swipe-grades button{font-size:11px}}
+</style></head>
 <body data-atelier="" data-page="study">
 <noscript><p class="atelier-noscript">JavaScript is needed for this interactive workspace. Enable JavaScript, then reload this page.</p></noscript>
 <div class="shell">
@@ -1018,11 +1030,42 @@ function renderDiagramEntry(el){
   setTimeout(()=>el.querySelector("[data-diagram-input]")?.focus(),40);
 }
 function renderFlashcard(el){
-  el.innerHTML=`<div class="rating-row"><button id="showAnswerBtn" class="btn primary">Show Answer</button></div>`;
-  document.getElementById("showAnswerBtn").onclick=()=>{
-    el.innerHTML=`<div class="answer-box">${esc(currentCard.answer?.text||"")}${imageHtml(currentCard.answer?.image)}</div>${ratingButtons(true)}`;
-    wireRatings(el);
-  };
+  el.innerHTML=`<div class="swipe-card" id="swipeCard" role="button" tabindex="0" aria-label="Tap to reveal answer">
+    <span class="swipe-label">TAP TO REVEAL ANSWER</span><div class="swipe-answer" hidden></div>
+    <span class="swipe-hint">Tap card to reveal</span>
+  </div><div class="swipe-grades" hidden>
+    <button data-swipe="wrong">← Wrong</button><button data-swipe="guessed">↓ Guessed</button>
+    <button data-swipe="correct">→ Correct</button><button data-swipe="confident">↑ Confident</button>
+  </div>`;
+  const card=el.querySelector("#swipeCard"), grades=el.querySelector(".swipe-grades");
+  let revealed=false,done=false,start=null;
+  function reveal(){
+    if(revealed||done)return;
+    revealed=true;
+    card.classList.add("revealed");
+    card.querySelector(".swipe-label").textContent="ANSWER · SWIPE TO GRADE";
+    const answer=card.querySelector(".swipe-answer");
+    answer.innerHTML=esc(currentCard.answer?.text||"")+imageHtml(currentCard.answer?.image);
+    answer.hidden=false;
+    card.querySelector(".swipe-hint").textContent="← Wrong · ↓ Guessed · → Correct · ↑ Confident";
+    grades.hidden=false;
+  }
+  function grade(value){if(!revealed||done)return;done=true;recordAndNext(value);}
+  card.addEventListener("click",reveal);
+  card.addEventListener("keydown",e=>{
+    if(e.key==="Enter"||e.key===" "){e.preventDefault();reveal();}
+    const keys={ArrowLeft:"wrong",ArrowDown:"guessed",ArrowRight:"correct",ArrowUp:"confident"};
+    if(revealed&&keys[e.key]){e.preventDefault();grade(keys[e.key]);}
+  });
+  card.addEventListener("pointerdown",e=>{if(revealed)start={x:e.clientX,y:e.clientY};});
+  card.addEventListener("pointerup",e=>{
+    if(!start)return;
+    const dx=e.clientX-start.x,dy=e.clientY-start.y;start=null;
+    if(Math.max(Math.abs(dx),Math.abs(dy))<55)return;
+    grade(Math.abs(dx)>Math.abs(dy)?(dx<0?"wrong":"correct"):(dy<0?"confident":"guessed"));
+  });
+  card.addEventListener("pointercancel",()=>{start=null;});
+  grades.querySelectorAll("[data-swipe]").forEach(btn=>btn.onclick=()=>grade(btn.dataset.swipe));
 }
 function renderChoices(el,multi){
   const choices=[...(currentCard.choices||[])];
