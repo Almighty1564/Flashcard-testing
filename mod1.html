@@ -271,17 +271,27 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
 <link data-lg-stylesheet rel="stylesheet" href="./liquid-glass-inner.css?v=20260912-1">
 <script src="./liquid-glass.js?v=20260912-1"></script>
 <style>
-.swipe-card{border:1px solid var(--line);border-radius:20px;background:var(--panel2);min-height:245px;padding:24px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:18px;cursor:pointer;touch-action:none;user-select:none}
+.swipe-stage{position:relative;overflow:hidden;padding:12px 8px;min-height:270px}
+.swipe-card{position:relative;border:1px solid var(--line);border-radius:20px;background:var(--panel2);min-height:245px;padding:24px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:18px;cursor:grab;touch-action:none;user-select:none;will-change:transform;transition:transform .22s ease,border-color .15s}
+.swipe-card.dragging{transition:none;cursor:grabbing}
+.swipe-card.swipe-dismiss{transition:transform .19s ease-in}
 .swipe-card.revealed{border-color:var(--accent)}
+.swipe-card[data-direction="wrong"]{border-color:var(--bad)}
+.swipe-card[data-direction="guessed"]{border-color:var(--warn)}
+.swipe-card[data-direction="correct"]{border-color:var(--good)}
+.swipe-card[data-direction="confident"]{border-color:var(--accent)}
 .swipe-label{font-size:11px;letter-spacing:.12em;color:var(--muted);font-weight:700}
 .swipe-answer{font-size:19px;line-height:1.5;overflow-wrap:anywhere;max-width:100%}
-.swipe-answer img{max-width:100%;height:auto;border-radius:12px}
-.swipe-hint{font-size:12px;color:var(--muted)}
-.swipe-grades{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px;margin-top:12px}
-.swipe-grades[hidden],.swipe-answer[hidden]{display:none}
-.swipe-grades button{padding:13px 3px;border:1px solid var(--line);border-radius:12px;background:var(--panel);color:var(--text);font-size:12px;font-weight:700}
-.swipe-grades button:nth-child(1){color:var(--bad)}.swipe-grades button:nth-child(2){color:var(--warn)}.swipe-grades button:nth-child(3){color:var(--good)}.swipe-grades button:nth-child(4){color:var(--accent)}
-@media(max-width:420px){.swipe-card{min-height:270px;padding:17px}.swipe-grades{gap:4px}.swipe-grades button{font-size:11px}}
+.swipe-answer img{max-width:100%;height:auto;border-radius:12px;pointer-events:none}
+.swipe-hint,.swipe-legend{font-size:12px;color:var(--muted);text-align:center}
+.swipe-legend[hidden],.swipe-answer[hidden]{display:none}
+.swipe-direction{font-size:15px;font-weight:800;letter-spacing:.08em}
+.swipe-card[data-direction="wrong"] .swipe-direction{color:var(--bad)}
+.swipe-card[data-direction="guessed"] .swipe-direction{color:var(--warn)}
+.swipe-card[data-direction="correct"] .swipe-direction{color:var(--good)}
+.swipe-card[data-direction="confident"] .swipe-direction{color:var(--accent)}
+@media(max-width:420px){.swipe-card{min-height:270px;padding:17px}}
+@media(prefers-reduced-motion:reduce){.swipe-card{transition:none}}
 </style></head>
 <body data-atelier="" data-page="study">
 <noscript><p class="atelier-noscript">JavaScript is needed for this interactive workspace. Enable JavaScript, then reload this page.</p></noscript>
@@ -1030,42 +1040,72 @@ function renderDiagramEntry(el){
   setTimeout(()=>el.querySelector("[data-diagram-input]")?.focus(),40);
 }
 function renderFlashcard(el){
-  el.innerHTML=`<div class="swipe-card" id="swipeCard" role="button" tabindex="0" aria-label="Tap to reveal answer">
+  el.innerHTML=`<div class="swipe-stage"><div class="swipe-card" id="swipeCard" role="button" tabindex="0" aria-label="Tap to reveal answer, then swipe card to grade">
     <span class="swipe-label">TAP TO REVEAL ANSWER</span><div class="swipe-answer" hidden></div>
-    <span class="swipe-hint">Tap card to reveal</span>
-  </div><div class="swipe-grades" hidden>
-    <button data-swipe="wrong">← Wrong</button><button data-swipe="guessed">↓ Guessed</button>
-    <button data-swipe="correct">→ Correct</button><button data-swipe="confident">↑ Confident</button>
-  </div>`;
-  const card=el.querySelector("#swipeCard"), grades=el.querySelector(".swipe-grades");
-  let revealed=false,done=false,start=null;
+    <span class="swipe-hint">Tap card to reveal</span><span class="swipe-direction" aria-hidden="true"></span>
+  </div></div><div class="swipe-legend" hidden>← Wrong &nbsp; ↓ Guessed &nbsp; → Correct &nbsp; ↑ Confident</div>`;
+  const card=el.querySelector("#swipeCard"),legend=el.querySelector(".swipe-legend"),direction=card.querySelector(".swipe-direction");
+  let revealed=false,done=false,start=null,suppressClick=false;
+  const labels={wrong:"← WRONG",guessed:"↓ GUESSED",correct:"→ CORRECT",confident:"↑ CONFIDENT"};
   function reveal(){
     if(revealed||done)return;
     revealed=true;
     card.classList.add("revealed");
-    card.querySelector(".swipe-label").textContent="ANSWER · SWIPE TO GRADE";
+    card.querySelector(".swipe-label").textContent="ANSWER · SWIPE CARD TO GRADE";
     const answer=card.querySelector(".swipe-answer");
     answer.innerHTML=esc(currentCard.answer?.text||"")+imageHtml(currentCard.answer?.image);
     answer.hidden=false;
-    card.querySelector(".swipe-hint").textContent="← Wrong · ↓ Guessed · → Correct · ↑ Confident";
-    grades.hidden=false;
+    card.querySelector(".swipe-hint").textContent="Drag the card in any direction";
+    legend.hidden=false;
   }
-  function grade(value){if(!revealed||done)return;done=true;recordAndNext(value);}
-  card.addEventListener("click",reveal);
+  function reset(){
+    card.style.transform="";card.classList.remove("dragging");
+    direction.textContent="";card.removeAttribute("data-direction");
+  }
+  function grade(value,dx=0,dy=0){
+    if(!revealed||done)return;
+    done=true;
+    card.classList.remove("dragging");
+    card.dataset.direction=value;
+    direction.textContent=labels[value];
+    card.style.transform=`translate(${dx||({wrong:-480,correct:480}[value]||0)}px,${dy||({confident:-480,guessed:480}[value]||0)}px) rotate(${dx>0?12:dx<0?-12:0}deg)`;
+    card.classList.add("swipe-dismiss");
+    setTimeout(()=>recordAndNext(value),190);
+  }
+  card.addEventListener("click",e=>{
+    if(suppressClick){suppressClick=false;return;}
+    reveal();
+  });
   card.addEventListener("keydown",e=>{
     if(e.key==="Enter"||e.key===" "){e.preventDefault();reveal();}
     const keys={ArrowLeft:"wrong",ArrowDown:"guessed",ArrowRight:"correct",ArrowUp:"confident"};
     if(revealed&&keys[e.key]){e.preventDefault();grade(keys[e.key]);}
   });
-  card.addEventListener("pointerdown",e=>{if(revealed)start={x:e.clientX,y:e.clientY};});
-  card.addEventListener("pointerup",e=>{
-    if(!start)return;
-    const dx=e.clientX-start.x,dy=e.clientY-start.y;start=null;
-    if(Math.max(Math.abs(dx),Math.abs(dy))<55)return;
-    grade(Math.abs(dx)>Math.abs(dy)?(dx<0?"wrong":"correct"):(dy<0?"confident":"guessed"));
+  card.addEventListener("pointerdown",e=>{
+    if(!revealed||done||e.button!==0)return;
+    start={id:e.pointerId,x:e.clientX,y:e.clientY,dx:0,dy:0,moved:false};
+    card.setPointerCapture(e.pointerId);
+    card.classList.add("dragging");
   });
-  card.addEventListener("pointercancel",()=>{start=null;});
-  grades.querySelectorAll("[data-swipe]").forEach(btn=>btn.onclick=()=>grade(btn.dataset.swipe));
+  card.addEventListener("pointermove",e=>{
+    if(!start||e.pointerId!==start.id||done)return;
+    start.dx=e.clientX-start.x;start.dy=e.clientY-start.y;
+    if(Math.max(Math.abs(start.dx),Math.abs(start.dy))>8)start.moved=true;
+    card.style.transform=`translate(${start.dx}px,${start.dy}px) rotate(${Math.max(-12,Math.min(12,start.dx/18))}deg)`;
+    const {dx,dy}=start;
+    const value=Math.abs(dx)>Math.abs(dy)?(dx<0?"wrong":"correct"):(dy<0?"confident":"guessed");
+    card.dataset.direction=value;direction.textContent=Math.max(Math.abs(dx),Math.abs(dy))>20?labels[value]:"";
+  });
+  card.addEventListener("pointerup",e=>{
+    if(!start||e.pointerId!==start.id)return;
+    const {dx,dy,moved}=start;start=null;
+    if(moved)suppressClick=true;
+    if(Math.max(Math.abs(dx),Math.abs(dy))<65){reset();return;}
+    const value=Math.abs(dx)>Math.abs(dy)?(dx<0?"wrong":"correct"):(dy<0?"confident":"guessed");
+    grade(value,dx*3,dy*3);
+  });
+  card.addEventListener("pointercancel",()=>{start=null;reset();});
+  card.addEventListener("lostpointercapture",()=>{if(start){start=null;reset();}});
 }
 function renderChoices(el,multi){
   const choices=[...(currentCard.choices||[])];
