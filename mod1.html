@@ -271,32 +271,31 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
 <link data-lg-stylesheet rel="stylesheet" href="./liquid-glass-inner.css?v=20260912-1">
 <script src="./liquid-glass.js?v=20260912-1"></script>
 <style>
-.swipe-stage{position:relative;overflow:hidden;padding:12px 8px;min-height:270px}
-.swipe-card{--swipe-strength:0;position:relative;isolation:isolate;border:1px solid var(--line);border-radius:20px;background:var(--panel2);min-height:245px;padding:24px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:18px;cursor:grab;touch-action:none;user-select:none;will-change:transform;transition:transform .22s ease,border-color .15s,box-shadow .15s;overflow:hidden}
+.swipe-flashcard-mode #questionText,.swipe-flashcard-mode #questionImageWrap{display:none}
+.swipe-flashcard-mode .question-card{background:transparent;border:0;padding:0;box-shadow:none}
+.swipe-flashcard-mode .question-meta{margin-bottom:12px}
+.swipe-stage{position:relative;overflow:hidden;padding:6px 5px;min-height:345px}
+.swipe-card{--swipe-strength:0;position:relative;isolation:isolate;border:1px solid #304859;border-radius:20px;background:#0b1520;min-height:325px;padding:24px;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;gap:22px;cursor:grab;touch-action:none;user-select:none;will-change:transform;transition:transform .22s ease,border-color .15s,box-shadow .15s;overflow:hidden}
 .swipe-card::before{content:"";position:absolute;inset:0;z-index:-1;opacity:var(--swipe-strength);pointer-events:none;transition:opacity .1s}
-.swipe-card.dragging{transition:none;cursor:grabbing}
-.swipe-card.dragging::before{transition:none}
-.swipe-card.swipe-dismiss{transition:transform .19s ease-in}
-.swipe-card.revealed{border-color:var(--accent)}
+.swipe-card.dragging{transition:none;cursor:grabbing}.swipe-card.dragging::before{transition:none}
+.swipe-card.swipe-dismiss{transition:transform .21s ease-in}.swipe-card.revealed{border-color:#1674b9}
 .swipe-card[data-direction="wrong"]{border-color:#ff344a;box-shadow:0 0 calc(26px * var(--swipe-strength)) rgba(255,52,74,.48)}
-.swipe-card[data-direction="wrong"]::before{background:radial-gradient(ellipse at 50% 30%,rgba(255,35,62,.55),rgba(105,12,31,.42) 55%,rgba(40,5,14,.24))}
+.swipe-card[data-direction="wrong"]::before{background:radial-gradient(ellipse at 50% 30%,rgba(255,35,62,.75),rgba(105,12,31,.55) 60%,rgba(40,5,14,.35))}
 .swipe-card[data-direction="guessed"]{border-color:#ffc400;box-shadow:0 0 calc(26px * var(--swipe-strength)) rgba(255,196,0,.45)}
-.swipe-card[data-direction="guessed"]::before{background:radial-gradient(ellipse at 50% 30%,rgba(255,190,0,.48),rgba(95,63,0,.4) 55%,rgba(39,27,0,.2))}
+.swipe-card[data-direction="guessed"]::before{background:radial-gradient(ellipse at 50% 30%,rgba(255,190,0,.7),rgba(95,63,0,.55) 60%,rgba(39,27,0,.3))}
 .swipe-card[data-direction="correct"]{border-color:#00e65b;box-shadow:0 0 calc(26px * var(--swipe-strength)) rgba(0,230,91,.48)}
-.swipe-card[data-direction="correct"]::before{background:radial-gradient(ellipse at 50% 30%,rgba(0,228,80,.5),rgba(0,90,40,.4) 55%,rgba(0,30,18,.2))}
+.swipe-card[data-direction="correct"]::before{background:radial-gradient(ellipse at 50% 30%,rgba(0,228,80,.7),rgba(0,90,40,.55) 60%,rgba(0,30,18,.3))}
 .swipe-card[data-direction="confident"]{border-color:#00aaff;box-shadow:0 0 calc(26px * var(--swipe-strength)) rgba(0,170,255,.48)}
-.swipe-card[data-direction="confident"]::before{background:radial-gradient(ellipse at 50% 30%,rgba(0,158,255,.52),rgba(0,55,120,.4) 55%,rgba(0,18,45,.2))}
-.swipe-label{font-size:11px;letter-spacing:.12em;color:var(--muted);font-weight:700}
-.swipe-answer{font-size:19px;line-height:1.5;overflow-wrap:anywhere;max-width:100%}
-.swipe-answer img{max-width:100%;height:auto;border-radius:12px;pointer-events:none}
-.swipe-hint,.swipe-legend{font-size:12px;color:var(--muted);text-align:center}
-.swipe-legend[hidden],.swipe-answer[hidden]{display:none}
-.swipe-direction{font-size:20px;font-weight:800;letter-spacing:.04em;min-height:25px;text-shadow:0 0 15px currentColor}
-.swipe-card[data-direction="wrong"] .swipe-direction{color:#ff5266}
-.swipe-card[data-direction="guessed"] .swipe-direction{color:#ffd43b}
-.swipe-card[data-direction="correct"] .swipe-direction{color:#42ff8b}
-.swipe-card[data-direction="confident"] .swipe-direction{color:#47c5ff}
-@media(max-width:420px){.swipe-card{min-height:270px;padding:17px}}
+.swipe-card[data-direction="confident"]::before{background:radial-gradient(ellipse at 50% 30%,rgba(0,158,255,.7),rgba(0,55,120,.55) 60%,rgba(0,18,45,.3))}
+.swipe-card-top{font-size:11px;letter-spacing:.12em;color:#a9bac9;font-weight:700;border:1px solid #344759;border-radius:20px;padding:5px 12px}
+.swipe-face-question,.swipe-face-answer{font-size:clamp(19px,4vw,25px);font-weight:550;line-height:1.5;overflow-wrap:anywhere;max-width:100%;color:#f1f5fa}
+.swipe-face-question[hidden],.swipe-face-answer[hidden]{display:none}
+.swipe-face-question img,.swipe-face-answer img{max-width:100%;max-height:190px;object-fit:contain;border-radius:12px;pointer-events:none;display:block;margin:12px auto}
+.swipe-hint,.swipe-legend{font-size:12px;color:#a5b9c9;text-align:center}.swipe-legend[hidden]{display:none}
+.swipe-direction{font-size:23px;font-weight:850;letter-spacing:.04em;min-height:27px;text-shadow:0 0 15px currentColor}
+.swipe-card[data-direction="wrong"] .swipe-direction{color:#ff5266}.swipe-card[data-direction="guessed"] .swipe-direction{color:#ffd43b}
+.swipe-card[data-direction="correct"] .swipe-direction{color:#42ff8b}.swipe-card[data-direction="confident"] .swipe-direction{color:#47c5ff}
+@media(max-width:420px){.swipe-card{min-height:340px;padding:18px}.swipe-stage{min-height:355px}}
 @media(prefers-reduced-motion:reduce){.swipe-card{transition:none}}
 </style></head>
 <body data-atelier="" data-page="study">
@@ -1046,43 +1045,39 @@ function renderDiagramEntry(el){
   setTimeout(()=>el.querySelector("[data-diagram-input]")?.focus(),40);
 }
 function renderFlashcard(el){
-  el.innerHTML=`<div class="swipe-stage"><div class="swipe-card" id="swipeCard" role="button" tabindex="0" aria-label="Tap to reveal answer, then swipe card to grade">
-    <span class="swipe-label">TAP TO REVEAL ANSWER</span><div class="swipe-answer" hidden></div>
-    <span class="swipe-hint">Tap card to reveal</span><span class="swipe-direction" aria-hidden="true"></span>
-  </div></div><div class="swipe-legend" hidden>← Wrong &nbsp; ↓ Guessed &nbsp; → Correct &nbsp; ↑ Confident</div>`;
+  const question=esc(currentCard.question?.text||"");
+  const questionImage=imageHtml(currentCard.question?.image,"question-image","Question image");
+  el.innerHTML=`<div class="swipe-stage"><div class="swipe-card" id="swipeCard" role="button" tabindex="0" aria-label="Tap to reveal answer, then drag the card to grade">
+    <div class="swipe-card-top">FLASHCARD</div>
+    <div class="swipe-face-question">${question}${questionImage}</div>
+    <div class="swipe-face-answer" hidden></div>
+    <div class="swipe-direction" aria-hidden="true"></div>
+    <div class="swipe-hint">Tap to reveal answer</div>
+  </div></div><div class="swipe-legend" hidden>← Wrong · ↓ Guessed · → Correct · ↑ Confident</div>`;
   const card=el.querySelector("#swipeCard"),legend=el.querySelector(".swipe-legend"),direction=card.querySelector(".swipe-direction");
   let revealed=false,done=false,start=null,suppressClick=false;
-  const labels={wrong:"✕  Wrong  ←",guessed:"↓  ?  Guessed",correct:"✓  Correct  →",confident:"↑  ◉  Confident"};
+  const labels={wrong:"← ✕ Wrong",guessed:"↓ ? Guessed",correct:"✓ Correct →",confident:"↑ ◉ Confident"};
   function reveal(){
     if(revealed||done)return;
-    revealed=true;
-    card.classList.add("revealed");
-    card.querySelector(".swipe-label").textContent="ANSWER · SWIPE CARD TO GRADE";
-    const answer=card.querySelector(".swipe-answer");
+    revealed=true;card.classList.add("revealed");
+    card.querySelector(".swipe-card-top").textContent="ANSWER";
+    card.querySelector(".swipe-face-question").hidden=true;
+    const answer=card.querySelector(".swipe-face-answer");
     answer.innerHTML=esc(currentCard.answer?.text||"")+imageHtml(currentCard.answer?.image);
     answer.hidden=false;
-    card.querySelector(".swipe-hint").textContent="Drag the card in any direction";
+    card.querySelector(".swipe-hint").textContent="Swipe the card in any direction";
     legend.hidden=false;
   }
-  function reset(){
-    card.style.transform="";card.classList.remove("dragging");
-    direction.textContent="";card.removeAttribute("data-direction");card.style.removeProperty("--swipe-strength");
-  }
+  function reset(){card.style.transform="";card.classList.remove("dragging");direction.textContent="";card.removeAttribute("data-direction");card.style.removeProperty("--swipe-strength");}
   function grade(value,dx=0,dy=0){
-    if(!revealed||done)return;
-    done=true;
-    card.classList.remove("dragging");
-    card.dataset.direction=value;
-    direction.textContent=labels[value];
+    if(!revealed||done)return;done=true;
+    card.classList.remove("dragging");card.dataset.direction=value;direction.textContent=labels[value];
     card.style.setProperty("--swipe-strength","1");
     card.style.transform=`translate(${dx||({wrong:-480,correct:480}[value]||0)}px,${dy||({confident:-480,guessed:480}[value]||0)}px) rotate(${dx>0?12:dx<0?-12:0}deg)`;
     card.classList.add("swipe-dismiss");
-    setTimeout(()=>recordAndNext(value),190);
+    setTimeout(()=>recordAndNext(value),210);
   }
-  card.addEventListener("click",e=>{
-    if(suppressClick){suppressClick=false;return;}
-    reveal();
-  });
+  card.addEventListener("click",()=>{if(suppressClick){suppressClick=false;return;}reveal();});
   card.addEventListener("keydown",e=>{
     if(e.key==="Enter"||e.key===" "){e.preventDefault();reveal();}
     const keys={ArrowLeft:"wrong",ArrowDown:"guessed",ArrowRight:"correct",ArrowUp:"confident"};
@@ -1091,17 +1086,15 @@ function renderFlashcard(el){
   card.addEventListener("pointerdown",e=>{
     if(!revealed||done||e.button!==0)return;
     start={id:e.pointerId,x:e.clientX,y:e.clientY,dx:0,dy:0,moved:false};
-    card.setPointerCapture(e.pointerId);
-    card.classList.add("dragging");
+    card.setPointerCapture(e.pointerId);card.classList.add("dragging");
   });
   card.addEventListener("pointermove",e=>{
     if(!start||e.pointerId!==start.id||done)return;
     start.dx=e.clientX-start.x;start.dy=e.clientY-start.y;
     if(Math.max(Math.abs(start.dx),Math.abs(start.dy))>8)start.moved=true;
     card.style.transform=`translate(${start.dx}px,${start.dy}px) rotate(${Math.max(-12,Math.min(12,start.dx/18))}deg)`;
-    const {dx,dy}=start;
+    const {dx,dy}=start,magnitude=Math.max(Math.abs(dx),Math.abs(dy));
     const value=Math.abs(dx)>Math.abs(dy)?(dx<0?"wrong":"correct"):(dy<0?"confident":"guessed");
-    const magnitude=Math.max(Math.abs(dx),Math.abs(dy));
     if(magnitude>12){card.dataset.direction=value;direction.textContent=labels[value];card.style.setProperty("--swipe-strength",String(Math.min(1,magnitude/105)));}
     else{card.removeAttribute("data-direction");direction.textContent="";card.style.setProperty("--swipe-strength","0");}
   });
@@ -1110,8 +1103,7 @@ function renderFlashcard(el){
     const {dx,dy,moved}=start;start=null;
     if(moved)suppressClick=true;
     if(Math.max(Math.abs(dx),Math.abs(dy))<65){reset();return;}
-    const value=Math.abs(dx)>Math.abs(dy)?(dx<0?"wrong":"correct"):(dy<0?"confident":"guessed");
-    grade(value,dx*3,dy*3);
+    grade(Math.abs(dx)>Math.abs(dy)?(dx<0?"wrong":"correct"):(dy<0?"confident":"guessed"),dx*3,dy*3);
   });
   card.addEventListener("pointercancel",()=>{start=null;reset();});
   card.addEventListener("lostpointercapture",()=>{if(start){start=null;reset();}});
