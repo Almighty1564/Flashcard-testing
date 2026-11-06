@@ -3,7 +3,7 @@
   'use strict';
   if (document.body.dataset.page !== 'modules' || !document.getElementById('testerApp')) return;
   // Keep the loader and embedded HTML on the same release, including cache keys.
-  const release = new URL(document.currentScript?.src || location.href, location.href).searchParams.get('v') || '20261020-swipe-v6';
+  const release = new URL(document.currentScript?.src || location.href, location.href).searchParams.get('v') || '20261105-learning-v1';
   const studyURL = slug => {
     const url = new URL('./mod1.html', location.href);
     url.searchParams.set('module', slug);

@@ -534,7 +534,10 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
       <button id="retestAllBtn" class="btn primary">Retest All</button>
       <button id="returnDueBtn" class="btn">Return to Due Reviews</button>
       <button id="debriefProgressBtn" class="btn">View full breakdown</button>
+      <button id="studyMissedBtn" class="btn" hidden>Study what I missed</button>
     </div>
+    <p id="learningOpenStatus" class="muted small" role="status" hidden></p>
+    <p id="learningEvidenceStatus" class="muted small" role="status" hidden></p>
     <div style="margin-top:20px">
       <h4>Priority Retest</h4>
       <div id="priorityList" class="priority-list"></div>
@@ -584,6 +587,11 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
 <script src="./supabase-config.js?v=9"></script>
 <script src="./cloud.js?v=11"></script>
 <script src="./mod1-calc.js?v=8"></script>
+<link rel="stylesheet" href="./learning-workspace.css?v=1">
+<script src="./learning-config.js?v=1"></script>
+<script src="./learning-client.js?v=1"></script>
+<script src="./learning-capture.js?v=1"></script>
+<script src="./learning-workspace.js?v=1" defer></script>
 <script>
 const MODULE_SLUG=new URLSearchParams(location.search).get("module")||"mod1";
 
@@ -603,6 +611,36 @@ let bank=null;
 let state=null;
 let selectedGroupId=null;
 let session=null;
+let learningResponse=null;
+let learningDebrief=null;
+function stageLearningResponse(response,gradingMethod){
+  // Snapshot before revealing correctness or answer keys.
+  if(!window.T08LearningCapture?.available())return;
+  try{learningResponse={response:JSON.parse(JSON.stringify(response)),gradingMethod};}catch(_){learningResponse=null;}
+}
+function captureLearningAttempt(result){
+  try{
+    const capture=window.T08LearningCapture;
+    if(!session||!currentCard||!capture?.available())return;
+    if(!session.learningSessionId)session.learningSessionId=capture.newSessionId();
+    const snapshot={card:JSON.parse(JSON.stringify(currentCard)),moduleId:bank?.module?.id||null,moduleSlug:MODULE_SLUG,bankRevision:bank?.revision||bank?.version||null};
+    const attempt={id:session.learningSessionId+':'+session.cursor,sessionId:session.learningSessionId,moduleId:bank?.module?.id||null,questionId:currentCard.id,sequence:session.cursor,questionType:currentCard.type,response:currentCard.type==='flashcard'?null:(learningResponse?.response??null),result,confidence:result==='confident'?'confident':result==='guessed'?'guessed':'unknown',gradingMethod:currentCard.type==='flashcard'?'self_report':(learningResponse?.gradingMethod||'unanswered'),questionSnapshot:snapshot};
+    const saved=capture.record(attempt);
+    if(saved)(session.learningAttemptIds||(session.learningAttemptIds=[])).push(saved);
+  }catch(_){/* Optional evidence must never interrupt legacy progress. */}
+}
+function refreshLearningButton(){
+  const button=document.getElementById('studyMissedBtn');
+  if(button)button.hidden=!(learningDebrief&&window.T08LearningCapture?.available());
+  showLearningEvidenceStatus(window.T08LearningCapture?.getStatus?.());
+}
+function showLearningEvidenceStatus(detail){
+  const output=document.getElementById('learningEvidenceStatus');if(!output)return;
+  output.hidden=!detail||!window.T08LearningCapture?.available();if(output.hidden)return;
+  output.textContent=detail.state==='saved'?'New learning evidence saved separately.':detail.state==='pending'?`New learning evidence pending (${detail.pending}); it will retry when the service is available. Regular study progress is separate.`:'Some new learning evidence could not be saved. Regular study progress is unaffected.';
+}
+window.addEventListener('t08-learning-ready',refreshLearningButton);
+window.addEventListener('t08-learning-evidence-status',event=>showLearningEvidenceStatus(event.detail));
 let currentCard=null;
 let interactionState=null;
 
@@ -843,6 +881,7 @@ function loadCurrent(){
   currentCard=cards().find(c=>c.id===session.queue[session.cursor]);
   if(!currentCard){session.cursor++;loadCurrent();return;}
   interactionState=null;
+  learningResponse=null;
   renderCard();
 }
 function renderCard(){
@@ -969,6 +1008,7 @@ function renderEntry(el){
     if(!String(raw).trim()){ input.focus(); return; }
 
     const correct=gradeEntry(raw,entry);
+    stageLearningResponse(raw,'objective_numeric');
     input.disabled=true;
     submitBtn.remove();
 
@@ -1026,6 +1066,7 @@ function renderDiagramEntry(el){
   function grade(){
     const inputs=[...el.querySelectorAll("[data-diagram-input]")];
     if(inputs.some(i=>!String(i.value).trim())){const blank=inputs.find(i=>!String(i.value).trim());blank.focus();return;}
+    stageLearningResponse(Object.fromEntries(inputs.map(i=>[i.dataset.diagramInput,i.value])),'objective_image_entry');
     let all=true;
     inputs.forEach(inp=>{
       const f=fields.find(x=>x.id===inp.dataset.diagramInput);
@@ -1133,6 +1174,7 @@ function renderChoices(el,multi){
     const correct=(currentCard.choices||[]).filter(c=>c.correct).map(c=>c.id).sort();
     const picked=[...selected].sort();
     const isCorrect=correct.length===picked.length && correct.every((id,i)=>id===picked[i]);
+    stageLearningResponse(selected,multi?'objective_multiple_select':'objective_multiple_choice');
 
     el.querySelectorAll("[data-choice-row]").forEach(row=>{
       const c=currentCard.choices.find(x=>x.id===row.dataset.choiceRow);
@@ -1235,6 +1277,7 @@ function renderMatching(el){
       alert("Match every item before submitting.");return;
     }
     const correct=pairs.every(p=>interactionState.assignments[p.id]===p.id);
+    stageLearningResponse(interactionState.assignments,'objective_matching');
 
     el.querySelectorAll("[data-drop]").forEach(d=>{
       d.classList.add(interactionState.assignments[d.dataset.drop]===d.dataset.drop?"correct-reveal":"wrong-reveal");
@@ -1257,6 +1300,7 @@ function renderMatching(el){
 }
 function recordAndNext(result){
   if(!session||!currentCard)return;
+  captureLearningAttempt(result);
   applySrs(currentCard.id,result);
   session.results[currentCard.id]=result;
   session.cursor++;
@@ -1298,6 +1342,7 @@ async function sendReport(){
 }
 function skipCurrent(){
   if(!session||!currentCard)return;
+  captureLearningAttempt('unanswered');
   markUnanswered(currentCard.id);
   session.results[currentCard.id]="unanswered";
   session.cursor++;
@@ -1321,6 +1366,7 @@ function finishSession(){
     startedAt:session.startedAt,
     completedAt:new Date().toISOString()
   };
+  if(session.learningSessionId){summary.learningSessionId=session.learningSessionId;summary.learningAttemptIds=[...(session.learningAttemptIds||[])];}
   state.sessions.push(summary);
   if(state.sessions.length>100)state.sessions=state.sessions.slice(-100);
   FC.saveSession(bank?.module?.id,summary);
@@ -1328,6 +1374,18 @@ function finishSession(){
   showDebrief(summary);
 }
 function showDebrief(summary){
+  learningDebrief=summary;
+  refreshLearningButton();
+  const learningStatus=document.getElementById('learningOpenStatus');
+  learningStatus.hidden=true;
+  document.getElementById('studyMissedBtn').onclick=async()=>{
+    const button=document.getElementById('studyMissedBtn');
+    if(!window.T08LearningCapture?.available()){refreshLearningButton();return;}
+    button.disabled=true;learningStatus.hidden=true;
+    try{await window.T08Learning.open({moduleId:bank?.module?.id,moduleSlug:MODULE_SLUG,summary,bank});}
+    catch(_){learningStatus.textContent='The lesson workspace could not open. Your test results are unchanged; use the existing review buttons or try again.';learningStatus.hidden=false;}
+    finally{button.disabled=false;}
+  };
   refreshRank();
   hideViews();
   document.getElementById("debriefView").classList.remove("hidden");

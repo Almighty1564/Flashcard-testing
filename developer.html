@@ -383,6 +383,8 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
       <span>Manage Groups</span><span></span>
     </button>
 
+    <button type="button" class="btn navbtn" id="learningSourcesBtn" hidden>Learning sources &amp; rules</button>
+    <p id="learningAuthoringStatus" class="small muted" role="status" hidden></p>
     <div class="nav-section">Review</div>
     <button type="button" class="btn navbtn" data-view="validate">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3 4 6v6c0 4.4 3.4 8.3 8 9 4.6-.7 8-4.6 8-9V6l-8-3Z"/><path d="m9 12 2 2 4-4"/></svg>
@@ -2662,6 +2664,26 @@ window.__startBuilder=async function(profile){
 </script>
 
 <script src="./ai-distractors.js?v=atelier-1"></script>
+<link rel="stylesheet" href="./learning-workspace.css?v=1">
+<script src="./learning-config.js?v=1"></script>
+<script src="./learning-client.js?v=1"></script>
+<script src="./learning-authoring.js?v=1"></script>
+<script>
+/* Optional source authoring; the original module editor remains independent. */
+(function(){
+  const button=document.getElementById('learningSourcesBtn');
+  const status=document.getElementById('learningAuthoringStatus');
+  function sync(){button.hidden=!window.T08Learning?.isAvailable();}
+  window.addEventListener('t08-learning-ready',sync);
+  button.addEventListener('click',async()=>{
+    button.disabled=true;status.hidden=true;
+    try{await window.T08LearningAuthoring.open({moduleId:project.moduleId,moduleSlug:project.moduleSlug,moduleName:project.moduleName,questions:project.questions});}
+    catch(error){status.textContent=error.message||'Learning sources could not load. Your question editor is unchanged.';status.hidden=false;}
+    finally{button.disabled=false;}
+  });
+  sync();
+})();
+</script>
 
 
 <script>

@@ -1,0 +1,12 @@
+{
+  "name": "tomato08-regression-tests",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Development-only regression tools. The website remains static and requires no frontend build.",
+  "scripts": {
+    "test": "node --test tests/*.test.cjs tests/*.test.mjs podcast-media.test.mjs"
+  },
+  "devDependencies": {
+    "@electric-sql/pglite": "0.5.15"
+  }
+}

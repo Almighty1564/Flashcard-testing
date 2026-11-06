@@ -1,0 +1,9 @@
+OPERATIONS PRACTICE — FICTIONAL TEST HANDBOOK
+
+The maintenance log records completed equipment checks and the date of each check.
+The equipment register records equipment identifiers, including serial numbers.
+
+Use the maintenance log when checking whether a scheduled check was completed.
+Use the equipment register when looking up the serial number of an item.
+
+This handbook is invented test data for checking the application. It is not course material.
