@@ -4,6 +4,7 @@ on:
     branches:
       - main
       - 'fix/**'
+      - 'feat/source-backed-study'
   pull_request:
 permissions:
   contents: read
@@ -16,8 +17,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Run regression tests
-        run: node --test tests/*.test.cjs podcast-media.test.mjs
+      - name: Install pinned development-only database test dependency
+        run: npm ci --ignore-scripts --no-audit --no-fund
+      - name: Run regression tests and isolated PostgreSQL schema checks
+        run: npm test
       - name: Syntax-check reliability scripts
         run: |
           node --check study-reliability.js
@@ -32,6 +35,15 @@ jobs:
           node --check cs50/studio/store.js
           node --check cs50/studio/app.js
           node --check security.js
+      - name: Syntax-check optional learning capture and pure backend domain
+        run: |
+          node --check learning-capture.js
+          node --check learning-client.js
+          node --check learning-workspace.js
+          node --check learning-config.js
+          node --check learning-authoring.js
+          node --check supabase/functions/learning-api/domain.mjs
+          node --check supabase/functions/learning-api/backend.mjs
       - name: Package review snapshot
         if: always()
         run: git archive --format=zip --output=source-snapshot.zip HEAD

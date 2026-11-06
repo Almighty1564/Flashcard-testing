@@ -45,6 +45,26 @@ Read-only Supabase inspection confirms the core tables and private media bucket 
 
 Authenticated end-to-end browser flows still require an existing tester/developer account. Before a release that substantially changes study or authoring behavior, exercise: sign in, open a module, answer and reload a card, finish a test, report a question, edit and save a draft, upload an image, and generate AI distractors.
 
+## Optional source-backed learning extension
+
+The feature branch adds **Study what I missed** to the existing completed-test screen and **Learning sources & rules** to Question Studio. Existing buttons, question formats, grading, navigation, SRS and stored progress are retained. The new controls appear only when both the public rollout switch and authenticated backend readiness checks pass. `learning-config.js` ships with `enabled: false`.
+
+The learner workspace provides a plan from missed/uncertain/unanswered questions, complete cited lessons with original source files, and a different complete-set retest after every assigned lesson is acknowledged. Correct guesses/unknown confidence are retained as uncertainty; neither reading nor multiple-choice scores establish independent recall or practical mastery. New attempts and lesson/retest results are stored separately from existing mastery/SRS.
+
+The first release supports developer-authored module sources (text/Markdown, PNG, JPEG and PDF, up to 2 MiB each), explicitly reviewed source links, and versioned course study instructions. It does not yet provide personal learner uploads. Plans are bounded to 100 attempts, 8 objectives and 4 source files; larger study sets should be split using existing custom tests. Background processing uses distinct source organization, authoring, source review, rule review and presentation review requests. Unreadable or failed material remains unpublished.
+
+Backend code and deployment steps are in [supabase/learning/README.md](supabase/learning/README.md). The SQL is staged rather than applied; model credentials, worker hosting and production enablement are deployment steps. No live database migration or real provider request was part of local implementation.
+
+There is still no frontend build step. Development tests now use a pinned, development-only PGlite package to execute the staged SQL against an isolated PostgreSQL engine:
+
+```text
+npm ci --ignore-scripts --no-audit --no-fund
+npm test
+node scripts/preview-learning.mjs
+```
+
+The preview at `http://127.0.0.1:8767/` serves the actual study page and new scripts with explicitly labelled fictional test data and a simulated server. It blocks the production cloud configuration and external network access. It is for local validation, not production hosting. See [tests/LEARNING-VALIDATION.md](tests/LEARNING-VALIDATION.md) for test boundaries.
+
 ## GitHub Pages handoff
 
 There is no frontend build step. Publish the **complete repository contents**, including the CSS/JavaScript files, at the same level as `index.html`. Keep `CNAME` and `supabase-config.js` with the site. The Supabase browser library is pinned to version 2.45.4 on jsDelivr. Never add a service-role key or secret key to browser files.

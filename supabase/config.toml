@@ -1,0 +1,6 @@
+project_id = "tomato08-learning"
+
+[functions.learning-api]
+# The handler verifies user JWTs through Supabase Auth and security_access_status.
+# A separate high-entropy server-only worker token authorizes process_job only.
+verify_jwt = false

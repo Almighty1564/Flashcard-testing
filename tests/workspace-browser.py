@@ -144,7 +144,15 @@ with sync_playwright() as p:
         page.locator('#moduleSearch').fill('');page.screenshot(path=str(OUT/'communicator-desktop.png'),full_page=True)
         goto(page,'tester.html?module=mod2',None)
         page.wait_for_url('**/tester.html?module=mod2')
-        page.wait_for_function('document.querySelector("#cwStudyFrame")?.contentWindow.location.search==="?module=module-two"')
+        page.wait_for_function('''() => {
+            const frame = document.querySelector('#cwStudyFrame');
+            if (!frame?.contentWindow) return false;
+            const target = new URL(frame.contentWindow.location.href);
+            return target.origin === location.origin
+                && target.pathname === new URL('./mod1.html', location.href).pathname
+                && target.searchParams.get('module') === 'module-two'
+                && target.searchParams.get('ui') === document.querySelector('#cwStudy')?.dataset.uiRelease;
+        }''')
         passed('Sidebar resolves actual published module slugs inside the same tester page')
         goto(page,'tester.html?module=missing','testerApp')
         expect(page.locator('#requestedModuleStatus')).to_be_visible()
