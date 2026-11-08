@@ -3,7 +3,7 @@
   'use strict';
   if (document.body.dataset.page !== 'modules' || !document.getElementById('testerApp')) return;
   // Keep the loader and embedded HTML on the same release, including cache keys.
-  const release = new URL(document.currentScript?.src || location.href, location.href).searchParams.get('v') || '20261020-swipe-v6';
+  const release = new URL(document.currentScript?.src || location.href, location.href).searchParams.get('v') || '20261108-study-v8';
   const studyURL = slug => {
     const url = new URL('./mod1.html', location.href);
     url.searchParams.set('module', slug);
@@ -51,7 +51,7 @@
   const study = document.createElement('section');
   study.id = 'cwStudy'; study.dataset.uiRelease = release; study.hidden = true; study.setAttribute('aria-labelledby','cwTitle');
   study.innerHTML = `<div class="cw-breadcrumb"><a href="./tester.html">Communicator</a><span aria-hidden="true">/</span><span id="cwCrumb"></span></div>
-    <header class="w-heading cw-heading"><div><h1 id="cwTitle" tabindex="-1">Study</h1><p id="cwSubtitle"></p><p id="cwSaveStatus" role="status" aria-live="polite"></p></div></header>
+    <header class="w-heading cw-heading"><div><h1 id="cwTitle" tabindex="-1">Study</h1><p id="cwSubtitle"></p><p id="cwSaveStatus" role="status" aria-live="polite"></p><a id="cwStudyMaterial" href="./mod4-study.html" hidden>Study material →</a></div></header>
     <div id="cwLoading" class="p-empty" role="status">Loading your module…</div><div id="cwError" class="p-empty" role="alert" hidden><h2>Module could not be opened</h2><p id="cwErrorText"></p><button id="cwRetry" type="button" class="p-button">Try again</button> <a class="p-button" id="cwStandalone" href="./mod1.html">Open standalone study page</a></div>
     <div id="cwFrameHost"></div><a class="cw-back" href="./tester.html">← Communicator / all modules</a>`;
   app.after(study);
@@ -147,6 +147,7 @@
   }
   function show(module, focus=false) {
     selected=module||null;document.body.classList.toggle('cw-studying',Boolean(selected));
+    $('cwStudyMaterial').hidden = !selected || normalize(selected.slug) !== 'mod4';
     app.hidden=Boolean(selected);study.hidden=!selected;tools.hidden=!selected;menu.open=!selected;
     communicator.toggleAttribute('aria-current',!selected);if(!selected)communicator.setAttribute('aria-current','page');
     moduleGroup.querySelectorAll('a.w-child').forEach(a=>{

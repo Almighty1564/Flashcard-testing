@@ -1,7 +1,7 @@
 """Additional inline-workspace checks. Reuses the synthetic FC transport, never live data."""
 import ast, json, mimetypes, os
 from pathlib import Path
-from urllib.parse import urlparse, unquote
+from urllib.parse import urlparse, unquote, parse_qs
 from playwright.sync_api import sync_playwright, expect
 ROOT=Path(__file__).resolve().parents[1]
 OUT=Path(os.environ.get('T08_COMMUNICATOR_OUTPUT','/tmp/communicator-results'));OUT.mkdir(parents=True,exist_ok=True)
@@ -32,6 +32,8 @@ with sync_playwright() as pw:
  def ready(page):
   page.wait_for_function('document.querySelector("#cwStudyFrame") && !document.querySelector("#cwStudyFrame").hidden && !document.querySelector("#cwRing").disabled')
  def frame(page):return next(f for f in page.frames if '/mod1.html?' in f.url)
+ def selected_module(page,slug):
+  url=urlparse(page.url);return url.path=='/tester.html' and parse_qs(url.query).get('module')==[slug]
  def flash(page):
   f=frame(page);f.evaluate('()=>{startSession([cards().find(c=>c.type==="flashcard")],"all");renderSidebar();}');return f
  def patch(page,**values):page.evaluate('x=>sessionStorage.__cw_fixture=JSON.stringify({...JSON.parse(sessionStorage.__cw_fixture),...x})',values)
@@ -42,7 +44,11 @@ with sync_playwright() as pw:
     page.set_viewport_size({'width':width,'height':1000});f=flash(page)
     page.wait_for_function('getComputedStyle(document.querySelector("#workspaceNav")).visibility==="hidden"')
     check(f'Closed navigation does not cover mobile content at {width}px ({motion})',page.locator('#menuButton').is_visible())
-    f.locator('#showAnswerBtn').click();expect(f.locator('[data-rate="correct"]')).to_be_visible()
+    f.locator('#swipeCard').click();expect(f.locator('.swipe-face-answer')).to_be_visible()
+    expect(f.locator('.swipe-legend')).to_be_visible()
+    f.locator('#swipeCard').focus();f.locator('#swipeCard').press('ArrowRight')
+    expect(f.locator('#debriefView')).to_be_visible()
+    check(f'Mobile swipe grading records the answer at {width}px ({motion})',f.evaluate('state.mastery["mod3-flash"].lastResult')=='correct')
     check(f'Mobile question can be answered without opening or closing navigation at {width}px ({motion})')
     if width==390 and motion=='no-preference':
      flash(page);page.screenshot(path=str(OUT/'07-mobile-settled.png'),full_page=True,animations='disabled')
@@ -59,17 +65,18 @@ with sync_playwright() as pw:
   page.evaluate('window.dispatchEvent(new PageTransitionEvent("pagehide",{persisted:true}))')
   check('Page hide removes the embedded engine and conceals study UI',page.locator('#cwStudyFrame').count()==0 and page.locator('#cwStudy').is_hidden())
   page.evaluate('window.dispatchEvent(new PageTransitionEvent("pageshow",{persisted:true}))');ready(page)
-  check('Restored approved page reopens the selected module only after account validation',page.url.endswith('module=mod3'))
+  check('Restored approved page reopens the selected module only after account validation',selected_module(page,'mod3'))
   patch(page,approved=False)
   page.evaluate('window.dispatchEvent(new PageTransitionEvent("pageshow",{persisted:true}))')
   page.wait_for_url('**/index.html**')
   check('Restored unapproved page cannot display cached questions',page.locator('#cwStudyFrame').count()==0)
   ctx.close()
   ctx,page=setup(writeFail=True)
-  f=flash(page);f.locator('#showAnswerBtn').click();f.locator('[data-rate="correct"]').click()
+  f=flash(page);f.locator('#swipeCard').click();expect(f.locator('.swipe-face-answer')).to_be_visible()
+  f.locator('#swipeCard').focus();f.locator('#swipeCard').press('ArrowRight')
   page.wait_for_function('/pending|not saved|saving|queued/i.test(document.querySelector("#cwSaveStatus").textContent)')
   page.locator('#workspaceNav a[href="./tester.html?module=mod2"]').click()
-  check('Pending cloud writes block accidental module disposal',page.url.endswith('module=mod3') and frame(page)==f)
+  check('Pending cloud writes block accidental module disposal',selected_module(page,'mod3') and frame(page)==f)
   check('Pending answer remains in original engine state',f.evaluate('state.mastery["mod3-flash"].lastResult')=='correct')
   ctx.close()
   check('No uncaught exceptions in lifecycle and mobile checks',not errors)

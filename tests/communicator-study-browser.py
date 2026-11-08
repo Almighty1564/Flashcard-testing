@@ -1,6 +1,7 @@
 """Real Communicator + study engine; synthetic accounts, question banks and API only."""
 from pathlib import Path
-import json, os, mimetypes
+import base64, hashlib, json, os, mimetypes
+from tempfile import TemporaryDirectory
 from urllib.parse import urlparse, unquote
 from playwright.sync_api import sync_playwright, expect
 ROOT=Path(__file__).resolve().parents[1]
@@ -50,12 +51,18 @@ try:
   opts={'headless':True}
   if os.environ.get('T08_CHROMIUM_EXECUTABLE'):opts['executable_path']=os.environ['T08_CHROMIUM_EXECUTABLE']
   browser=pw.chromium.launch(**opts)
-  def setup(**overrides):
+  def setup(mod4_fixture=None, **overrides):
    ctx=browser.new_context(viewport={'width':1440,'height':1050},accept_downloads=True)
    state={'signedIn':True,'approved':True,'role':'developer','calls':[],'progress':{},**overrides}
    ctx.add_init_script("if(!sessionStorage.getItem('__cw_fixture'))sessionStorage.setItem('__cw_fixture',JSON.stringify("+json.dumps(state)+"));")
    def route(r):
-    if '/cloud.js' in r.request.url:r.fulfill(content_type='application/javascript',body=MOCK)
+    if '/cloud.js' in r.request.url:
+     study_mock=''
+     if mod4_fixture:
+      study_mock='\n{const load=FC.loadBank;FC.loadBank=async slug=>{if(slug!=="mod4")return load(slug);const s=JSON.parse(sessionStorage.__cw_fixture);s.calls.push({name:"loadBank",args:{slug}});sessionStorage.__cw_fixture=JSON.stringify(s);if(!s.signedIn||!s.approved)throw Error("Denied fixture load");return '+json.dumps(mod4_fixture['bank'])+';};}'
+     r.fulfill(content_type='application/javascript',body=MOCK+study_mock)
+    elif mod4_fixture and '/mod4-study-data.js' in r.request.url:
+     r.fulfill(content_type='application/javascript',body='window.M4_MANIFEST='+json.dumps(mod4_fixture['manifest'])+';')
     elif r.request.url.startswith(ORIGIN):
      local=(ROOT/unquote(urlparse(r.request.url).path).lstrip('/')).resolve()
      if local.is_file() and local.is_relative_to(ROOT):r.fulfill(body=local.read_bytes(),content_type=mimetypes.guess_type(str(local))[0] or 'application/octet-stream')
@@ -83,21 +90,22 @@ try:
   f=force_card(page)
   check('Original safeguards and answer presentation run inside the embedded engine',f.evaluate('Boolean(FC_STUDY_RELIABILITY && document.querySelector("#studyView").dataset.presentationReady)'))
   check('Only one visible navigation system and no duplicate study header',not f.locator('#fcSidebar').is_visible() and not f.locator('.topbar').is_visible() and page.locator('#cwTitle').inner_text()=='MOD 3')
-  before=f.evaluate('JSON.stringify(state)');f.locator('#showAnswerBtn').click()
-  check('Original answer reveal changes no grades',before==f.evaluate('JSON.stringify(state)'))
-  f.locator('[data-rate="correct"]').click();page.wait_for_function('document.querySelector("#cwCount1").textContent==="1"')
+  before=f.evaluate('JSON.stringify(state)');question=f.locator('.swipe-face-question');prompt=question.inner_text()
+  f.locator('#swipeCard').click()
+  check('Embedded reveal keeps the original question and shows the answer without grading',question.is_visible() and question.inner_text()==prompt and f.locator('.swipe-face-answer').is_visible() and before==f.evaluate('JSON.stringify(state)'))
+  f.locator('#swipeCard').focus();f.locator('#swipeCard').press('ArrowRight');page.wait_for_function('document.querySelector("#cwCount1").textContent==="1"')
   check('Rating writes through the existing safe-progress RPC and updates the shared sidebar',page.evaluate('JSON.parse(sessionStorage.__cw_fixture).calls.some(x=>x.name==="save_card_progress_safe")'))
   force_card(page)
   page.screenshot(path=str(OUT/'02-inline-mod3.png'),full_page=True)
-  q=f.locator('#questionText').inner_text();queue=f.evaluate('JSON.stringify(session.queue)')
+  q=f.locator('.swipe-face-question').inner_text();queue=f.evaluate('JSON.stringify(session.queue)')
   page.locator('#cwWorkspaceMenu>summary').click();expect(page.locator('#cwWorkspaceMenu a[href="./dev.html"]')).to_be_visible()
-  check('Workspace dropdown opens without replacing the question',f.locator('#questionText').inner_text()==q)
+  check('Workspace dropdown opens without replacing the question',f.locator('.swipe-face-question').inner_text()==q)
   page.screenshot(path=str(OUT/'03-workspace-dropdown.png'),full_page=True)
   page.keyboard.press('Escape');check('Escape closes dropdown and restores summary focus',page.locator('#cwWorkspaceMenu').get_attribute('open') is None and page.locator('#cwWorkspaceMenu>summary').evaluate('e=>e===document.activeElement'))
   page.locator('#cwStudy .cw-back').click();expect(page.locator('#testerApp')).to_be_visible();expect(page.locator('#cwStudy')).to_be_hidden()
   check('Clicking Communicator restores full overview without unloading current test',len([x for x in page.frames if '/mod1.html?' in x.url])==1)
   openmod(page);f=current_frame(page)
-  check('Reopening the same MOD resumes its unanswered question and queue',f.locator('#questionText').inner_text()==q and f.evaluate('JSON.stringify(session.queue)')==queue)
+  check('Reopening the same MOD resumes its unanswered question and queue',f.locator('.swipe-face-question').inner_text()==q and f.evaluate('JSON.stringify(session.queue)')==queue)
   page.go_back();expect(page.locator('#testerApp')).to_be_visible();page.go_forward();expect(page.locator('#cwStudy')).to_be_visible()
   check('Browser Back and Forward restore overview and selected MOD in place',page.evaluate('__documentSentinel')=='unchanged')
   page.locator('#cwGroups>summary').click();expect(page.locator('#cwGroupList button')).to_have_count(2)
@@ -121,7 +129,7 @@ try:
   check('Import reaches the original input and checks the existing backup format')
   page.wait_for_function('!document.querySelector("#cwSaveStatus").classList.contains("cw-pending")')
   openmod(page,'mod2');f=current_frame(page)
-  check('Noncanonical module slugs resolve from published records',page.url.endswith('module=module-two') and f.url.endswith('module=module-two'))
+  check('Noncanonical module slugs resolve from published records',page.evaluate('new URL(location.href).searchParams.get("module")')=='module-two' and f.evaluate('new URL(location.href).searchParams.get("module")')=='module-two')
   check('Changing modules leaves only one active engine instance',page.locator('#cwStudyFrame').count()==1 and len([x for x in page.frames if '/mod1.html?' in x.url])==1)
   page.locator('#cwWorkspaceMenu>summary').click();page.locator('#cwWorkspaceMenu .lg-controls>summary').click();page.locator('#cwWorkspaceMenu [data-lg-palette="dawn"]').click()
   check('Appearance applies to both shell and question workspace',f.locator('body').evaluate('e=>getComputedStyle(e).backgroundColor')=='rgb(239, 243, 248)')
@@ -147,6 +155,48 @@ try:
   expect(f.locator('#lockedText')).to_contain_text('Module unavailable');patch(page,bankFail=False)
   check('Refresh is available after a failed module load',page.locator('[data-study-action="unlockBtn"]').is_enabled())
   page.locator('[data-study-action="unlockBtn"]').click();expect(f.locator('#studyView')).to_be_visible();check('Existing bank reload recovers without a new login');ctx.close()
+  png=base64.b64decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+a3loAAAAASUVORK5CYII=')
+  source_path='mod 4 tests/quiz 1/1.PNG'
+  question_text='Which literal tag looks like <fixture> in this question?'
+  answer_text='The literal text <fixture>, not an HTML element.'
+  fixture={'bank':{'module':{'id':'m4','slug':'mod4','name':'MOD 4','is_published':True},
+                   'groups':[{'id':'m4-quiz1','name':'Quiz 1'}],
+                   'cards':[{'id':'fixture-q1','groupId':'m4-quiz1','type':'flashcard','status':'complete',
+                             'question':{'text':question_text},'answer':{'text':answer_text}}]},
+           'manifest':{'files':[{'path':source_path,'bytes':len(png),'sha256':hashlib.sha256(png).hexdigest()}],
+                       'slots':[{'id':'fixture-q1','quiz':1,'number':1,'status':'verified','sources':[source_path]}]}}
+  ctx,page=setup(mod4_fixture=fixture,signedIn=False)
+  page.goto(ORIGIN+'/mod4-study.html');expect(page.locator('#gateMessage')).to_contain_text('Sign in through Communicator')
+  expect(page.locator('#signIn')).to_be_visible();expect(page.locator('#library')).to_be_hidden()
+  check('Signed-out MOD 4 library never loads the question bank',page.evaluate('!JSON.parse(sessionStorage.__cw_fixture).calls.some(x=>x.name==="loadBank")'))
+  ctx.close()
+  ctx,page=setup(mod4_fixture=fixture,approved=False)
+  page.goto(ORIGIN+'/mod4-study.html');expect(page.locator('#gateMessage')).not_to_have_text('Checking your existing account access.')
+  expect(page.locator('#library')).to_be_hidden()
+  check('Unapproved MOD 4 account fails the existing server access check before bank load',page.evaluate('(()=>{const calls=JSON.parse(sessionStorage.__cw_fixture).calls;return calls.some(x=>x.name==="security_access_status")&&!calls.some(x=>x.name==="loadBank");})()'))
+  ctx.close()
+  ctx,page=setup(mod4_fixture=fixture)
+  requests=[]
+  page.on('request',lambda req:requests.append((req.method,req.url)))
+  page.goto(ORIGIN+'/mod4-study.html');expect(page.locator('#library')).to_be_visible()
+  card=page.locator('#questions article.question').filter(has_text=question_text)
+  expect(card.locator('h2')).to_have_text(question_text);expect(card.locator('.answer')).to_be_hidden()
+  card.locator('summary').click();expect(card.locator('.answer')).to_contain_text(answer_text);expect(card.locator('h2')).to_have_text(question_text)
+  check('MOD 4 answer reveal keeps exact literal question and answer text',card.locator('fixture').count()==0)
+  page.locator('button[data-section="sources"]').click()
+  with TemporaryDirectory() as temporary:
+   folder=Path(temporary)/'supporting material'
+   image=folder/source_path
+   image.parent.mkdir(parents=True)
+   image.write_bytes(png)
+   page.locator('#folder').set_input_files(str(folder))
+   tile=page.locator('#gallery button.source-tile').filter(has_text='1.PNG')
+   expect(tile).to_be_visible();tile.click();expect(page.locator('#sourceDialog')).to_be_visible()
+   page.wait_for_function('(()=>{const img=document.querySelector("#sourceImage");return img.src.startsWith("blob:") && img.naturalWidth===1;})()')
+   page.locator('#closeSource').click();expect(page.locator('#sourceDialog')).to_be_hidden()
+  check('MOD 4 opens a matching screenshot locally without sending uploads or saving progress',
+        all(method=='GET' for method,_ in requests) and page.evaluate('!JSON.parse(sessionStorage.__cw_fixture).calls.some(x=>/^save|upload/i.test(x.name))'))
+  ctx.close()
   check('No uncaught browser exceptions',not errors)
   browser.close()
 finally:
