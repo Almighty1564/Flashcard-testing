@@ -306,7 +306,7 @@
 
     var groupRes = await client
       .from("question_groups")
-      .select("id, name, sort_order")
+      .select("id, module_id, name, sort_order, is_enabled")
       .eq("module_id", module.id)
       .order("sort_order", { ascending: true });
     if (groupRes.error) throw new Error(groupRes.error.message);
@@ -319,13 +319,21 @@
       .order("sort_order", { ascending: true });
     if (qRes.error) throw new Error(qRes.error.message);
 
-    var rows = qRes.data || [];
+    // Developer accounts can read disabled sections for authoring. Study views
+    // use the same eligible pool for every role, before signing any images.
+    var groups = (groupRes.data || []).filter(function (g) {
+      return g.is_enabled !== false && (!g.module_id || g.module_id === module.id);
+    });
+    var enabledIds = new Set(groups.map(function (g) { return g.id; }));
+    var rows = (qRes.data || []).filter(function (q) {
+      return q.is_active !== false && (q.group_id == null || enabledIds.has(q.group_id));
+    });
     await signPaths(collectPaths(rows));
 
     return {
       schemaVersion: 1,
       module: { id: module.id, slug: module.slug, name: module.name },
-      groups: (groupRes.data || []).map(function (g, i) {
+      groups: groups.map(function (g, i) {
         return { id: g.id, name: g.name, order: g.sort_order != null ? g.sort_order : i + 1 };
       }),
       cards: rows.map(toCard)

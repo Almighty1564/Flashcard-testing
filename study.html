@@ -21,7 +21,7 @@ code{background:#0d1117;border:1px solid var(--line);padding:2px 5px;border-radi
 <link rel="stylesheet" href="./theme.css?v=4">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4"></script>
 <script src="./supabase-config.js?v=9"></script>
-<script src="./cloud.js?v=11"></script>
+<script src="./cloud.js?v=20261108-sections-v1"></script>
 <script>
 // Share the portal session and project configuration with every other page.
 const sb = FC.client;
@@ -136,8 +136,9 @@ function start(mode){
  let r=await sb.from("modules").select("id,slug,name,description").eq("slug",slug).single();
  if(r.error){document.getElementById("loading").textContent=r.error.message;return;} moduleRow=r.data;
  document.getElementById("title").textContent=moduleRow.name;
- r=await sb.from("question_groups").select("id,name,sort_order").eq("module_id",moduleRow.id).order("sort_order"); if(r.error) throw r.error; groups=r.data||[];
- r=await sb.from("questions").select("id,group_id,question_type,question_text,answer_data,sort_order").eq("module_id",moduleRow.id).eq("is_active",true).order("sort_order"); if(r.error) throw r.error; questions=r.data||[];
+ r=await sb.from("question_groups").select("id,name,sort_order,is_enabled").eq("module_id",moduleRow.id).order("sort_order"); if(r.error) throw r.error; groups=(r.data||[]).filter(g=>g.is_enabled!==false);
+ const enabledGroups=new Set(groups.map(g=>g.id));
+ r=await sb.from("questions").select("id,group_id,question_type,question_text,answer_data,sort_order,is_active").eq("module_id",moduleRow.id).eq("is_active",true).order("sort_order"); if(r.error) throw r.error; questions=(r.data||[]).filter(q=>q.is_active!==false&&(q.group_id==null||enabledGroups.has(q.group_id)));
  r=await sb.from("card_progress").select("*").eq("user_id",user.id); if(r.error) throw r.error; (r.data||[]).forEach(p=>progress[p.question_id]=p);
  document.getElementById("groupSelect").replaceChildren(new Option("All Groups", ""), ...groups.map(g=>new Option(g.name, g.id)));
  document.getElementById("status").textContent=`${groups.length} groups • ${questions.length} questions • progress saved to cloud`;

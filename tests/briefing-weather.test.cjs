@@ -117,7 +117,7 @@ test('unit conversion, weather advice and safe news links still work', () => {
 });
 test('full forecast moves to Weather while module authentication and podcast remain', () => {
   const s=fs.readFileSync(path.join(__dirname,'../weather.html'),'utf8');
-  for(const f of ['briefing-weather.css?v=20260913-1','briefing-data.js?v=20260913-1','briefing.js?v=20261005-v3','cloud.js?v=11','atelier-portal.js?v=20261005-v3','security-auth.js']) assert.ok(s.includes(f),f);
+  for(const f of ['briefing-weather.css?v=20260913-1','briefing-data.js?v=20260913-1','briefing.js?v=20261005-v3','cloud.js?v=20261108-sections-v1','atelier-portal.js?v=20261005-v3','security-auth.js']) assert.ok(s.includes(f),f);
   assert.match(s,/<section id="modePicker" hidden/);
   const modules=fs.readFileSync(path.join(__dirname,'../tester.html'),'utf8');
   assert.ok(!modules.includes('id="dailyBriefing"'));

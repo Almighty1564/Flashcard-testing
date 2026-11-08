@@ -31,6 +31,43 @@
   }, true);
 
   const originalLoad = window.loadModuleIntoBuilder;
+  const originalQueueSync = window.queueSync;
+  let operations = Promise.resolve(), dirty = false, editVersion = 0;
+  let knownModule = null, knownGroups = new Map(), knownQuestions = new Map();
+  const controls = window.T08AuthoringState = {busy:false,pendingGroup:null,message:''};
+  function renderControls() { if (typeof renderGroupManager === 'function') renderGroupManager(); }
+  function enqueue(action) {
+    const next = operations.then(async () => {
+      controls.busy = true;
+      const app = document.getElementById('developerApp');
+      if (app) app.inert = true;
+      renderControls();
+      try { return await action(); }
+      finally { controls.busy = false; controls.pendingGroup = null; if (app) app.inert = false; renderControls(); }
+    });
+    operations = next.catch(() => {});
+    return next;
+  }
+  function cancelTimer() { clearTimeout(syncTimer); syncTimer = null; }
+  window.queueSync = function () { dirty = true; editVersion++; originalQueueSync(); };
+  function rememberFlags() {
+    knownModule = project.moduleId;
+    knownGroups = new Map(project.groups.map(g => [g.id, g.isEnabled !== false]));
+    knownQuestions = new Map(project.questions.map(q => [q.id, q.isActive !== false]));
+  }
+  window.reconcileAuthoringFlags = function () {
+    if (knownModule !== project.moduleId) return;
+    project.groups.forEach(g => { g.isEnabled = knownGroups.has(g.id) ? knownGroups.get(g.id) : true; });
+    project.questions.forEach(q => { q.isActive = knownQuestions.has(q.id) ? knownQuestions.get(q.id) : q.isActive !== false; });
+  };
+  function failed(error, sectionChange = false) {
+    const message = String(error?.message || error || 'Save failed');
+    cloudReady = false;
+    controls.message = sectionChange ? 'Section change not confirmed. Refresh from Cloud before trying again. ' + message : '';
+    setSyncStatus(/stale_module_revision/i.test(message)
+      ? 'Conflict detected. Refresh From Cloud before saving again.'
+      : 'Not confirmed: ' + message + ' · Refresh From Cloud before saving again.', '#f85149');
+  }
   async function revisionForSlug(slug) {
     const r = await FC.client.from('modules').select('id,revision').eq('slug', slug).single();
     if (r.error) throw new Error(r.error.message);
@@ -41,17 +78,29 @@
     if (r.error) throw new Error(r.error.message);
     return r.data;
   }
-  async function stableLoad(slug) {
-    const before = await revisionForSlug(slug);
-    await originalLoad(slug);
-    let after = await revisionForId(before.id);
-    // If the module changed while the multi-query loader was running, reload once from the new revision.
-    if (Number(before.revision) !== Number(after.revision)) {
-      await originalLoad(slug);
-      after = await revisionForId(before.id);
-    }
-    project.moduleRevision = Number(after.revision);
-    setSyncStatus('Loaded ' + project.questions.length + ' questions · revision ' + project.moduleRevision, '#8b949e');
+  function stableLoad(slug, options = {}) {
+    return enqueue(async () => {
+      cancelTimer(); controls.message = '';
+      try {
+        if (options.discard) dirty = false;
+        else if (dirty) await flushDirty();
+        for (let attempt = 0; attempt < 3; attempt++) {
+          cloudReady = false;
+          const before = await revisionForSlug(slug);
+          await originalLoad(slug);
+          cloudReady = false;
+          const after = await revisionForId(before.id);
+          if (project.moduleId === before.id && Number(before.revision) === Number(after.revision)) {
+            project.moduleRevision = Number(after.revision);
+            if (!Number.isInteger(project.moduleRevision)) throw new Error('Invalid module revision.');
+            dirty = false; cloudReady = true; rememberFlags();
+            setSyncStatus('Loaded ' + project.questions.length + ' questions · revision ' + project.moduleRevision, '#8b949e');
+            return;
+          }
+        }
+        throw new Error('This module kept changing while loading. Refresh From Cloud to retry.');
+      } catch (error) { failed(error); throw error; }
+    });
   }
   window.loadModuleIntoBuilder = stableLoad;
 
@@ -65,27 +114,25 @@
       question_image_path: q.questionImagePath || null,
       answer_data: answerDataFor(q),
       sort_order: index + 1,
-      is_active: true
+      is_active: q.isActive !== false
     };
   }
 
-  window.runSync = async function () {
-    if (!cloudReady || !project.moduleId) return;
-    if (syncing) { syncQueued = true; return; }
-    if (!Number.isInteger(project.moduleRevision)) {
-      cloudReady = false;
-      setSyncStatus('Reload required before saving. Revision protection is not initialized.', '#f85149');
-      return;
-    }
+  async function saveSnapshot() {
+    if (!dirty) return;
+    if (!cloudReady || !project.moduleId || !Number.isInteger(project.moduleRevision)) throw new Error('Reload required before saving.');
     syncing = true;
-    const expectedRevision = project.moduleRevision;
+    const target = project, expectedRevision = project.moduleRevision;
     try {
       await uploadPendingImages();
+      if (project !== target) throw new Error('The module changed while saving.');
+      window.reconcileAuthoringFlags();
+      const savedVersion = editVersion;
       const snapshot = {
         moduleId: project.moduleId,
         moduleName: project.moduleName || project.moduleSlug,
         isPublished: !!project.isPublished,
-        groups: project.groups.map((g,i) => ({id:g.id,module_id:project.moduleId,name:g.name || 'Untitled group',sort_order:i+1})),
+        groups: project.groups.map((g,i) => ({id:g.id,module_id:project.moduleId,name:g.name || 'Untitled group',sort_order:i+1,is_enabled:g.isEnabled!==false})),
         questions: project.questions.map((q,i) => questionRow(q, project.moduleId, i))
       };
       const result = await FC.client.rpc('sync_module_snapshot', {
@@ -97,21 +144,50 @@
         p_questions: snapshot.questions
       });
       if (result.error) throw result.error;
+      if (project !== target || project.moduleId !== snapshot.moduleId) throw new Error('The module changed before the save finished.');
+      if (!Number.isInteger(Number(result.data)) || Number(result.data) <= expectedRevision) throw new Error('Invalid saved revision. Refresh From Cloud.');
       project.moduleRevision = Number(result.data);
+      dirty = editVersion !== savedVersion; rememberFlags();
       setSyncStatus('Saved to cloud · revision ' + project.moduleRevision + ' · ' + new Date().toLocaleTimeString(), '#3fb950');
-    } catch (error) {
-      const message = String(error?.message || error || 'Save failed');
-      if (/stale_module_revision/i.test(message)) {
-        cloudReady = false;
-        setSyncStatus('Conflict detected. This module changed elsewhere. Refresh From Cloud before saving again.', '#f85149');
-        alert('This module changed in another tab or device. Your current editor was NOT allowed to overwrite it. Export your draft if needed, then use Refresh From Cloud before saving again.');
-      } else {
-        setSyncStatus('Not saved: ' + message, '#f85149');
-      }
-    } finally {
-      syncing = false;
-      if (syncQueued && cloudReady) { syncQueued = false; queueSync(); }
-    }
+    } finally { syncing = false; syncQueued = false; }
+  }
+  async function flushDirty() {
+    cancelTimer();
+    for (let attempt = 0; dirty && attempt < 3; attempt++) await saveSnapshot();
+    if (dirty) throw new Error('Edits are still pending. Wait for saving to finish.');
+  }
+  window.runSync = function () {
+    return enqueue(async () => {
+      try { await flushDirty(); return true; }
+      catch (error) { failed(error); return false; }
+    });
+  };
+  window.setQuestionGroupEnabled = function (groupId, enabled) {
+    const target = project, moduleId = project.moduleId;
+    return enqueue(async () => {
+      controls.pendingGroup = groupId; controls.message = 'Saving section availability…'; renderControls();
+      try {
+        if (typeof enabled !== 'boolean') throw new Error('A section must be enabled or disabled.');
+        if (project !== target || project.moduleId !== moduleId) throw new Error('The selected module changed.');
+        if (!cloudReady || !Number.isInteger(project.moduleRevision)) throw new Error('Refresh From Cloud before changing a section.');
+        await flushDirty();
+        const group = project.groups.find(g => g.id === groupId);
+        if (!group) throw new Error('This section no longer exists in the module.');
+        if ((group.isEnabled !== false) === enabled) { controls.message = 'Section is already ' + (enabled ? 'enabled.' : 'disabled.'); return true; }
+        const revision = project.moduleRevision;
+        const result = await FC.client.rpc('set_question_group_enabled', {
+          p_module_id: moduleId, p_group_id: groupId, p_enabled: enabled, p_expected_revision: revision
+        });
+        if (result.error) throw result.error;
+        if (project !== target || project.moduleId !== moduleId) throw new Error('The selected module changed before the response arrived.');
+        if (!Number.isInteger(Number(result.data)) || Number(result.data) < revision) throw new Error('Invalid saved revision.');
+        project.moduleRevision = Number(result.data); group.isEnabled = enabled;
+        knownGroups.set(groupId, enabled);
+        controls.message = 'Section ' + (enabled ? 'enabled' : 'disabled') + '. Questions and history are kept. Refresh already-open study tabs to use the change.';
+        setSyncStatus('Section saved · revision ' + project.moduleRevision, '#3fb950');
+        return true;
+      } catch (error) { failed(error, true); return false; }
+    });
   };
 
   // If the original boot finished before this deferred layer attached, reload once to establish a safe revision baseline.

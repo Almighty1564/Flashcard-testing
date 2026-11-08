@@ -314,7 +314,7 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
 <link rel="stylesheet" href="./theme.css?v=4">
 <meta name="theme-color" content="#191a1e">
 <link rel="stylesheet" href="./atelier.css?v=1">
-<script src="./atelier-shell.js?v=20261005-v3" defer></script>
+<script src="./atelier-shell.js?v=20261108-sections-v1" defer></script>
 
 <link data-lg-stylesheet rel="stylesheet" href="./liquid-glass.css?v=20260912-1">
 <link data-lg-stylesheet rel="stylesheet" href="./liquid-glass-inner.css?v=20260912-1">
@@ -848,7 +848,7 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="./supabase-config.js?v=9"></script>
-<script src="./cloud.js?v=11"></script>
+<script src="./cloud.js?v=20261108-sections-v1"></script>
 <script>
 const PROJECT_FORMAT="flashcard-question-builder-v1";
 
@@ -865,6 +865,7 @@ function uid(prefix){
 }
 function emptyDraft(){
   return {
+    isActive:true,answerDataExtra:{},
     groupId:"",
     type:"flashcard",
     questionText:"",
@@ -956,8 +957,11 @@ async function uploadPendingImages(){
   }
 }
 function answerDataFor(q){
-  const base=q.visual?{visual:q.visual}:{};
-  return Object.assign(base,answerBodyFor(q));
+  return {...answerDataExtras(q.answerDataExtra),...(q.visual?{visual:q.visual}:{}),...answerBodyFor(q)};
+}
+function answerDataExtras(data){
+  const reserved=new Set(["text","image_path","choices","shuffle","value","tolerance","unit","accept","mode","labels","fields","pairs","visual","__proto__","constructor","prototype"]);
+  return Object.fromEntries(Object.entries(data&&typeof data==="object"&&!Array.isArray(data)?data:{}).filter(([key])=>!reserved.has(key)));
 }
 function answerBodyFor(q){
   if(q.type==="flashcard"){
@@ -1034,7 +1038,7 @@ async function runSync(){
       question_image_path:q.questionImagePath||null,
       answer_data:answerDataFor(q),
       sort_order:i+1,
-      is_active:true,
+      is_active:q.isActive!==false,
       updated_at:new Date().toISOString()
     }));
     if(questionRows.length){
@@ -1087,12 +1091,12 @@ async function loadModuleIntoBuilder(slug){
   if(!module) throw new Error("Module \""+slug+"\" was not found.");
 
   const gRes=await sb.from("question_groups")
-    .select("id, name, sort_order").eq("module_id",module.id)
+    .select("id, name, sort_order, is_enabled").eq("module_id",module.id)
     .order("sort_order",{ascending:true});
   if(gRes.error) throw new Error(gRes.error.message);
 
   const qRes=await sb.from("questions")
-    .select("id, group_id, question_type, question_text, question_image_path, answer_data, sort_order")
+    .select("id, group_id, question_type, question_text, question_image_path, answer_data, sort_order, is_active")
     .eq("module_id",module.id).order("sort_order",{ascending:true});
   if(qRes.error) throw new Error(qRes.error.message);
 
@@ -1115,11 +1119,12 @@ async function loadModuleIntoBuilder(slug){
   project.moduleSlug=module.slug;
   project.moduleName=module.name||"";
   project.isPublished=!!module.is_published;
-  project.groups=(gRes.data||[]).map(g=>({id:g.id,name:g.name}));
+  project.groups=(gRes.data||[]).map(g=>({id:g.id,name:g.name,isEnabled:g.is_enabled!==false}));
   project.questions=rows.map(row=>{
     const ad=row.answer_data||{};
     const q={
       id:row.id,
+      isActive:row.is_active!==false,answerDataExtra:answerDataExtras(ad),
       groupId:row.group_id,
       type:(row.question_type==="numeric" && ad.mode==="image-entry")?"image-entry":row.question_type,
       questionText:row.question_text||"",
@@ -1569,6 +1574,7 @@ function saveCurrentQuestion(){
   if(!project.groups.length){alert("Create a group first.");showView("groups");return;}
   const q={
     id:editingId || uid("card"),
+    isActive:draft.isActive!==false,answerDataExtra:answerDataExtras(draft.answerDataExtra),
     questionImagePath:draft.questionImagePath||null,
     answerImagePath:draft.type==="flashcard"?(draft.answerImagePath||null):null,
     groupId:draft.groupId,
@@ -1643,6 +1649,7 @@ function editQuestion(id){
   editingId=id;
   draft={
     ...emptyDraft(),
+    isActive:q.isActive!==false,answerDataExtra:answerDataExtras(q.answerDataExtra),
     groupId:q.groupId,type:q.type,questionText:q.questionText||"",questionImage:q.questionImage||null,
     answerText:q.answerText||"",answerImage:q.answerImage||null,
     visual:q.visual||"",
@@ -1858,17 +1865,26 @@ async function openTestersView(){
 function renderGroupManager(){
   const el=document.getElementById("groupManager");
   if(!project.groups.length){el.innerHTML='<div class="empty">No groups yet.</div>';return;}
-  el.innerHTML=project.groups.map((g,i)=>{
+  const controls=window.T08AuthoringState||{};
+  el.innerHTML='<p class="small muted">Disabled sections stay editable and keep every question and its history. Already-open study tabs use the change after Refresh from Cloud.</p><p id="groupToggleStatus" class="small" role="status"></p>'+project.groups.map((g,i)=>{
     const count=project.questions.filter(q=>q.groupId===g.id).length;
+    const enabled=g.isEnabled!==false,pending=controls.pendingGroup===g.id;
     return `<div class="qrow">
       <div class="row">
         <strong style="width:28px">${i+1}.</strong>
         <input type="text" value="${esc(g.name)}" data-group-name="${esc(g.id)}" style="flex:1">
         <span class="small muted">${count} questions</span>
+        <span class="badge" data-group-enabled="${esc(g.id)}">${enabled?"Enabled":"Disabled"}</span>
+        <button type="button" class="btn" data-toggle-group="${esc(g.id)}" aria-pressed="${enabled}" aria-label="${enabled?"Disable":"Enable"} section ${esc(g.name)}" ${controls.busy||!cloudReady||!Number.isInteger(project.moduleRevision)?"disabled":""}>${pending?"Saving…":enabled?"Disable section":"Enable section"}</button>
         <button type="button" class="btn bad" data-delete-group="${esc(g.id)}">Delete</button>
       </div>
     </div>`;
   }).join("");
+  document.getElementById("groupToggleStatus").textContent=controls.message||"";
+  el.querySelectorAll("[data-toggle-group]").forEach(button=>button.onclick=()=>{
+    const group=project.groups.find(g=>g.id===button.dataset.toggleGroup);
+    if(group&&window.setQuestionGroupEnabled)window.setQuestionGroupEnabled(group.id,group.isEnabled===false);
+  });
   el.querySelectorAll("[data-group-name]").forEach(inp=>inp.onchange=()=>{
     const g=project.groups.find(x=>x.id===inp.dataset.groupName);
     if(g){g.name=inp.value.trim();saveProject();renderAll();}
@@ -1886,7 +1902,7 @@ function addGroup(){
   const name=inp.value.trim();
   if(!name)return;
   if(project.groups.some(g=>g.name.toLowerCase()===name.toLowerCase())){alert("A group with that name already exists.");return;}
-  const g={id:(crypto.randomUUID?crypto.randomUUID():uid("group")),name,createdAt:new Date().toISOString()};
+  const g={id:(crypto.randomUUID?crypto.randomUUID():uid("group")),name,isEnabled:true,createdAt:new Date().toISOString()};
   project.groups.push(g);inp.value="";saveProject();
   if(!draft.groupId)draft.groupId=g.id;
   renderAll();
@@ -1905,9 +1921,10 @@ function normalizedBank(bankVersion=1){
       id:"module_"+(project.moduleName||"untitled").toLowerCase().replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,""),
       name:project.moduleName||"Untitled Module"
     },
-    groups:project.groups.map((g,i)=>({id:g.id,name:g.name,order:i+1})),
+    groups:project.groups.map((g,i)=>({id:g.id,name:g.name,isEnabled:g.isEnabled!==false,order:i+1})),
     cards:project.questions.map((q,i)=>({
       id:q.id,groupId:q.groupId,type:q.type,order:i+1,status:questionIssues(q).length?"incomplete":"complete",
+      isActive:q.isActive!==false,answerDataExtra:answerDataExtras(q.answerDataExtra),
       question:{text:q.questionText||"",image:q.questionImage||null},
       ...(q.visual?{visual:q.visual}:{}),
       ...(q.type==="flashcard"?{answer:{text:q.answerText||"",image:q.answerImage||null}}:{}),
@@ -2409,9 +2426,10 @@ document.getElementById("importProjectInput").onchange=async e=>{
     const obj=JSON.parse(await f.text());
     if(!obj||!Array.isArray(obj.groups)||!Array.isArray(obj.questions))throw new Error("Not a valid builder project.");
     if(!confirm("Replace ALL groups and questions in the current cloud module with this file?"))return;
-    const keep={moduleId:project.moduleId,moduleSlug:project.moduleSlug,moduleName:project.moduleName,isPublished:project.isPublished};
+    const keep={moduleId:project.moduleId,moduleSlug:project.moduleSlug,moduleName:project.moduleName,isPublished:project.isPublished,moduleRevision:project.moduleRevision};
     project={...blankProject(),...obj,...keep,format:PROJECT_FORMAT};
     project.groups=(project.groups||[]).map(g=>({...g,id:/^[0-9a-f-]{36}$/i.test(g.id)?g.id:(crypto.randomUUID?crypto.randomUUID():g.id)}));
+    if(window.reconcileAuthoringFlags)window.reconcileAuthoringFlags();
     newQuestion();renderAll();saveProject();showView("bank");
   }catch(err){alert(err.message||String(err));}
   e.target.value="";
@@ -2542,7 +2560,7 @@ document.getElementById("downloadCompleteZipBtn").onclick=()=>{
 
 document.getElementById("resetProjectBtn").onclick=async()=>{
   if(!confirm("Discard unsaved edits and reload this module from the cloud?"))return;
-  try{ await loadModuleIntoBuilder(project.moduleSlug); showView("questions"); }
+  try{ await loadModuleIntoBuilder(project.moduleSlug,{discard:true}); showView("questions"); }
   catch(e){ alert(e.message||String(e)); }
 };
 
@@ -2586,13 +2604,15 @@ window.__startBuilder=async function(profile){
     "Signed in as "+(profile.username||"developer");
   const modules=await renderModuleSelect();
   if(modules.length){
-    /* Reopen whatever was last edited, as long as it still exists. */
+    /* Open only an existing module, then fall back to the last edited one. */
+    const requested=new URLSearchParams(location.search).get("module");
     const saved=lastModule();
-    const wanted=modules.some(m=>m.slug===saved)
+    const wanted=modules.some(m=>m.slug===requested)?requested:modules.some(m=>m.slug===saved)
       ? saved
       : (document.getElementById("cloudModuleSelect").value||modules[0].slug);
     document.getElementById("cloudModuleSelect").value=wanted;
     await loadModuleIntoBuilder(wanted);
+    if(new URLSearchParams(location.search).get("view")==="groups")showView("groups");
   }else{
     setSyncStatus("No modules yet — use New Module","#8b949e");
   }
