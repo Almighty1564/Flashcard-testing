@@ -52,8 +52,11 @@ with sync_playwright() as pw:
  untouched=page.evaluate('JSON.stringify(state.mastery)')
  t=drag(100,0);t('touchEnd');page.wait_for_timeout(250)
  check('Dragging before reveal does not grade',page.evaluate('JSON.stringify(state.mastery)')==untouched)
- start();before=page.evaluate('JSON.stringify(state)');reveal()
- check('Tap reveals the answer without changing progress',page.locator('.swipe-face-answer').is_visible() and not page.locator('.swipe-face-question').is_visible() and page.evaluate('JSON.stringify(state)')==before)
+ start();before=page.evaluate('JSON.stringify(state)')
+ question=page.locator('.swipe-face-question');prompt=question.inner_text()
+ check('Answer is hidden before reveal',not page.locator('.swipe-face-answer').is_visible())
+ reveal()
+ check('Tap shows the original question above the answer without grading',question.is_visible() and question.inner_text()==prompt and page.locator('.swipe-face-answer').is_visible() and question.bounding_box()['y']<page.locator('.swipe-face-answer').bounding_box()['y'] and page.evaluate('JSON.stringify(state)')==before)
  for label,dx,dy,border in [('wrong',-100,0,'rgb(255, 52, 74)'),('guessed',0,100,'rgb(255, 196, 0)'),('correct',100,0,'rgb(0, 230, 91)'),('confident',0,-100,'rgb(0, 170, 255)')]:
   start();reveal();before=page.evaluate('state.totalReviews');t=drag(dx,dy);data=snapshot()
   check(label+': live touch drag moves card, colors it and shows label',data['direction']==label and label.lower() in data['label'].lower() and data['opacity']>0.8 and data['glow']!='none' and data['border']==border and data['transform']!='none')

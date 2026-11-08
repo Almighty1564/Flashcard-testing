@@ -289,7 +289,9 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
 .swipe-card[data-direction="confident"]::before{background:radial-gradient(ellipse at 50% 30%,rgba(0,158,255,.7),rgba(0,55,120,.55) 60%,rgba(0,18,45,.3))}
 .swipe-card-top{font-size:11px;letter-spacing:.12em;color:#a9bac9;font-weight:700;border:1px solid #344759;border-radius:20px;padding:5px 12px}
 .swipe-face-question,.swipe-face-answer{font-size:clamp(19px,4vw,25px);font-weight:550;line-height:1.5;overflow-wrap:anywhere;max-width:100%;color:#f1f5fa}
-.swipe-face-question[hidden],.swipe-face-answer[hidden]{display:none}
+.swipe-face-answer{width:100%;border-top:1px solid #344759;padding-top:16px}
+.swipe-face-answer[hidden]{display:none}
+.swipe-answer-label{display:block;margin-bottom:6px;font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:#a9bac9}
 .swipe-face-question img,.swipe-face-answer img{max-width:100%;max-height:190px;object-fit:contain;border-radius:12px;pointer-events:none;display:block;margin:12px auto}
 .swipe-hint,.swipe-legend{font-size:12px;color:#a5b9c9;text-align:center}.swipe-legend[hidden]{display:none}
 .swipe-direction{font-size:23px;font-weight:850;letter-spacing:.04em;min-height:27px;text-shadow:0 0 15px currentColor}
@@ -1050,10 +1052,10 @@ function renderDiagramEntry(el){
 function renderFlashcard(el){
   const question=esc(currentCard.question?.text||"");
   const questionImage=imageHtml(currentCard.question?.image,"question-image","Question image");
-  el.innerHTML=`<div class="swipe-stage"><div class="swipe-card" id="swipeCard" role="button" tabindex="0" aria-label="Tap to reveal answer, then drag the card to grade">
+  el.innerHTML=`<div class="swipe-stage"><div class="swipe-card" id="swipeCard" role="button" tabindex="0" aria-label="Reveal answer" aria-describedby="swipeQuestion">
     <div class="swipe-card-top">FLASHCARD</div>
-    <div class="swipe-face-question">${question}${questionImage}</div>
-    <div class="swipe-face-answer" hidden></div>
+    <div class="swipe-face-question" id="swipeQuestion">${question}${questionImage}</div>
+    <div class="swipe-face-answer" id="swipeAnswer" hidden><span class="swipe-answer-label">Answer</span><div class="swipe-answer-content"></div></div>
     <div class="swipe-direction" aria-hidden="true"></div>
     <div class="swipe-hint">Tap to reveal answer</div>
   </div></div><div class="swipe-legend" hidden>← Wrong · ↓ Guessed · → Correct · ↑ Confident</div>`;
@@ -1063,11 +1065,11 @@ function renderFlashcard(el){
   function reveal(){
     if(revealed||done)return;
     revealed=true;card.classList.add("revealed");
-    card.querySelector(".swipe-card-top").textContent="ANSWER";
-    card.querySelector(".swipe-face-question").hidden=true;
     const answer=card.querySelector(".swipe-face-answer");
-    answer.innerHTML=esc(currentCard.answer?.text||"")+imageHtml(currentCard.answer?.image);
+    answer.querySelector(".swipe-answer-content").innerHTML=esc(currentCard.answer?.text||"")+imageHtml(currentCard.answer?.image);
     answer.hidden=false;
+    card.setAttribute("aria-label","Swipe or use the arrow keys to grade");
+    card.setAttribute("aria-describedby","swipeQuestion swipeAnswer");
     card.querySelector(".swipe-hint").textContent="Swipe the card in any direction";
     legend.hidden=false;
   }
