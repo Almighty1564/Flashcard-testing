@@ -19,7 +19,7 @@
   const pageName = names[body.dataset.page] || 'Workspace';
 
   // Page-specific reliability layers load after the original inline controllers have initialized.
-  const reliability = { study: './study-reliability.js?v=1', developer: './authoring-reliability.js?v=1' }[body.dataset.page];
+  const reliability = { study: './study-reliability.js?v=1', developer: './authoring-reliability.js?v=20261108-sections-v1' }[body.dataset.page];
   if (reliability) {
     const script = document.createElement('script');
     script.src = reliability;
