@@ -119,7 +119,19 @@ try:
   f=force_card(page,'multiple-choice');f.locator('input[value="yes"]').check();f.locator('#submitObjectiveBtn').click()
   check('Multiple-choice grading still uses original answer handlers',f.locator('.feedback.good').count()==1)
   f=force_card(page,'numeric');f.locator('#entryInput').fill('23abc');f.locator('#submitEntryBtn').click();check('Strict numeric safeguard remains enabled',f.locator('.feedback.bad').count()==1)
-  f=force_card(page);page.locator('#cwSettings>summary').click()
+  f=force_card(page)
+  f.evaluate('''() => { currentCard.studyMetadata={audit_id:'A999',provenance:'synthetic fixture',assessment_kind:'application',source_status:'reviewed',sources:[{folder:'Fixture source',file:'example.png',heading:'<fixture-heading>'}],grading_criteria:['Synthetic answer checklist'],notes:['Synthetic private note']};renderCard(); }''')
+  metadata_question=f.locator('.swipe-face-question').inner_text()
+  expect(f.locator('#questionMeta')).to_contain_text('Reference A999')
+  expect(f.locator('[data-study-metadata-details]')).to_have_count(0)
+  check('Audited flashcard hides source headings, filenames and grading notes before reveal',f.locator('#studyView').evaluate('e=>!["<fixture-heading>","example.png","Synthetic answer checklist","Synthetic private note"].some(t=>e.textContent.includes(t))'))
+  f.locator('#swipeCard').click()
+  expect(f.locator('[data-study-metadata-details]')).to_contain_text('example.png')
+  expect(f.locator('[data-study-metadata-details]')).to_contain_text('<fixture-heading>')
+  expect(f.locator('[data-study-metadata-details]')).to_contain_text('Synthetic answer checklist')
+  check('Audited flashcard reveals plain-text source notes while retaining its question',f.locator('.swipe-face-question').inner_text()==metadata_question and f.locator('fixture-heading').count()==0 and f.locator('#swipeCard [data-study-metadata-details]').count()==0)
+  f.evaluate('delete currentCard.studyMetadata;renderCard();')
+  page.locator('#cwSettings>summary').click()
   with page.expect_download() as info:page.locator('[data-study-action="exportBtn"]').click()
   download=info.value;dest=OUT/'progress-export.json';download.save_as(str(dest));data=json.loads(dest.read_text())
   check('Progress export retains original module-specific backup schema',data['format']=='question-bank-study-progress-v1' and data['module']['slug']=='mod3')
@@ -162,7 +174,9 @@ try:
   fixture={'bank':{'module':{'id':'m4','slug':'mod4','name':'MOD 4','is_published':True},
                    'groups':[{'id':'m4-quiz1','name':'Quiz 1'}],
                    'cards':[{'id':'fixture-q1','groupId':'m4-quiz1','type':'flashcard','status':'complete',
-                             'question':{'text':question_text},'answer':{'text':answer_text}}]},
+                             'question':{'text':question_text},'answer':{'text':answer_text},
+                             'studyMetadata':{'audit_id':'A999','provenance':'synthetic fixture','assessment_kind':'direct recall','source_status':'reviewed','sources':[{'folder':'mod 4 tests/quiz 1','file':'1.PNG','heading':'<fixture-heading>'}],'grading_criteria':['Synthetic answer checklist']}},
+                            {'id':'fixture-pending','groupId':'m4-quiz1','type':'flashcard','question':{'text':'Synthetic pending-source question'},'answer':{'text':'Unverified fixture key'},'studyMetadata':{'audit_id':'O999','source_status':'pending','sources':[]}}]},
            'manifest':{'files':[{'path':source_path,'bytes':len(png),'sha256':hashlib.sha256(png).hexdigest()}],
                        'slots':[{'id':'fixture-q1','quiz':1,'number':1,'status':'verified','sources':[source_path]}]}}
   ctx,page=setup(mod4_fixture=fixture,signedIn=False)
@@ -181,7 +195,13 @@ try:
   page.goto(ORIGIN+'/mod4-study.html');expect(page.locator('#library')).to_be_visible()
   card=page.locator('#questions article.question').filter(has_text=question_text)
   expect(card.locator('h2')).to_have_text(question_text);expect(card.locator('.answer')).to_be_hidden()
+  expect(card.locator('[data-study-metadata-details]')).to_have_count(0)
+  expect(page.locator('#questions')).not_to_contain_text('Synthetic pending-source question')
+  check('MOD 4 audited references are absent before reveal and pending sources are excluded from practice','<fixture-heading>' not in card.inner_text() and 'Synthetic answer checklist' not in card.inner_text())
   card.locator('summary').click();expect(card.locator('.answer')).to_contain_text(answer_text);expect(card.locator('h2')).to_have_text(question_text)
+  expect(card.locator('[data-study-metadata-details]')).to_contain_text('<fixture-heading>')
+  expect(card.locator('[data-study-metadata-details]')).to_contain_text('Synthetic answer checklist')
+  check('MOD 4 audited source notes appear as plain text after reveal',card.locator('fixture-heading').count()==0)
   check('MOD 4 answer reveal keeps exact literal question and answer text',card.locator('fixture').count()==0)
   page.locator('button[data-section="sources"]').click()
   with TemporaryDirectory() as temporary:
@@ -196,6 +216,11 @@ try:
    page.locator('#closeSource').click();expect(page.locator('#sourceDialog')).to_be_hidden()
   check('MOD 4 opens a matching screenshot locally without sending uploads or saving progress',
         all(method=='GET' for method,_ in requests) and page.evaluate('!JSON.parse(sessionStorage.__cw_fixture).calls.some(x=>/^save|upload/i.test(x.name))'))
+  page.locator('button[data-section="review"]').click()
+  pending=page.locator('#questions article.question').filter(has_text='Synthetic pending-source question')
+  expect(pending).to_be_visible();expect(pending.locator('[data-study-metadata-details]')).to_have_count(0)
+  pending.locator('summary').click();expect(pending.locator('[data-study-metadata-details]')).to_contain_text('Source verification pending')
+  check('Pending audited source appears in review without a fabricated source reference',pending.locator('h2').inner_text()=='Synthetic pending-source question' and pending.locator('[data-study-metadata-details] button').count()==0)
   ctx.close()
   check('No uncaught browser exceptions',not errors)
   browser.close()

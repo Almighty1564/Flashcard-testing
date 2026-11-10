@@ -252,6 +252,8 @@
     }
 
     if (ad.visual) card.visual = ad.visual;
+    // Carry source metadata without interpreting it. Renderers validate its shape and use text nodes.
+    if (ad.study_metadata && typeof ad.study_metadata === 'object' && !Array.isArray(ad.study_metadata)) card.studyMetadata = ad.study_metadata;
 
     if (row.question_type === "numeric" && ad.mode === "image-entry") {
       card.type = "image-entry";
