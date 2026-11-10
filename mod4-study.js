@@ -17,7 +17,14 @@
     if (card.type === 'image-entry') return (card.diagram?.fields || []).map((x, i) => `${i + 1}. ${x.answer || ''}`).join('\n');
     return '';
   }
-  const core = {sourcePath, localURL, answerText};
+  function libraryCard(card, previousSources, metadataAPI) {
+    const metadata = metadataAPI?.normalize(card.studyMetadata) || (card.studyMetadata ? {source_status:'pending',sources:[]} : null);
+    const liveSources = (metadata?.sources || []).map(x => metadataAPI?.sourcePath(x)).filter(Boolean);
+    // Audit references supersede older static mappings, including an explicit pending source.
+    const status = metadata && !/^(reviewed|verified)$/.test(metadata.source_status) ? 'needs-review' : 'verified';
+    return {...card, studyMetadata: metadata, status, answer: {text:answerText(card),image:card.answer?.image}, sources:metadata ? liveSources : previousSources};
+  }
+  const core = {sourcePath, localURL, answerText, libraryCard};
   if (typeof module !== 'undefined' && module.exports) module.exports = core;
   if (typeof document === 'undefined') return;
   const $ = id => document.getElementById(id);
@@ -83,16 +90,16 @@
   }
   function reviewRecords() {
     if (offline) return cards.filter(x => x.status !== 'verified');
-    return slots.filter(x => x.status !== 'verified').map(x => ({
+    return [...slots.filter(x => x.status !== 'verified').map(x => ({
       id: x.id, groupId: 'quiz-' + x.quiz, label: `Quiz ${x.quiz} · Question ${x.number}`, status: 'needs-review',
       question: {text: 'Source check required'}, answer: {text: ''}, sources: x.sources,
       notes: 'This item is held out of practice. Open its source image or use the offline library to review the source wording.'
-    }));
+    })), ...cards.filter(x => x.studyMetadata && x.status !== 'verified')];
   }
   function updateGroups() {
     const previous = $('group').value;
     $('group').replaceChildren(new Option('All topics', ''));
-    const options = section === 'review' ? Array.from({length: 8}, (_, i) => ({id: 'quiz-' + (i + 1), name: 'Course Quiz ' + (i + 1)})) : groups;
+    const options = section === 'review' ? [...Array.from({length: 8}, (_, i) => ({id: 'quiz-' + (i + 1), name: 'Course Quiz ' + (i + 1)})), ...groups.filter(g => cards.some(c => c.groupId === g.id && c.studyMetadata && c.status !== 'verified'))] : groups;
     options.forEach(g => $('group').add(new Option(g.name, g.id)));
     if ([...$('group').options].some(o => o.value === previous)) $('group').value = previous;
   }
@@ -105,6 +112,7 @@
     shown.slice(0, limit).forEach(card => {
       const article = node('article', undefined, 'question');
       article.append(node('div', card.label || groups.find(g => g.id === card.groupId)?.name || 'MOD 4', 'tag'));
+      if (card.studyMetadata) window.T08StudyMetadata?.appendLabels(article, card.studyMetadata);
       if (section === 'review') article.append(node('p', 'Needs review · not included in practice', 'review-badge'));
       article.append(node('h2', card.question?.text || 'Question is not visible in the supplied source.'));
       const qImage = cloudImage(card.question?.image, 'Question image'); if (qImage) article.append(qImage);
@@ -113,9 +121,17 @@
         const answer = node('div', card.answer?.text || '', 'answer');
         const aImage = cloudImage(card.answer?.image, 'Answer image'); if (aImage) answer.append(aImage);
         details.append(summary, answer); article.append(details);
+        if (card.studyMetadata) details.addEventListener('toggle', () => {
+          if (!details.open || details.dataset.sourceNotesReady) return;
+          details.dataset.sourceNotesReady = 'true';
+          window.T08StudyMetadata?.appendDetails(details, card.studyMetadata, (path, button) => {
+            if (fileIndex.has(path)) openSource(path, button);
+            else { const message = node('p', 'This reference is not in the local source manifest. Locate the filename in your supplied material.', 'notes'); button.replaceWith(message); }
+          });
+        });
       } else article.append(node('p', section === 'review' ? 'No practice answer is supplied for this item.' : 'Use the original test view for this question’s interactive answer.', 'notes'));
       if (card.notes) article.append(node('p', card.notes, 'notes'));
-      article.append(references(card.sources)); $('questions').append(article);
+      if (!card.studyMetadata) article.append(references(card.sources)); $('questions').append(article);
     });
     if (!shown.length) $('questions').append(node('p', 'No matching questions. Try another topic or search.', 'empty'));
     $('moreQuestions').hidden = shown.length <= limit;
@@ -188,7 +204,7 @@
       const bank = await FC.loadBank('mod4'); if (ticket !== generation) return;
       const provenance = new Map(); [...slots, ...(manifest.references || [])].forEach(slot => { if (slot.id) { const list = provenance.get(slot.id) || []; list.push(slot); provenance.set(slot.id, list); } });
       groups = bank.groups || [];
-      cards = (bank.cards || []).map(card => ({...card, status: 'verified', answer: {text: answerText(card), image: card.answer?.image}, sources: (provenance.get(card.id) || []).flatMap(x => x.sources || [])}));
+      cards = (bank.cards || []).map(card => libraryCard(card, (provenance.get(card.id) || []).flatMap(x => x.sources || []), window.T08StudyMetadata));
       ready();
     } catch (error) { if (ticket !== generation) return; $('gateMessage').textContent = error.message || 'The library could not be opened.'; $('retry').hidden = false; }
   }

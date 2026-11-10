@@ -25,7 +25,7 @@ test('all entry pages have a consistent grouped sidebar and role-protected utili
 test('all entry pages retain FC and server security checks before showing content',()=>{
  for(const f of ['index.html','tester.html','dev.html','weather.html']){
   const s=read(f);
-  assert.ok(s.includes('cloud.js?v=20261108-sections-v1'));
+  assert.ok(s.includes('cloud.js?v='+(f==='tester.html'?'20261109-source-notes-v1':'20261108-sections-v1')));
   assert.ok(s.includes('security-auth.js?v=20260926-1'));
   assert.ok(s.indexOf('security-auth.js')<s.indexOf('atelier-portal.js'));
   assert.match(s,/<section id="(?:modePicker|testerApp)" hidden/);

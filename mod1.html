@@ -584,7 +584,8 @@ body.sb-collapsed .main{padding-left:46px;padding-right:30px}
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script src="./supabase-config.js?v=9"></script>
-<script src="./cloud.js?v=20261108-sections-v1"></script>
+<script src="./study-metadata.js?v=20261109-source-notes-v1"></script>
+<script src="./cloud.js?v=20261109-source-notes-v1"></script>
 <script src="./mod1-calc.js?v=8"></script>
 <script>
 const MODULE_SLUG=new URLSearchParams(location.search).get("module")||"mod1";
@@ -856,6 +857,7 @@ function renderCard(){
     <span class="badge">${esc(typeLabel(currentCard.type))}</span>
     <span class="badge">${session.cursor+1}/${session.queue.length}</span>
   `;
+  window.T08StudyMetadata?.appendLabels(document.getElementById("questionMeta"),currentCard.studyMetadata);
   const isSwipeFlashcard=currentCard.type==="flashcard";
   document.getElementById("studyView").classList.toggle("swipe-flashcard-mode",isSwipeFlashcard);
   // Flashcards render the question inside the swipe card, never in the legacy header.
@@ -1071,6 +1073,7 @@ function renderFlashcard(el){
     card.setAttribute("aria-label","Swipe or use the arrow keys to grade");
     card.setAttribute("aria-describedby","swipeQuestion swipeAnswer");
     card.querySelector(".swipe-hint").textContent="Swipe the card in any direction";
+    window.T08StudyMetadata?.appendDetails(el,currentCard.studyMetadata);
     legend.hidden=false;
   }
   function reset(){card.style.transform="";card.classList.remove("dragging");direction.textContent="";card.removeAttribute("data-direction");card.style.removeProperty("--swipe-strength");}
